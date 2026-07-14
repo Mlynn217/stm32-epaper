@@ -2,6 +2,22 @@
 
 An STM32-based e-reader using the Waveshare 6inch HD e-Paper HAT (IT8951 controller).
 
+## Current Status
+
+**Display bring-up milestone: core goal achieved.** On real hardware, confirmed working:
+- STM32CubeMX → CMake → arm-none-eabi-gcc/Ninja → OpenOCD → ST-LINK build/flash/debug loop, from
+  inside VSCode (tasks + launch configs for build, flash, debug, and a serial monitor)
+- SPI1 communication with the IT8951 — `EPD_IT8951_Init()` reads back the correct panel resolution
+  (1448×1072), firmware version, and LUT version
+- This panel's VCOM (`-2.59V`) set correctly
+- A test image (100×100px checkerboard) written and displayed on the physical panel
+
+Not done yet — see [TODO.md](TODO.md) for the full list, but the near-term highlights:
+- FMC/SDRAM hasn't been exercised with real data yet (needed before a **full-panel** image, since
+  that source buffer is ~758KB — too big for internal SRAM/the 32KB FreeRTOS heap)
+- Only full refresh (GC16) has been tested; fast/partial (A2 mode) refresh is still unverified
+- No license chosen yet; a few environment/tooling loose ends (`gdb-multiarch`, J-Trace pin check)
+
 ## Overview
 
 Goal: a standalone e-reader built around Waveshare's [6inch HD e-Paper HAT](https://www.waveshare.com/6inch-hd-e-paper-hat.htm)
@@ -30,8 +46,9 @@ product host may end up being a smaller, lower-power part once the design is pro
 - Operating voltage: 5V
 - Outline: 138.4×101.8×0.67mm; active display area: 122.356×90.584mm
 - Viewing angle: >170°; operating temp 0–50°C, storage -25–70°C
-- Each physical panel has a unique **VCOM** value printed on its FPC cable (e.g. `-1.50`) that must
-  be set in firmware for correct grayscale/contrast — read this off the hardware once it arrives.
+- Each physical panel has a unique **VCOM** value printed on its FPC cable that must be set in
+  firmware for correct grayscale/contrast. **This panel's VCOM is `-2.59V`** → pass `2590` (mV
+  magnitude) to `EPD_IT8951_Init()`/`EPD_IT8951_SetVCOM()`.
 
 ### Host: STM32F469I-DISCO
 
@@ -40,24 +57,40 @@ product host may end up being a smaller, lower-power part once the design is pro
   here as the IT8951 frame buffer
 - Onboard ST-LINK/V2-1 — no external debug probe needed
 
-### Wiring (reference only — pins TBD for this board)
+### Wiring
 
-Waveshare's own STM32 demo (targeting their Open429I board) uses this SPI pinout:
+Final pin assignment for the F469-Disco, chosen by checking every candidate pin against the MCU's
+full alternate-function list and cross-referencing everything already enabled in the `.ioc` (FMC,
+DSIHOST/LTDC, I2C1/2, SAI1, SDIO, QUADSPI, USART3/6, USB_OTG_FS, TIM1) — no conflicts:
 
-| IT8951 HAT | Signal          | Notes            |
-|------------|-----------------|-------------------|
-| 5V         | Power           | 5V required       |
-| GND        | Ground          |                   |
-| MISO       | SPI MISO        |                   |
-| MOSI       | SPI MOSI        |                   |
-| SCK        | SPI SCK         |                   |
-| CS         | Chip select     | active low        |
-| RST        | Reset           | active low        |
-| HRDY       | Busy/ready      | active low = busy |
+| IT8951 HAT pin | Signal              | STM32 pin | Discovery connector      | Pin # | Silkscreen label | Wire color |
+|----------------|---------------------|-----------|--------------------------|-------|-------------------|------------|
+| 5V             | Power               | —         | CN6 (Arduino Power)      | 5     | `+5V`             | Grey       |
+| GND            | Ground              | —         | CN6 (Arduino Power)      | 6/7   | `GND`             | Black      |
+| SCK            | SPI1_SCK            | PA5       | CN12 (Extension header)  | 7     | —                 | Orange     |
+| MISO           | SPI1_MISO           | PB4       | CN12 (Extension header)  | 5     | —                 | Blue       |
+| MOSI           | SPI1_MOSI           | PB5       | CN12 (Extension header)  | 9     | —                 | Yellow     |
+| CS             | GPIO_Output, PP, idle high | PA4 | CN8 (Arduino Analog)   | 6     | `A5`              | Green      |
+| RST            | GPIO_Output, PP, idle high | PB1 | CN8 (Arduino Analog)   | 1     | `A0`              | White      |
+| HRDY (busy)    | GPIO_Input          | PA2       | CN7 (Arduino Digital)    | 6     | `D5`              | Purple     |
 
-The Open429I pin assignment (PE11–PE14, PC5, PA7) doesn't necessarily apply to the F469-Disco,
-since many of its pins are already committed to the onboard LCD/SDRAM/camera/USB. Final GPIO
-mapping is a TODO for hardware bring-up.
+Notes:
+- SPI1's SCK/MISO/MOSI are only broken out on **CN12**, the 16-pin 2.54mm extension header on the
+  underside of the board — not on the Arduino headers. CS/RST/HRDY are split across CN8 and CN7
+  instead, so wiring the HAT means jumpers from three different connectors plus CN6, not one.
+- CN8 pin 6 (`A5`) defaults to PA4 via solder bridges SB10/SB12 (closed by default) — worth a
+  continuity check with a multimeter before trusting it, since those can be reconfigured.
+- CS/RST are push-pull, idle **high** (both signals are active-low on the IT8951 side — CS is only
+  pulled low during a transaction, RST is only pulsed low as a deliberate reset, driven by the
+  driver's init code rather than left low by default).
+- SPI1 clock: **11.25 MHz** (APB2/8 off a 90MHz APB2 clock). The IT8951's datasheet (Table 9-4, SPI
+  AC Characteristics) caps `fSCLK` at 24MHz; 11.25MHz leaves comfortable margin for jumper-wire
+  wiring rather than a tightly-routed PCB. `hspi1.Init.BaudRatePrescaler` in `Core/Src/main.c` and
+  `SPI1.CalculateBaudRate` in the `.ioc` are both set to match.
+- HRDY (busy) is active-low (low = busy). All three IT8951-side GPIOs are currently `GPIO_NOPULL`
+  (no pull-up/down) — a defensive pull-up was considered for the brief post-reset window before
+  `MX_GPIO_Init()` runs, but wasn't applied; not required since these are actively driven once init
+  runs, just an optional safety margin if boot-order issues ever show up.
 
 ## Architecture / Approach
 
@@ -67,9 +100,15 @@ mapping is a TODO for hardware bring-up.
 - **Editor/debug**: VSCode, using the CMake Tools and Cortex-Debug extensions (OpenOCD or
   STM32CubeProgrammer's ST-Link GDB server against the onboard ST-LINK/V2-1)
 - **IT8951 driver**: vendored and adapted from Waveshare's reference implementation
-  ([github.com/waveshare/IT8951-ePaper](https://github.com/waveshare/IT8951-ePaper)) rather than
-  used as-is or pulled in as a submodule — their demo targets Keil MDK on a different board, so it
-  needs rework to fit our HAL/CMake setup anyway
+  ([github.com/waveshare/IT8951-ePaper](https://github.com/waveshare/IT8951-ePaper)), specifically
+  their **Raspberry Pi** driver (`Raspberry/lib/e-Paper/EPD_IT8951.c/h`) rather than their STM32 demo
+  — the STM32 demo (targets Keil MDK on their Open429I board anyway) turned out to only actually
+  implement **I80** mode; its `IT8951_Interface_SPI` `#define` is vestigial and never referenced in
+  the code. The Raspberry Pi driver is genuinely SPI-based (matches our chosen interface) and is
+  pure protocol logic on top of a small hardware-abstraction layer (`DEV_Config.c/h`), so only that
+  thin layer needed rewriting for STM32 HAL — `EPD_IT8951.c/h` is vendored essentially unchanged.
+  Lives at `Drivers/IT8951/` (`e-Paper/` = vendored protocol driver, `Config/` = our HAL port of
+  `DEV_Config`).
 - Bare-metal for now, no RTOS — revisit once UI/storage/input concurrency makes task separation
   worthwhile
 - Whenever the `.ioc` changes (new pin, new peripheral), regenerate in CubeMX — it only touches its
@@ -91,12 +130,36 @@ still needs the `arm-none-eabi-gcc` toolchain, OpenOCD, Ninja, and the relevant 
 
 ## Repo Layout
 
-Not yet created — this will be populated once the CubeMX project is generated (see
-[TODO.md](TODO.md)).
+- `stm32-epaper.ioc` — STM32CubeMX project (source of truth for pins/clocks/peripherals)
+- `Core/`, `Drivers/STM32F4xx_HAL_Driver/`, `Drivers/CMSIS/`, `Middlewares/`, `FATFS/`, `USB_HOST/` —
+  CubeMX-generated HAL/CMSIS/FreeRTOS/FatFS/USB Host scaffolding (regenerated by CubeMX; hand-written
+  code lives in the `USER CODE BEGIN/END` blocks within, which survive regeneration)
+- `Drivers/IT8951/` — vendored + adapted IT8951 SPI driver (see Architecture above)
+- `cmake/`, `CMakeLists.txt`, `CMakePresets.json` — CubeMX's CMake export + our toolchain file
+- `.vscode/` — `tasks.json` (build/flash/serial-monitor), `launch.json` (debug via OpenOCD or J-Link,
+  plus a `node-terminal` entry for the minicom serial monitor), `c_cpp_properties.json`,
+  `extensions.json`
+- `docs/` — IT8951 datasheet + programming guide, F469-Disco user manual (UM1932)
+- `TODO.md` — task list/roadmap
 
 ## Building / Flashing / Debugging
 
-Placeholder — instructions will be filled in once the first CubeMX-generated CMake project lands.
+**Command line:**
+```sh
+cmake --preset Debug
+cmake --build --preset Debug
+openocd -f interface/stlink.cfg -f target/stm32f4x.cfg \
+  -c "program build/Debug/stm32-epaper.elf verify reset exit"
+```
+
+**VSCode:** Terminal → Run Task → `Build (Debug)` or `Flash (OpenOCD / ST-LINK)` (the latter builds
+first automatically), or use the Run and Debug dropdown for `Debug (OpenOCD / ST-LINK)` /
+`Debug (J-Link)`. `Serial Monitor (minicom)` is available both as a task and in the Run and Debug
+dropdown — it opens `/dev/ttyACM0` at 115200 baud (the ST-LINK's virtual COM port, wired to USART3)
+in an integrated terminal. Exit minicom with `Ctrl-A` then `X`.
+
+Debugging needs `gdb-multiarch` (`arm-none-eabi-gdb` isn't packaged separately on this Ubuntu
+version) — see [TODO.md](TODO.md).
 
 ## TODO
 

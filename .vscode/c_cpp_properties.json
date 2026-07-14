@@ -1,0 +1,30 @@
+{
+  "version": 4,
+  "configurations": [
+    {
+      "name": "STM32F469I-DISCO",
+      "includePath": [
+        "${workspaceFolder}/Core/Inc",
+        "${workspaceFolder}/Drivers/CMSIS/Include",
+        "${workspaceFolder}/Drivers/CMSIS/Device/ST/STM32F4xx/Include",
+        "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc",
+        "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy",
+        "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/include",
+        "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS",
+        "${workspaceFolder}/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
+        "${workspaceFolder}/Middlewares/Third_Party/FatFs/src",
+        "${workspaceFolder}/FATFS/App",
+        "${workspaceFolder}/FATFS/Target",
+        "${workspaceFolder}/Middlewares/ST/STM32_USB_Host_Library/Core/Inc",
+        "${workspaceFolder}/Middlewares/ST/STM32_USB_Host_Library/Class/CDC/Inc",
+        "${workspaceFolder}/USB_HOST/App",
+        "${workspaceFolder}/USB_HOST/Target"
+      ],
+      "defines": ["USE_HAL_DRIVER", "STM32F469xx"],
+      "compilerPath": "/usr/bin/arm-none-eabi-gcc",
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "linux-gcc-arm"
+    }
+  ]
+}

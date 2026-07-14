@@ -1,0 +1,37 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug (OpenOCD / ST-LINK)",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/Debug/stm32-epaper.elf",
+      "request": "launch",
+      "type": "cortex-debug",
+      "servertype": "openocd",
+      "configFiles": ["interface/stlink.cfg", "target/stm32f4x.cfg"],
+      "device": "STM32F469NIHx",
+      "preLaunchTask": "Build (Debug)",
+      "runToEntryPoint": "main",
+      "gdbPath": "gdb-multiarch"
+    },
+    {
+      "name": "Debug (J-Link)",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/Debug/stm32-epaper.elf",
+      "request": "launch",
+      "type": "cortex-debug",
+      "servertype": "jlink",
+      "device": "STM32F469NI",
+      "interface": "swd",
+      "preLaunchTask": "Build (Debug)",
+      "runToEntryPoint": "main",
+      "gdbPath": "gdb-multiarch"
+    },
+    {
+      "name": "Serial Monitor (minicom)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "minicom -D /dev/ttyACM0 -b 115200 -o"
+    }
+  ]
+}
