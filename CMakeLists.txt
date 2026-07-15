@@ -28,6 +28,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 project(${CMAKE_PROJECT_NAME})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
+# Re-apply fixes for known CubeMX regeneration regressions (e.g. SPI1 clock
+# getting reset to a speed the IT8951 doesn't support) - see the script for
+# why this is needed. Runs on every configure (i.e. every `cmake --preset`),
+# so if you regenerate from CubeMX, just re-run cmake before building and
+# this self-heals; it's a no-op otherwise.
+execute_process(
+    COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/patch-cubemx.sh
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    RESULT_VARIABLE PATCH_CUBEMX_RESULT
+)
+if(NOT PATCH_CUBEMX_RESULT EQUAL 0)
+    message(FATAL_ERROR "scripts/patch-cubemx.sh failed (exit ${PATCH_CUBEMX_RESULT})")
+endif()
+
 # Enable CMake support for ASM and C languages
 enable_language(C ASM)
 

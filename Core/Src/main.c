@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 #include "EPD_IT8951.h"
 /* USER CODE END Includes */
 
@@ -85,6 +86,7 @@ QSPI_HandleTypeDef hqspi;
 SAI_HandleTypeDef hsai_BlockA1;
 
 SD_HandleTypeDef hsd;
+DMA_HandleTypeDef hdma_sdio;
 
 SPI_HandleTypeDef hspi1;
 
@@ -104,6 +106,7 @@ osThreadId defaultTaskHandle;
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_CRC_Init(void);
 static void MX_DMA2D_Init(void);
 static void MX_DSIHOST_DSI_Init(void);
@@ -161,6 +164,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_CRC_Init();
   MX_DMA2D_Init();
   MX_DSIHOST_DSI_Init();
@@ -865,6 +869,22 @@ static void MX_USART6_UART_Init(void)
 
 }
 
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA2_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+
+}
+
 /* FMC initialization function */
 static void MX_FMC_Init(void)
 {
@@ -1179,6 +1199,73 @@ void StartDefaultTask(void const * argument)
   {
     printf("stm32-epaper: SDRAM test FAILED (%lu word mismatches).\r\n",
            (unsigned long)sdramErrors);
+  }
+
+  printf("stm32-epaper: mounting SD card...\r\n");
+  {
+    FRESULT fres = f_mount(&SDFatFS, SDPath, 1);
+    if (fres != FR_OK)
+    {
+      printf("stm32-epaper: SD mount FAILED (FRESULT=%d)\r\n", (int)fres);
+    }
+    else
+    {
+      FATFS *fs;
+      DWORD freeClusters;
+
+      printf("stm32-epaper: SD mount OK.\r\n");
+
+      if (f_getfree(SDPath, &freeClusters, &fs) == FR_OK)
+      {
+        uint32_t totalSectors = (fs->n_fatent - 2) * fs->csize;
+        uint32_t freeSectors = freeClusters * fs->csize;
+        printf("stm32-epaper: SD card: %lu MB total, %lu MB free\r\n",
+               (unsigned long)(totalSectors / 2 / 1024),
+               (unsigned long)(freeSectors / 2 / 1024));
+      }
+
+      /* 8.3 filename required - ffconf.h has _USE_LFN=0 (long filenames
+         disabled), so anything with a base name over 8 chars (e.g.
+         "epaper_test.txt") fails with FR_INVALID_NAME. Worth keeping in
+         mind for real ebook filenames later, unless LFN gets enabled. */
+      static const char testStr[] = "stm32-epaper storage test\r\n";
+      fres = f_open(&SDFile, "EPTEST.TXT", FA_CREATE_ALWAYS | FA_WRITE);
+      if (fres != FR_OK)
+      {
+        printf("stm32-epaper: SD file create/open FAILED (FRESULT=%d)\r\n", (int)fres);
+      }
+      else
+      {
+        UINT bytesWritten;
+        f_write(&SDFile, testStr, sizeof(testStr) - 1, &bytesWritten);
+        f_close(&SDFile);
+        printf("stm32-epaper: wrote %u bytes to EPTEST.TXT\r\n", bytesWritten);
+
+        static char readBuf[64];
+        UINT bytesRead;
+        fres = f_open(&SDFile, "EPTEST.TXT", FA_READ);
+        if (fres != FR_OK)
+        {
+          printf("stm32-epaper: SD read-back open FAILED (FRESULT=%d)\r\n", (int)fres);
+        }
+        else
+        {
+          f_read(&SDFile, readBuf, sizeof(readBuf) - 1, &bytesRead);
+          f_close(&SDFile);
+          readBuf[bytesRead] = '\0';
+          printf("stm32-epaper: read back %u bytes: \"%s\"\r\n", bytesRead, readBuf);
+
+          if (bytesRead == sizeof(testStr) - 1 && memcmp(readBuf, testStr, bytesRead) == 0)
+          {
+            printf("stm32-epaper: SD read/write test PASSED.\r\n");
+          }
+          else
+          {
+            printf("stm32-epaper: SD read/write test FAILED (content mismatch).\r\n");
+          }
+        }
+      }
+    }
   }
 
   printf("stm32-epaper: starting IT8951 init (VCOM=%dmV)...\r\n", IT8951_VCOM_MV);

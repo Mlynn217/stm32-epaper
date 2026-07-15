@@ -33,6 +33,22 @@
         are broken out on a header — needed to use J-Trace's ETM instruction trace, not just SWO
   - [ ] Install `gdb-multiarch` (needed by Cortex-Debug; `gcc-arm-none-eabi` didn't bundle
         `arm-none-eabi-gdb` on this Ubuntu version)
+- [x] **CubeMX regeneration regression discovered + patched**: regenerating for the SDIO DMA/NVIC
+      config (below) silently reverted `hspi1.Init.BaudRatePrescaler` from `/16` back to CubeMX's
+      own default `/2` (45MHz, over the IT8951's 24MHz max) — even though we'd "fixed" this twice
+      before, including editing the `.ioc`'s own `SPI1.CalculateBaudRate` field, which apparently
+      doesn't reliably round-trip through CubeMX's GUI model. Symptom was very distinctive: every
+      value read back from `EPD_IT8951_GetSystemInfo()` was exactly right-shifted by one bit
+      (`1448→724`, `1072→536`, garbled FW/LUT strings) — a clean bit-shift pattern, not random
+      noise, which is what pointed at an SPI clock/timing issue rather than a logic bug. Reproduced
+      identically across a manual reset and a full reflash before being traced to the prescaler.
+      Fixed with `scripts/patch-cubemx.sh`, wired into `CMakeLists.txt` via `execute_process` at
+      configure time — checks/re-applies known CubeMX regressions on every `cmake --preset`,
+      idempotent (only touches the file when a fix is actually needed, so no spurious rebuilds).
+      Tested: deliberately reverted the prescaler, ran `cmake --preset Debug`, confirmed it
+      self-healed. Still worth doing the "proper" fix too: CubeMX → SPI1 → Configuration →
+      Parameter Settings → Prescaler for Baud Rate → select `16` directly in the GUI, so the
+      project's own state is correct at the source (not yet done).
 
 ### Firmware — display bring-up milestone (current focus)
 - [x] Vendor + adapt Waveshare's IT8951 driver source (SPI mode) into this repo — used their
@@ -116,8 +132,24 @@
         chunked variant like the 4bpp one — fine for a 400x400 test, but full-panel 1bpp would want
         the same chunked-write speedup treatment before relying on it for real page turns.
 
-### Later milestones (not yet scoped in detail)
-- [ ] Storage (SD card / file system) for book files
+### Storage
+- [x] SD card + FatFS — **confirmed on real hardware**: mount, write, and read-back verified
+      byte-for-byte on a real SD card (`SD mount OK`, `SD card: 15263 MB total, 15263 MB free`,
+      wrote 27 bytes, read back 27 bytes, content matched). Two gaps found and fixed:
+  - [x] **No DMA/interrupt configured for SDIO at all** — `sd_diskio.c` calls
+        `BSP_SD_ReadBlocks_DMA`/`WriteBlocks_DMA`, which need a DMA channel and the SDIO interrupt
+        enabled to signal completion, but CubeMX never generated either (same class of gap as the
+        SDRAM JEDEC sequence: peripheral basics configured, but not everything the actual driver
+        needs). Fixed via CubeMX: Connectivity → SDIO → DMA Settings → added a DMA request
+        (auto-assigned DMA2_Stream3) → NVIC Settings → enabled SDIO global interrupt → regenerated;
+        CubeMX correctly auto-generated `SDIO_IRQHandler`/`DMA2_Stream3_IRQHandler` on its own.
+        Side effect of this regeneration: silently reverted the SPI1 clock fix (see the CubeMX
+        regeneration regression entry above) — reflashing after any CubeMX regen and checking the
+        panel still initializes correctly is worth doing as a habit.
+  - [x] **8.3 filenames required** — `ffconf.h` has `_USE_LFN=0` (long filenames disabled), so a
+        base filename over 8 characters (e.g. `epaper_test.txt`) fails with `FR_INVALID_NAME`
+        (FRESULT 6). Fixed by using `EPTEST.TXT` for the test; worth remembering for real ebook
+        filenames later, unless LFN gets enabled.
 - [ ] Page rendering / text layout
 - [ ] Ebook format parsing (EPUB/TXT)
 - [ ] UI / input handling

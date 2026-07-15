@@ -25,6 +25,10 @@ An STM32-based e-reader using the Waveshare 6inch HD e-Paper HAT (IT8951 control
 - **A2 (fast, black/white-only partial refresh) mode** — confirmed working: a 400×400 region
   toggled cleanly without disturbing the surrounding gradient, and measurably faster than GC16
   (390ms per A2 update vs. multi-second full GC16 refreshes)
+- **SD card storage** — mount, write, and read-back confirmed on a real SD card, byte-for-byte.
+  Needed adding SDIO's DMA/interrupt config (CubeMX generated the peripheral basics but not what the
+  DMA-based FatFS driver actually needs — same pattern as the SDRAM gap); also learned the hard way
+  that `ffconf.h` disables long filenames (`_USE_LFN=0`), so filenames need to fit 8.3 (see TODO.md)
 
 Not done yet — see [TODO.md](TODO.md) for the full list, but the near-term highlights:
 - An unexplained 4-5x slowdown in full-panel GC16 refresh time showed up in one run (same code,
