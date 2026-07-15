@@ -72,6 +72,15 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Drivers/Fonts/Font44.c
     Drivers/Fonts/Font60Bold.c
 
+    # EPUB reading: a minimal ZIP reader + DEFLATE decompressor + tiny XML/
+    # HTML helpers, enough to pull plain text out of a real .epub's first
+    # chapter. See Drivers/Epub/EPUB_Book.h for the overview.
+    Drivers/Inflate/puff.c
+    Drivers/Epub/EPUB_Zip.c
+    Drivers/Epub/EPUB_Xml.c
+    Drivers/Epub/EPUB_Html.c
+    Drivers/Epub/EPUB_Book.c
+
     # FatFs long-filename support (ffconf.h _USE_LFN=3): unicode.c and the
     # ccsbcs.c it #includes (code page 850, matching ffconf.h's _CODE_PAGE)
     # provide ff_convert()/ff_wtoupper(), needed by ff.c whenever LFN is
@@ -89,6 +98,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     Drivers/IT8951/e-Paper
     Drivers/IT8951/Config
     Drivers/Fonts
+    Drivers/Inflate
+    Drivers/Epub
 )
 
 # Add project symbols (macros)

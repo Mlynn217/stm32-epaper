@@ -309,10 +309,72 @@
       ~26s to ~10s, page content unchanged (verified via webcam capture, byte-for-byte identical
       page 1/2 split as before the cleanup). SDRAM test and the EPTEST.TXT SD read/write check were
       kept (silent correctness checks, not visual demos).
-- [ ] EPUB parsing (EPUB is a zip of XHTML+CSS - a real parser is a much bigger lift than plain text;
-      revisit once plain-text reading + real page-turn UI feels solid). Now unblocked to actually
-      start: a real EPUB is sitting on the card (see above) as a real test file, no more need for
-      placeholder/self-seeded content for this milestone.
+- [x] **EPUB parsing — confirmed on real hardware with a real book.** A minimal ZIP reader + DEFLATE
+      decompressor + tiny XML/HTML helpers, enough to pull a chapter's plain text out of a real
+      `.epub` and feed it into the existing page-layout pipeline. New modules, all in
+      `Drivers/Epub/` and `Drivers/Inflate/`:
+  - [x] `Drivers/Inflate/puff.c/h` — vendored Mark Adler's reference DEFLATE decompressor (zlib
+        license, from `madler/zlib`'s `contrib/puff`) rather than writing one from scratch.
+  - [x] `EPUB_Zip.c/h` — minimal ZIP central-directory reader: locates the End Of Central
+        Directory record, walks central directory entries, extracts a named entry's data (stored
+        or deflated via `puff()`). Decoupled from any file API via an `EPUB_IO` struct
+        (read/size/reset callbacks) so it's usable against a real file or, as it turned out,
+        plain memory.
+  - [x] `EPUB_Xml.c/h` — tiny attribute/tag scanner (find a tag by name respecting word
+        boundaries, find its closing `>`, extract an attribute value) plus entity/UTF-8-smart-
+        punctuation decoding - not a general XML parser, just enough for EPUB's fixed
+        `container.xml`/OPF structure.
+  - [x] `EPUB_Html.c/h` — XHTML-to-plain-text: strips tags, discards `<script>`/`<style>`/`<title>`
+        element content, decodes entities and literal UTF-8 smart punctuation (curly quotes/dashes/
+        ellipsis - ASCII-folded since this project's fonts are ASCII-only, ISO Latin accented
+        letters are dropped), inserts paragraph breaks at block-tag boundaries.
+  - [x] `EPUB_Book.c/h` — orchestration: parses `META-INF/container.xml` for the OPF path, the
+        OPF's manifest+spine for reading order, extracts+converts any chapter to plain text on
+        demand; also grabs `<dc:title>` for display.
+  - [x] Native test harness (`tools/`-style, run on this dev machine, not the firmware) validated
+        all of the above against a synthetic EPUB (Python `zipfile`, mixed stored/deflated entries)
+        before ever touching hardware - caught two real bugs cheaply (script/style content leaking
+        because skip-mode wasn't checked for plain text between tags, and `<title>` swallowing
+        the rest of the document - see below) that would have been much slower to find via
+        flash-and-check cycles.
+  - [x] **Real, deep hardware bug found and fixed**: reading the actual EPUB (`Mistborn: Secret
+        History`, 731718 bytes, 72 zip entries) via repeated `f_lseek()`+`f_read()` calls at
+        different offsets on the same open FatFs file handle reliably returned stale/wrong data -
+        specifically, alternating between reads near the end of the file (ZIP central directory)
+        and reads near the beginning (actual entry data, e.g. `OEBPS/content.opf`'s local header)
+        would corrupt the earlier-file read in a way that was stable/reproducible (not random) but
+        depended on prior access history. Diagnosed by cross-checking extracted bytes against
+        Python's own `zlib`/`zipfile` (same failure = not a decompressor bug) and against the
+        *original* file directly (`/home/michael/Downloads/Mistborn_ Secret History.epub`, same
+        size, byte-identical central directory - so not SD-copy corruption either). Neither closing
+        + reopening the FatFs file handle nor a full `f_mount()` remount fixed it (both tested,
+        both reproduced the identical failure) - ruling out both FatFs's file-level and volume-
+        level state. **Fix**: since the whole file (a few hundred KB - a few MB for a typical book)
+        comfortably fits in the 16MB of SDRAM, load it once via a single sequential `f_read()` at
+        open time and have `EPUB_IO` operate on that in-RAM copy for everything afterwards - no
+        more repeated FatFs seeks, so nothing left to go stale. Confirmed on hardware: correct ZIP/
+        OPF parsing immediately after this change (`Title="Mistborn: Secret History" Chapters=40`).
+        Root cause not fully isolated beyond "not FatFs's own file/volume-level caches" - could be
+        the SDIO/DMA driver layer or FatFs's cluster-chain-walking in `f_lseek()` - not pursued
+        further since the workaround is simple, robust, and well within the RAM budget.
+  - [x] **Two more real bugs found via the actual book file** (native tests didn't cover these -
+        both are real-world EPUB-producer quirks the synthetic test didn't happen to include until
+        added afterward): (1) self-closing `<title/>` (empty per-chapter title, common in
+        Calibre-produced books) was treated the same as `<title>...</title>`, so skip-mode entered
+        and never saw the (nonexistent) closing tag - silently swallowing the rest of the chapter.
+        Fixed by detecting self-closing tags and not entering skip-mode for them. (2) Real body
+        text uses literal UTF-8 smart-quote/dash/ellipsis characters, not HTML entities - manifested
+        as blank gaps where every apostrophe should be. Fixed by adding `EPUB_DecodeUtf8SmartPunct`
+        (same ASCII-folding as the entity decoder, for the equivalent raw UTF-8 sequences).
+  - [x] Test: **confirmed on real hardware via webcam capture** - a genuine page of the real book's
+        Preface, correctly word-wrapped/paginated, title heading reading "Mistborn: Secret History
+        (2/4)", body text clean and correctly punctuated ("anything I've done before", "it's finally
+        time", "three years' time").
+  - [ ] Not yet done: only the first chapter with >50 characters of text is shown (skips
+        cover/title/copyright-style apparatus pages automatically, but there's no real page-turn/
+        chapter-navigation UI yet - see below); accented Latin letters and any other non-ASCII
+        character without a specific fold are silently dropped rather than transliterated; only
+        tested against one real book so far.
 - [ ] UI / input handling
 - [ ] Power management / battery life — key lever is deep-sleep between page turns (STOP mode,
       SDRAM either in self-refresh or fully powered down and repopulated from SD on wake), not

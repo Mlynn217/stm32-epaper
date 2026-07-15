@@ -30,6 +30,7 @@
 #include "EPD_IT8951.h"
 #include "EPD_Text.h"
 #include "EPD_Layout.h"
+#include "EPUB_Book.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -72,6 +73,30 @@
    any plain-text book needs. */
 #define TEXT_BUFFER_BASE      (SDRAM_BASE_ADDR + 0x100000) /* 1MB in */
 #define TEXT_BUFFER_MAX_BYTES ((uint32_t)0x400000)         /* 4MB */
+
+/* Scratch space for EPUB parsing (EPUB_Book_Open/GetChapterText) - staging
+   compressed+decompressed XML/XHTML during ZIP extraction and parsing.
+   Transient: not needed once a chapter's plain text has been produced into
+   TEXT_BUFFER_BASE above, so it's fine for this to sit right after the text
+   buffer rather than needing to coexist with it. */
+#define EPUB_SCRATCH_BASE      (TEXT_BUFFER_BASE + TEXT_BUFFER_MAX_BYTES) /* 5MB in */
+#define EPUB_SCRATCH_MAX_BYTES ((uint32_t)0x400000)                       /* 4MB */
+
+/* Whole-file buffer for the .epub itself. Loaded once via a single
+   sequential f_read() at open time, then treated as plain memory for every
+   EPUB_IO read afterwards - see EpubIo_RamRead/RamSize below for why: real
+   hardware testing found that repeated f_lseek()+f_read() calls to
+   different offsets on the same file - specifically, alternating between
+   reads near the end of the file (the ZIP central directory) and reads
+   near the beginning (actual entry data) - reliably returned stale data
+   for the earlier offset every time, and neither closing/reopening the
+   file nor remounting the SD volume fixed it (both were tried and
+   confirmed byte-for-byte identical failures on hardware). Since the whole
+   file (a few hundred KB to a few MB for a typical book) fits easily in
+   the 16MB of SDRAM, loading it once up front sidesteps the issue
+   entirely rather than chasing it further into the FatFs/SDIO driver. */
+#define EPUB_FILE_BUFFER_BASE      (EPUB_SCRATCH_BASE + EPUB_SCRATCH_MAX_BYTES) /* 9MB in */
+#define EPUB_FILE_BUFFER_MAX_BYTES ((uint32_t)0x200000)                        /* 2MB */
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -1185,6 +1210,56 @@ static uint32_t SDRAM_Test(void)
   return errors;
 }
 
+/* EPUB_IO adapter over a plain in-RAM copy of the whole .epub file (loaded
+   once via a single sequential f_read() - see main() call site and
+   EPUB_FILE_BUFFER_BASE's comment for why: repeated f_lseek()+f_read()
+   calls to different offsets on the same FatFs file handle - specifically
+   alternating between reads near the end of the file (ZIP central
+   directory) and reads near the beginning (actual entry data) - reliably
+   returned stale data on real hardware, and neither closing/reopening the
+   file nor remounting the SD volume fixed it. Once the file is fully in
+   RAM, these are just bounds-checked memcpys - no FatFs involved, so
+   nothing left to go stale. */
+typedef struct
+{
+  const uint8_t *data;
+  uint32_t size;
+} EpubRamCtx;
+
+static bool EpubIo_RamRead(void *ctx, uint32_t offset, void *buf, uint32_t len)
+{
+  EpubRamCtx *ram = (EpubRamCtx *)ctx;
+  if ((uint64_t)offset + len > ram->size)
+  {
+    return false;
+  }
+  memcpy(buf, ram->data + offset, len);
+  return true;
+}
+
+static uint32_t EpubIo_RamSize(void *ctx)
+{
+  return ((EpubRamCtx *)ctx)->size;
+}
+
+/* Case-insensitive ".epub" suffix check - used to spot a book file in the
+   SD card's directory listing without assuming a fixed filename. Avoids
+   depending on strcasecmp's availability. */
+static bool EndsWithEpubExtension(const char *filename)
+{
+  size_t len = strlen(filename);
+  if (len < 5)
+  {
+    return false;
+  }
+  const char *suffix = filename + len - 5;
+  return (suffix[0] == '.') &&
+         (suffix[1] == 'e' || suffix[1] == 'E') &&
+         (suffix[2] == 'p' || suffix[2] == 'P') &&
+         (suffix[3] == 'u' || suffix[3] == 'U') &&
+         (suffix[4] == 'b' || suffix[4] == 'B');
+}
+
 /* Page-layout test content: public-domain text (opening of "Alice's
    Adventures in Wonderland"), long enough to exercise both word-wrap and
    pagination (EPD_Layout_DrawParagraph's returned continuation pointer)
@@ -1240,8 +1315,11 @@ void StartDefaultTask(void const * argument)
 
   /* Fallback text if the SD card/file isn't available - keeps the layout
      test working even without a card inserted. Overwritten below on a
-     successful file read. */
+     successful file read (ALICE.TXT, then a real EPUB if one is found -
+     see the SD card block below). */
   const char *bookText = PageLayoutTestText;
+  char bookTitle[EPUB_MAX_TITLE_LEN] = "";
+  char epubFilename[128] = "";
 
   printf("stm32-epaper: mounting SD card...\r\n");
   {
@@ -1298,6 +1376,11 @@ void StartDefaultTask(void const * argument)
             {
               printf("stm32-epaper:   %s (%lu bytes)\r\n", listFno.fname,
                      (unsigned long)listFno.fsize);
+              if (epubFilename[0] == '\0' && EndsWithEpubExtension(listFno.fname))
+              {
+                strncpy(epubFilename, listFno.fname, sizeof(epubFilename) - 1);
+                epubFilename[sizeof(epubFilename) - 1] = '\0';
+              }
             }
             fileCount++;
           }
@@ -1401,6 +1484,105 @@ void StartDefaultTask(void const * argument)
                  (int)fres);
         }
       }
+
+      /* Real EPUB milestone: if a .epub file was spotted in the directory
+         listing above, open it, parse it (container.xml -> OPF -> spine),
+         and extract chapter 1's plain text - overriding ALICE.TXT/the
+         embedded fallback above, same override pattern as ALICE.TXT itself
+         used against the plain embedded string. EPUB_Book is ~26KB
+         (mostly its spine href table) - too big for this task's stack, so
+         it's static (BSS), not a local. */
+      if (epubFilename[0] != '\0')
+      {
+        printf("stm32-epaper: found EPUB \"%s\", opening...\r\n", epubFilename);
+        fres = f_open(&SDFile, epubFilename, FA_READ);
+        if (fres != FR_OK)
+        {
+          printf("stm32-epaper: EPUB open FAILED (FRESULT=%d), using ALICE.TXT/embedded "
+                 "text\r\n", (int)fres);
+        }
+        else if (f_size(&SDFile) > EPUB_FILE_BUFFER_MAX_BYTES)
+        {
+          printf("stm32-epaper: EPUB too big for the %lu-byte file buffer (%lu bytes), "
+                 "using ALICE.TXT/embedded text\r\n", (unsigned long)EPUB_FILE_BUFFER_MAX_BYTES,
+                 (unsigned long)f_size(&SDFile));
+          f_close(&SDFile);
+        }
+        else
+        {
+          /* Single sequential read of the whole file - see EpubRamCtx's
+             comment for why this replaced per-offset FatFs reads. */
+          uint8_t *epubFileBuf = (uint8_t *)EPUB_FILE_BUFFER_BASE;
+          UINT epubBytesRead;
+          fres = f_read(&SDFile, epubFileBuf, f_size(&SDFile), &epubBytesRead);
+          uint32_t epubFileSize = (uint32_t)epubBytesRead;
+          f_close(&SDFile);
+
+          if (fres != FR_OK)
+          {
+            printf("stm32-epaper: EPUB read FAILED (FRESULT=%d), using ALICE.TXT/embedded "
+                   "text\r\n", (int)fres);
+          }
+          else
+          {
+            static EpubRamCtx epubCtx;
+            epubCtx.data = epubFileBuf;
+            epubCtx.size = epubFileSize;
+            EPUB_IO io = { .ctx = &epubCtx, .read = EpubIo_RamRead, .size = EpubIo_RamSize,
+                           .reset = NULL };
+            uint8_t *epubScratch = (uint8_t *)EPUB_SCRATCH_BASE;
+            static EPUB_Book book;
+
+            if (!EPUB_Book_Open(&book, io, epubScratch, EPUB_SCRATCH_MAX_BYTES))
+            {
+              printf("stm32-epaper: EPUB parsing FAILED (not a supported EPUB?), using "
+                     "ALICE.TXT/embedded text\r\n");
+            }
+            else
+            {
+              printf("stm32-epaper: EPUB opened. Title=\"%s\" Chapters=%u\r\n", book.title,
+                     book.spineCount);
+
+              /* Some early spine entries are apparatus (cover image, title
+                 page, copyright page) with little or no extractable text -
+                 skip forward to the first chapter with real content rather
+                 than showing a blank first page. */
+              char *epubTextBuf = (char *)TEXT_BUFFER_BASE;
+              const uint16_t maxChaptersToScan = 10;
+              bool foundChapter = false;
+              for (uint16_t chapterIdx = 0;
+                   chapterIdx < book.spineCount && chapterIdx < maxChaptersToScan; chapterIdx++)
+              {
+                if (!EPUB_Book_GetChapterText(&book, chapterIdx, epubScratch,
+                                               EPUB_SCRATCH_MAX_BYTES, epubTextBuf,
+                                               TEXT_BUFFER_MAX_BYTES))
+                {
+                  printf("stm32-epaper: EPUB chapter %u (\"%s\") extraction FAILED\r\n",
+                         chapterIdx, book.spineHrefs[chapterIdx]);
+                  continue;
+                }
+
+                size_t chapterLen = strlen(epubTextBuf);
+                printf("stm32-epaper: EPUB chapter %u (\"%s\"): %u bytes of text\r\n",
+                       chapterIdx, book.spineHrefs[chapterIdx], (unsigned)chapterLen);
+                if (chapterLen > 50)
+                {
+                  bookText = epubTextBuf;
+                  strncpy(bookTitle, book.title, sizeof(bookTitle) - 1);
+                  foundChapter = true;
+                  break;
+                }
+              }
+
+              if (!foundChapter)
+              {
+                printf("stm32-epaper: no EPUB chapter with real text found in the first %u, "
+                       "using ALICE.TXT/embedded text\r\n", maxChaptersToScan);
+              }
+            }
+          }
+        }
+      }
     }
   }
 
@@ -1450,11 +1632,24 @@ void StartDefaultTask(void const * argument)
           fullImgBuf[i] = 0xFF;
         }
 
-        char heading[24];
-        snprintf(heading, sizeof(heading), "Chapter I (%lu/%lu)", (unsigned long)pageNum,
-                 (unsigned long)maxPages);
+        /* Font44 here, not Font60Bold - a real book title (bookTitle, from
+           the EPUB's <dc:title> if one was loaded) is arbitrary-length and
+           could overflow the panel width at 60px bold; Font44 is already
+           proven safe for full-width lines (see the earlier plain-text
+           layout test). */
+        char heading[96];
+        if (bookTitle[0] != '\0')
+        {
+          snprintf(heading, sizeof(heading), "%s (%lu/%lu)", bookTitle, (unsigned long)pageNum,
+                   (unsigned long)maxPages);
+        }
+        else
+        {
+          snprintf(heading, sizeof(heading), "Chapter I (%lu/%lu)", (unsigned long)pageNum,
+                   (unsigned long)maxPages);
+        }
         EPD_Text_DrawStringAA(fullImgBuf, stride, panelW, panelH, marginLeft, 40, heading,
-                               &Font60Bold, 0x0, 0xF);
+                               &Font44, 0x0, 0xF);
 
         const char *before = remaining;
         remaining = EPD_Layout_DrawParagraph(fullImgBuf, stride, panelW, panelH, marginLeft,
