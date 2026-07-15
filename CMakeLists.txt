@@ -71,6 +71,16 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Drivers/Fonts/Font32.c
     Drivers/Fonts/Font44.c
     Drivers/Fonts/Font60Bold.c
+
+    # FatFs long-filename support (ffconf.h _USE_LFN=3): unicode.c and the
+    # ccsbcs.c it #includes (code page 850, matching ffconf.h's _CODE_PAGE)
+    # provide ff_convert()/ff_wtoupper(), needed by ff.c whenever LFN is
+    # enabled. Not part of CubeMX's own FatFs_Src list in
+    # cmake/stm32cubemx/CMakeLists.txt (that file didn't know LFN would be
+    # turned on) and that list gets silently regenerated/overwritten by
+    # CubeMX - added here instead, alongside this project's other hand-added
+    # sources, so it survives a CubeMX regeneration.
+    Middlewares/Third_Party/FatFs/src/option/unicode.c
 )
 
 # Add include paths

@@ -248,7 +248,71 @@
       needed for plain bitmap-font text (see above) or for any source image that's already
       pre-quantized to grayscale — only add this step when an image's tonal range actually exceeds
       what the panel can represent directly.
-- [ ] Ebook format parsing (EPUB/TXT)
+- [x] **Plain-text (.txt) file reading from the SD card — confirmed on real hardware.** Replaces the
+      embedded test string with a real file-read -> paginate -> render pipeline.
+  - [x] Partitioned SDRAM into two regions (`Core/Src/main.c`, `USER CODE BEGIN PD`):
+        `SDRAM_BASE_ADDR` for the IT8951 frame buffer (as before, max ~776KB for this panel at 4bpp)
+        and `TEXT_BUFFER_BASE` (1MB in, 4MB capacity) for file content - comfortably more than any
+        plain-text book needs, with headroom between the two regions.
+  - [x] On boot, checks for `ALICE.TXT` on the SD card (`f_stat`); if missing, seeds it by writing
+        the same public-domain "Alice's Adventures in Wonderland" excerpt used in the earlier
+        embedded-string test, then always reads back whatever is actually on the card into the text
+        buffer (`f_read`, null-terminated) - so a real book just has to replace/append to this file by
+        any means (there's no way yet to copy an arbitrary file onto this physically-connected card
+        from the dev host - USB mass storage mode or a card reader would do it, not implemented) and
+        the read/paginate path underneath doesn't change.
+  - [x] Test: **confirmed on real hardware**. First boot: "ALICE.TXT not found, seeding... (1328
+        bytes)" -> wrote -> read back 1328 bytes -> paginated identically to the earlier embedded-
+        string test (982 chars page 1, 346 chars page 2). Then did a board reset (no reflash) to
+        confirm persistence: second boot went straight to "read 1328 bytes from ALICE.TXT" with no
+        re-seed message - the file genuinely persisted on the SD card, not just in RAM.
+  - [ ] Not yet done: reading files larger than fit in one `f_read` call / streaming a file too big
+        for the 4MB text buffer (not a concern for typical plain-text books, but worth remembering
+        before assuming any file "just works")
+  - [x] Turns out there already is a way to get a real file onto this card: a card reader on the dev
+        host, used directly (not USB mass storage mode from the firmware) — a real EPUB
+        (`Mistborn...epub`, 731718 bytes) showed up on the card this way. USB mass storage mode is
+        still worth having eventually (load a book without pulling the card), but isn't the only
+        option as previously assumed.
+- [x] **SD card directory listing — confirmed on real hardware.** Added a root-directory listing
+      (`f_opendir`/`f_readdir`/`f_closedir`) right after the mount/free-space printout in `main.c`,
+      so what's actually on the card is visible in the serial log without pulling it. Test: showed
+      `EPTEST.TXT` (27 bytes), `ALICE.TXT` (1328 bytes), and the real EPUB the user copied on via a
+      card reader — `MISTBO~1.EPU` (731718 bytes).
+  - [x] **Long filename (LFN) support added** — the 8.3-only caveat above is fixed. Set
+        `_USE_LFN=3` in `ffconf.h` (heap-based working buffer, not `1`/static-BSS or `2`/stack - `3`
+        is the only one of the three that's actually thread-safe per FatFs's own docs, and this
+        project's vendored FatFs already had everything wired up for it: `_FS_REENTRANT=1`, plus
+        `ff_memalloc()`/`ff_memfree()` in `Middlewares/.../FatFs/src/option/syscall.c` - only compiled
+        in when `_USE_LFN==3` - forwarding to `ff_malloc`/`ff_free`, already `#define`'d at the bottom
+        of `ffconf.h` as FreeRTOS's `pvPortMalloc`/`vPortFree`. All of that was sitting there unused
+        with `_USE_LFN=0`.) Also had to vendor two more FatFs option-package files that weren't
+        already in the repo: `option/unicode.c` and the `option/ccsbcs.c` it `#include`s for
+        single-byte code pages (ours is `_CODE_PAGE=850`) - `ff.c` needs their `ff_convert()`/
+        `ff_wtoupper()` whenever LFN is on (link failure without them). Copied both from the cached
+        `STM32Cube_FW_F4_V1.28.3` package (confirmed identical FatFs revision, R0.12c, to what's
+        already vendored here). Added `unicode.c` to the top-level `CMakeLists.txt`, not
+        `cmake/stm32cubemx/CMakeLists.txt`'s `FatFs_Src` list - that list is CubeMX-generated and
+        would silently drop it on the next regeneration (the same class of problem as the SPI1
+        prescaler regression above), so it goes wherever this project's other hand-added sources
+        already live instead.
+  - [x] Test: **confirmed on real hardware**. Directory listing now shows the real EPUB title -
+        `Mistborn_ Secret History.epub` (731718 bytes) - instead of the truncated `MISTBO~1.EPU`.
+        Rest of boot sequence (SDRAM test, SD read/write test, ALICE.TXT read, page layout/
+        pagination) unaffected - identical page 1/2 split as before.
+- [x] **Removed the boot-time visual demo/bring-up blocks** (black/white flash-clear, full-panel
+      16-level gradient, A2 mode 400x400 toggle test) from `main.c` — they'd already served their
+      purpose validating the write path (see the full-panel-writes debugging story above) and were
+      just adding ~20s of boot time and log noise before the real content (book pages) rendered.
+      Each page in the layout loop already clears to white before drawing, so no ghosting-mitigation
+      behavior was lost. Confirmed on real hardware: boot to first page displayed dropped from
+      ~26s to ~10s, page content unchanged (verified via webcam capture, byte-for-byte identical
+      page 1/2 split as before the cleanup). SDRAM test and the EPTEST.TXT SD read/write check were
+      kept (silent correctness checks, not visual demos).
+- [ ] EPUB parsing (EPUB is a zip of XHTML+CSS - a real parser is a much bigger lift than plain text;
+      revisit once plain-text reading + real page-turn UI feels solid). Now unblocked to actually
+      start: a real EPUB is sitting on the card (see above) as a real test file, no more need for
+      placeholder/self-seeded content for this milestone.
 - [ ] UI / input handling
 - [ ] Power management / battery life — key lever is deep-sleep between page turns (STOP mode,
       SDRAM either in self-refresh or fully powered down and repopulated from SD on wake), not

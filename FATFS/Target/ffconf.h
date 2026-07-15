@@ -110,8 +110,17 @@
 /   950 - Traditional Chinese (DBCS)
 */
 
-#define _USE_LFN     0    /* 0 to 3 */
+#define _USE_LFN     3    /* 0 to 3 */
 #define _MAX_LFN     255  /* Maximum LFN length to handle (12 to 255) */
+/* USER CODE: using 3 (heap-based working buffer), not 1 (static/BSS) or 2
+   (stack) - this is the only one of the three that's actually thread-safe
+   (per the docs below), and this project already has everything it needs
+   wired up for it: _FS_REENTRANT=1 below plus ff_memalloc()/ff_memfree()
+   (Middlewares/.../FatFs/src/option/syscall.c, only compiled in when
+   _USE_LFN==3) forwarding to ff_malloc()/ff_free() (defined at the bottom
+   of this file as FreeRTOS's pvPortMalloc()/vPortFree()). All of that was
+   already present in this vendored FatFs/CubeMX config with _USE_LFN=0 -
+   just not turned on until now. */
 /* The _USE_LFN switches the support of long file name (LFN).
 /
 /   0: Disable support of LFN. _MAX_LFN has no effect.

@@ -44,7 +44,7 @@
 
 /* Chunk size (words) for EPD_IT8951_4bp_Refresh_Chunked - see its declaration
    in EPD_IT8951.h. 2048 is comfortably within the ~2500-word burst size
-   already confirmed safe (the checkerboard test), leaving some margin. */
+   already confirmed safe on real hardware, leaving some margin. */
 #define IT8951_WRITE_CHUNK_WORDS ((uint32_t)2048)
 
 /* FMC/SDRAM: onboard MT48LC4M32B2B5-6A (128Mbit = 16MB), FMC bank 1.
@@ -64,6 +64,14 @@
 #define SDRAM_MODEREG_CAS_LATENCY_3           ((uint16_t)0x0030)
 #define SDRAM_MODEREG_OPERATING_MODE_STANDARD ((uint16_t)0x0000)
 #define SDRAM_MODEREG_WRITEBURST_MODE_SINGLE  ((uint16_t)0x0200)
+
+/* SDRAM partitioning: the IT8951 frame buffer lives at SDRAM_BASE_ADDR (max
+   ~776KB for this panel at 4bpp - 1448*1072/2). Book text is read into a
+   separate region well past that, leaving comfortable headroom for larger
+   panels/future formats without the two overlapping. 4MB is far more than
+   any plain-text book needs. */
+#define TEXT_BUFFER_BASE      (SDRAM_BASE_ADDR + 0x100000) /* 1MB in */
+#define TEXT_BUFFER_MAX_BYTES ((uint32_t)0x400000)         /* 4MB */
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -1230,6 +1238,11 @@ void StartDefaultTask(void const * argument)
            (unsigned long)sdramErrors);
   }
 
+  /* Fallback text if the SD card/file isn't available - keeps the layout
+     test working even without a card inserted. Overwritten below on a
+     successful file read. */
+  const char *bookText = PageLayoutTestText;
+
   printf("stm32-epaper: mounting SD card...\r\n");
   {
     FRESULT fres = f_mount(&SDFatFS, SDPath, 1);
@@ -1241,6 +1254,7 @@ void StartDefaultTask(void const * argument)
     {
       FATFS *fs;
       DWORD freeClusters;
+      FILINFO fno;
 
       printf("stm32-epaper: SD mount OK.\r\n");
 
@@ -1253,10 +1267,49 @@ void StartDefaultTask(void const * argument)
                (unsigned long)(freeSectors / 2 / 1024));
       }
 
-      /* 8.3 filename required - ffconf.h has _USE_LFN=0 (long filenames
-         disabled), so anything with a base name over 8 chars (e.g.
-         "epaper_test.txt") fails with FR_INVALID_NAME. Worth keeping in
-         mind for real ebook filenames later, unless LFN gets enabled. */
+      /* Directory listing - useful to confirm what's actually on the card
+         (e.g. a book file copied on via a card reader) without pulling the
+         card and checking on another machine. Root directory only, not
+         recursive - fine for how this card is actually being used. */
+      {
+        DIR dir;
+        FILINFO listFno;
+        fres = f_opendir(&dir, "/");
+        if (fres != FR_OK)
+        {
+          printf("stm32-epaper: SD directory listing FAILED (FRESULT=%d)\r\n", (int)fres);
+        }
+        else
+        {
+          printf("stm32-epaper: SD card contents:\r\n");
+          uint32_t fileCount = 0;
+          for (;;)
+          {
+            fres = f_readdir(&dir, &listFno);
+            if (fres != FR_OK || listFno.fname[0] == '\0')
+            {
+              break;
+            }
+            if (listFno.fattrib & AM_DIR)
+            {
+              printf("stm32-epaper:   %s/\r\n", listFno.fname);
+            }
+            else
+            {
+              printf("stm32-epaper:   %s (%lu bytes)\r\n", listFno.fname,
+                     (unsigned long)listFno.fsize);
+            }
+            fileCount++;
+          }
+          f_closedir(&dir);
+          printf("stm32-epaper: %lu entries total.\r\n", (unsigned long)fileCount);
+        }
+      }
+
+      /* EPTEST.TXT is 8.3-compliant regardless, so this still works now that
+         ffconf.h has _USE_LFN=3 (long filenames enabled - see ffconf.h for
+         why 3, not 1 or 2) - long filenames like "epaper_test.txt" would
+         have failed with FR_INVALID_NAME before that change. */
       static const char testStr[] = "stm32-epaper storage test\r\n";
       fres = f_open(&SDFile, "EPTEST.TXT", FA_CREATE_ALWAYS | FA_WRITE);
       if (fres != FR_OK)
@@ -1294,6 +1347,60 @@ void StartDefaultTask(void const * argument)
           }
         }
       }
+
+      /* Ebook text milestone: read a real file from the SD card instead of
+         the embedded PageLayoutTestText string, proving the actual
+         file-read -> paginate -> render pipeline. There's no way yet to
+         copy an arbitrary file onto this physically-connected card from the
+         dev host (see TODO.md) - so for now the firmware self-seeds
+         ALICE.TXT with that same public-domain text on first boot if it's
+         missing, then always reads whatever is actually on the card. A
+         real book just needs to replace/append to this file by any means
+         (USB mass storage mode, a card reader, etc.) - the read/paginate
+         path underneath doesn't change. */
+      fres = f_stat("ALICE.TXT", &fno);
+      if (fres == FR_NO_FILE)
+      {
+        printf("stm32-epaper: ALICE.TXT not found, seeding with embedded test text "
+               "(%u bytes)...\r\n", (unsigned)(sizeof(PageLayoutTestText) - 1));
+        fres = f_open(&SDFile, "ALICE.TXT", FA_CREATE_ALWAYS | FA_WRITE);
+        if (fres != FR_OK)
+        {
+          printf("stm32-epaper: ALICE.TXT create FAILED (FRESULT=%d)\r\n", (int)fres);
+        }
+        else
+        {
+          UINT seedWritten;
+          f_write(&SDFile, PageLayoutTestText, sizeof(PageLayoutTestText) - 1, &seedWritten);
+          f_close(&SDFile);
+          printf("stm32-epaper: wrote %u bytes to ALICE.TXT\r\n", seedWritten);
+        }
+      }
+
+      fres = f_open(&SDFile, "ALICE.TXT", FA_READ);
+      if (fres != FR_OK)
+      {
+        printf("stm32-epaper: ALICE.TXT open FAILED (FRESULT=%d), using embedded text\r\n",
+               (int)fres);
+      }
+      else
+      {
+        UINT bookBytesRead;
+        char *textBuf = (char *)TEXT_BUFFER_BASE;
+        fres = f_read(&SDFile, textBuf, TEXT_BUFFER_MAX_BYTES - 1, &bookBytesRead);
+        f_close(&SDFile);
+        if (fres == FR_OK)
+        {
+          textBuf[bookBytesRead] = '\0';
+          bookText = textBuf;
+          printf("stm32-epaper: read %u bytes from ALICE.TXT\r\n", bookBytesRead);
+        }
+        else
+        {
+          printf("stm32-epaper: ALICE.TXT read FAILED (FRESULT=%d), using embedded text\r\n",
+                 (int)fres);
+        }
+      }
     }
   }
 
@@ -1312,140 +1419,15 @@ void StartDefaultTask(void const * argument)
     UWORD stride = panelW * 4 / 8;
     UBYTE *fullImgBuf = (UBYTE *)SDRAM_BASE_ADDR;
 
-    /* Explicit full-panel white clear before drawing anything else. E-paper
-       retains a faint "memory" of previously-displayed content (ghosting);
-       leftover test patterns from earlier boots/flashes were still visible
-       after just drawing the gradient directly, since a full refresh over
-       existing content doesn't always fully reset every pixel. Clearing to
-       solid white first (its own full GC16 refresh) gives a clean baseline,
-       same technique used earlier to isolate the write-path corruption bug. */
-    {
-      /* Multi-pass flash (white -> black -> white) instead of a single clear.
-         EPD_IT8951_WaitForDisplayReady() (called at the top of every refresh
-         function) already polls the chip's actual refresh-complete register
-         (LUTAFSR) rather than just SPI-command completion, so a manual delay
-         between passes isn't needed - timing prints below confirm that wait
-         is really blocking for a meaningful duration, not returning instantly.
-         If a single white clear still leaves ghosting, that's not a timing
-         bug - it's the panel's electrical/physical pixel state not fully
-         resetting in one pass, which a black-then-white flash addresses. */
-      /* Diagnostic: black->white double-flash (webcam-verifiable), gradient
-         temporarily disabled below - see USER CODE BEGIN 5. A single white
-         pass alone still showed 3 horizontal bands; this checks whether
-         that's ghosting (should clear with black->white) or a write-path
-         bug (would persist regardless). */
-      const UBYTE flashPasses[] = { 0x00, 0xFF }; /* black, then white */
-      for (unsigned pass = 0; pass < sizeof(flashPasses); pass++)
-      {
-        uint32_t startTick = HAL_GetTick();
-        UBYTE fillValue = flashPasses[pass];
-
-        printf("stm32-epaper: flash pass %u/%u: filling panel with 0x%02X...\r\n",
-               pass + 1, (unsigned)sizeof(flashPasses), fillValue);
-        for (UWORD y = 0; y < panelH; y++)
-        {
-          for (UWORD bx = 0; bx < stride; bx++)
-          {
-            fullImgBuf[(UDOUBLE)y * stride + bx] = fillValue;
-          }
-        }
-        EPD_IT8951_4bp_Refresh_Chunked(fullImgBuf, 0, 0, panelW, panelH, true, targetMemAddr,
-                                       IT8951_WRITE_CHUNK_WORDS);
-        printf("stm32-epaper: flash pass %u/%u done (%lu ms).\r\n",
-               pass + 1, (unsigned)sizeof(flashPasses),
-               (unsigned long)(HAL_GetTick() - startTick));
-      }
-    }
-
-    /* Full-panel 16-level grayscale gradient, sourced from a buffer living in
-       SDRAM (not a static SRAM array - a full 4bpp frame is ~758KB, far past
-       both internal SRAM and the 32KB FreeRTOS heap). SDRAM is memory-mapped,
-       so a raw pointer at its base address is all that's needed; no linker
-       script changes required. Proves the full-panel + SDRAM buffer path,
-       and shows all 16 gray levels distinctly, not just black/white. */
-    {
-      /* 16-level grayscale gradient across the full panel, sourced from SDRAM.
-         Real root cause of the "banded, top portion only" corruption seen
-         with earlier attempts at this: EPD_IT8951.c's
-         HostAreaPackedPixelWrite_* functions (1bp/2bp/4bp/4bp_Chunked) all
-         declared their word-count "Source_Buffer_Length" as UWORD (16-bit,
-         max 65535) - but Width*Height for a full panel at 4bpp is 388064,
-         which silently wrapped to 60384. Only ~15% of the transfer (~166 of
-         1072 rows) actually went out before LoadImgEnd cut it short, so the
-         rest of the panel kept showing whatever was already in the chip's
-         buffer - reproducing identically regardless of what we tried to
-         draw (solid white, solid black, gradient), which is what gave it
-         away: content-independent meant it was never a pixel-data bug.
-         Fixed by widening those Length locals to UDOUBLE (uint32_t) in
-         EPD_IT8951.c. Also fixed along the way: the IT8951 programming
-         guide documents P0 (the lower/first pixel) in the LOW nibble and P1
-         in the HIGH nibble of each 4bpp byte - had that backwards too. */
-      printf("stm32-epaper: filling %ux%u SDRAM-backed gradient (stride=%u, %lu bytes)...\r\n",
-             panelW, panelH, stride, (unsigned long)stride * panelH);
-
-      for (UWORD y = 0; y < panelH; y++)
-      {
-        for (UWORD bx = 0; bx < stride; bx++)
-        {
-          UWORD px0 = bx * 2;
-          UBYTE nibble0 = (UBYTE)((px0 * 16) / panelW);       /* P0 - low nibble */
-          UBYTE nibble1 = (UBYTE)(((px0 + 1) * 16) / panelW); /* P1 - high nibble */
-          fullImgBuf[(UDOUBLE)y * stride + bx] = (UBYTE)((nibble1 << 4) | nibble0);
-        }
-      }
-
-      {
-        uint32_t startTick = HAL_GetTick();
-        printf("stm32-epaper: drawing full-panel gradient from SDRAM (chunked fast path, "
-               "%u words/chunk)...\r\n", (unsigned)IT8951_WRITE_CHUNK_WORDS);
-        EPD_IT8951_4bp_Refresh_Chunked(fullImgBuf, 0, 0, panelW, panelH, true, targetMemAddr,
-                                       IT8951_WRITE_CHUNK_WORDS);
-        printf("stm32-epaper: full-panel gradient displayed (%lu ms).\r\n",
-               (unsigned long)(HAL_GetTick() - startTick));
-      }
-    }
-
-    /* A2 mode: fast, black/white-only partial refresh - what a real page
-       turn would use instead of a full GC16 refresh. Moderate 400x400
-       region (not full panel yet) at top-left; X=0 satisfies 1bpp's "X must
-       be a multiple of 8" addressing rule trivially. Uniform fills (solid
-       black/white) sidestep any ambiguity in exactly how many logical
-       pixels the 1bpp path packs per host byte - correctness first, same
-       approach that worked for validating the 4bpp write path. Packed_Write
-       =false (proven-safe slow path) for this first test - once correctness
-       is confirmed, a chunked variant like the 4bpp one can speed this up. */
-    {
-      const UWORD testW = 400;
-      const UWORD testH = 400;
-      UDOUBLE bufLengthBytes = (UDOUBLE)((testW / 8) / 2) * testH * 2;
-      const UBYTE a2Passes[] = { 0x00, 0xFF, 0x00, 0xFF };
-
-      for (unsigned pass = 0; pass < sizeof(a2Passes); pass++)
-      {
-        uint32_t startTick = HAL_GetTick();
-        UBYTE fillValue = a2Passes[pass];
-
-        for (UDOUBLE i = 0; i < bufLengthBytes; i++)
-        {
-          fullImgBuf[i] = fillValue;
-        }
-        printf("stm32-epaper: A2 pass %u/%u: filling %ux%u with 0x%02X...\r\n",
-               pass + 1, (unsigned)sizeof(a2Passes), testW, testH, fillValue);
-        EPD_IT8951_1bp_Refresh(fullImgBuf, 0, 0, testW, testH, A2_Mode, targetMemAddr, false);
-        printf("stm32-epaper: A2 pass %u/%u done (%lu ms).\r\n",
-               pass + 1, (unsigned)sizeof(a2Passes),
-               (unsigned long)(HAL_GetTick() - startTick));
-      }
-    }
-
-    /* Page layout test: word-wraps real prose (PageLayoutTestText, see
-       "USER CODE BEGIN 4") into the panel with margins via
-       EPD_Layout_DrawParagraph(), paginating (looping on its returned
-       continuation pointer) until the whole text is drawn or a sane page
-       cap is hit. Each page gets a heading + body text, GC16 refresh, so
-       both word-wrap and pagination are exercised on real hardware rather
-       than just a single-line font sample. fgNibble=0x0 (black),
-       bgNibble=0xF (white). */
+    /* Page layout test: word-wraps real prose - bookText, read from
+       ALICE.TXT on the SD card above (falls back to the embedded
+       PageLayoutTestText if the card/file isn't available) - into the panel
+       with margins via EPD_Layout_DrawParagraph(), paginating (looping on
+       its returned continuation pointer) until the whole text is drawn or a
+       sane page cap is hit. Each page gets a heading + body text, GC16
+       refresh, so both word-wrap and pagination are exercised on real
+       hardware rather than just a single-line font sample. fgNibble=0x0
+       (black), bgNibble=0xF (white). */
     {
       const uint16_t marginLeft = 40;
       const uint16_t marginRight = (uint16_t)(panelW - 40);
@@ -1454,7 +1436,7 @@ void StartDefaultTask(void const * argument)
       const uint16_t lineSpacing = 10;
       const uint32_t maxPages = 4;
 
-      const char *remaining = PageLayoutTestText;
+      const char *remaining = bookText;
       uint32_t pageNum = 0;
 
       while (remaining != NULL && pageNum < maxPages)
