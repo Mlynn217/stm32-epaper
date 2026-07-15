@@ -25,6 +25,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <stdarg.h>
 #include "EPD_IT8951.h"
 /* USER CODE END Includes */
 
@@ -37,6 +38,29 @@
 /* USER CODE BEGIN PD */
 /* This panel's VCOM, read off its FPC cable: -2.59V, passed as an mV magnitude. */
 #define IT8951_VCOM_MV 2590
+
+/* Chunk size (words) for EPD_IT8951_4bp_Refresh_Chunked - see its declaration
+   in EPD_IT8951.h. 2048 is comfortably within the ~2500-word burst size
+   already confirmed safe (the checkerboard test), leaving some margin. */
+#define IT8951_WRITE_CHUNK_WORDS ((uint32_t)2048)
+
+/* FMC/SDRAM: onboard MT48LC4M32B2B5-6A (128Mbit = 16MB), FMC bank 1.
+   Values match ST's own BSP_SDRAM_Init()/Initialization_sequence() for this
+   exact chip (stm32469i_discovery_sdram.c) - CubeMX only configures the FMC
+   controller's timing (HAL_SDRAM_Init); the SDRAM chip's own JEDEC power-up
+   command sequence (clock enable/precharge/auto-refresh/mode register) has
+   to be sent separately, which is what MX_FMC_Init's USER CODE section below
+   does. */
+#define SDRAM_BASE_ADDR  ((uint32_t)0xC0000000)
+#define SDRAM_SIZE_BYTES ((uint32_t)0x1000000) /* 16MB */
+#define SDRAM_REFRESH_COUNT ((uint32_t)0x0569)
+#define SDRAM_CMD_TIMEOUT   ((uint32_t)0xFFFF)
+
+#define SDRAM_MODEREG_BURST_LENGTH_1          ((uint16_t)0x0000)
+#define SDRAM_MODEREG_BURST_TYPE_SEQUENTIAL   ((uint16_t)0x0000)
+#define SDRAM_MODEREG_CAS_LATENCY_3           ((uint16_t)0x0030)
+#define SDRAM_MODEREG_OPERATING_MODE_STANDARD ((uint16_t)0x0000)
+#define SDRAM_MODEREG_WRITEBURST_MODE_SINGLE  ((uint16_t)0x0200)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -714,7 +738,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -884,7 +908,44 @@ static void MX_FMC_Init(void)
   }
 
   /* USER CODE BEGIN FMC_Init 2 */
+  {
+    /* SDRAM chip power-up sequence (JEDEC), per ST's own reference for this
+       exact chip - see the SDRAM_* defines in USER CODE BEGIN PD. */
+    FMC_SDRAM_CommandTypeDef command;
 
+    /* Step 1: clock enable */
+    command.CommandMode = FMC_SDRAM_CMD_CLK_ENABLE;
+    command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK1;
+    command.AutoRefreshNumber = 1;
+    command.ModeRegisterDefinition = 0;
+    HAL_SDRAM_SendCommand(&hsdram1, &command, SDRAM_CMD_TIMEOUT);
+
+    /* Step 2: >=100us delay before precharge (HAL_Delay's tick unit is ms) */
+    HAL_Delay(1);
+
+    /* Step 3: precharge all banks */
+    command.CommandMode = FMC_SDRAM_CMD_PALL;
+    HAL_SDRAM_SendCommand(&hsdram1, &command, SDRAM_CMD_TIMEOUT);
+
+    /* Step 4: auto-refresh x8 */
+    command.CommandMode = FMC_SDRAM_CMD_AUTOREFRESH_MODE;
+    command.AutoRefreshNumber = 8;
+    HAL_SDRAM_SendCommand(&hsdram1, &command, SDRAM_CMD_TIMEOUT);
+
+    /* Step 5: load mode register - burst length 1, sequential, CAS latency 3
+       (matches hsdram1.Init.CASLatency above), standard op, single write burst */
+    command.CommandMode = FMC_SDRAM_CMD_LOAD_MODE;
+    command.AutoRefreshNumber = 1;
+    command.ModeRegisterDefinition = SDRAM_MODEREG_BURST_LENGTH_1
+                                    | SDRAM_MODEREG_BURST_TYPE_SEQUENTIAL
+                                    | SDRAM_MODEREG_CAS_LATENCY_3
+                                    | SDRAM_MODEREG_OPERATING_MODE_STANDARD
+                                    | SDRAM_MODEREG_WRITEBURST_MODE_SINGLE;
+    HAL_SDRAM_SendCommand(&hsdram1, &command, SDRAM_CMD_TIMEOUT);
+
+    /* Step 6: refresh rate counter */
+    HAL_SDRAM_ProgramRefreshRate(&hsdram1, SDRAM_REFRESH_COUNT);
+  }
   /* USER CODE END FMC_Init 2 */
 }
 
@@ -1040,6 +1101,59 @@ int __io_putchar(int ch)
   HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
   return ch;
 }
+
+/* Prefixes every printf() call below this point (via the #define printf
+   below) with the current HAL tick (ms since boot), so serial output can be
+   correlated with timing - e.g. exactly how long a given SPI/display
+   operation took, or the gap between two prints. Defined using the real
+   printf, before the macro that redirects "printf" to this function takes
+   effect. */
+static int timestamped_printf(const char *fmt, ...)
+{
+  va_list args;
+  int ret;
+
+  printf("[%8lu] ", (unsigned long)HAL_GetTick());
+
+  va_start(args, fmt);
+  ret = vprintf(fmt, args);
+  va_end(args);
+
+  return ret;
+}
+#define printf(...) timestamped_printf(__VA_ARGS__)
+
+/* Full-range SDRAM read/write test: writes each 32-bit word its own address-
+   derived value, reads it back, and reports any mismatches. Returns the
+   number of mismatched words (0 = pass). */
+static uint32_t SDRAM_Test(void)
+{
+  volatile uint32_t *sdram = (volatile uint32_t *)SDRAM_BASE_ADDR;
+  uint32_t wordCount = SDRAM_SIZE_BYTES / sizeof(uint32_t);
+  uint32_t errors = 0;
+
+  for (uint32_t i = 0; i < wordCount; i++)
+  {
+    sdram[i] = i;
+  }
+
+  for (uint32_t i = 0; i < wordCount; i++)
+  {
+    uint32_t readBack = sdram[i];
+    if (readBack != i)
+    {
+      errors++;
+      if (errors <= 5)
+      {
+        printf("stm32-epaper: SDRAM mismatch at 0x%08lX: wrote %lu, read %lu\r\n",
+               (unsigned long)(SDRAM_BASE_ADDR + i * sizeof(uint32_t)),
+               (unsigned long)i, (unsigned long)readBack);
+      }
+    }
+  }
+
+  return errors;
+}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1054,6 +1168,19 @@ void StartDefaultTask(void const * argument)
   /* init code for USB_HOST */
   MX_USB_HOST_Init();
   /* USER CODE BEGIN 5 */
+  printf("stm32-epaper: starting SDRAM test (%lu bytes)...\r\n", (unsigned long)SDRAM_SIZE_BYTES);
+  uint32_t sdramErrors = SDRAM_Test();
+  if (sdramErrors == 0)
+  {
+    printf("stm32-epaper: SDRAM test PASSED (%lu words verified).\r\n",
+           (unsigned long)(SDRAM_SIZE_BYTES / sizeof(uint32_t)));
+  }
+  else
+  {
+    printf("stm32-epaper: SDRAM test FAILED (%lu word mismatches).\r\n",
+           (unsigned long)sdramErrors);
+  }
+
   printf("stm32-epaper: starting IT8951 init (VCOM=%dmV)...\r\n", IT8951_VCOM_MV);
 
   IT8951_Dev_Info devInfo = EPD_IT8951_Init(IT8951_VCOM_MV);
@@ -1063,31 +1190,137 @@ void StartDefaultTask(void const * argument)
          (char *)devInfo.FW_Version, (char *)devInfo.LUT_Version);
 
   {
-    /* Small 100x100 test checkerboard (10px blocks), 4bpp packed (2 pixels/byte,
-       0xFF = white/white, 0x00 = black/black). Small enough to live in regular
-       SRAM as a static buffer - no SDRAM needed for this first test. */
-#define TEST_IMG_W   100
-#define TEST_IMG_H   100
-#define TEST_BLOCK_PX 10
-#define TEST_IMG_STRIDE (TEST_IMG_W * 4 / 8)
-    static UBYTE testImgBuf[TEST_IMG_STRIDE * TEST_IMG_H];
+    UDOUBLE targetMemAddr = devInfo.Memory_Addr_L | ((UDOUBLE)devInfo.Memory_Addr_H << 16);
+    UWORD panelW = devInfo.Panel_W;
+    UWORD panelH = devInfo.Panel_H;
+    UWORD stride = panelW * 4 / 8;
+    UBYTE *fullImgBuf = (UBYTE *)SDRAM_BASE_ADDR;
 
-    for (UWORD y = 0; y < TEST_IMG_H; y++)
+    /* Explicit full-panel white clear before drawing anything else. E-paper
+       retains a faint "memory" of previously-displayed content (ghosting);
+       leftover test patterns from earlier boots/flashes were still visible
+       after just drawing the gradient directly, since a full refresh over
+       existing content doesn't always fully reset every pixel. Clearing to
+       solid white first (its own full GC16 refresh) gives a clean baseline,
+       same technique used earlier to isolate the write-path corruption bug. */
     {
-      for (UWORD bx = 0; bx < TEST_IMG_STRIDE; bx++)
+      /* Multi-pass flash (white -> black -> white) instead of a single clear.
+         EPD_IT8951_WaitForDisplayReady() (called at the top of every refresh
+         function) already polls the chip's actual refresh-complete register
+         (LUTAFSR) rather than just SPI-command completion, so a manual delay
+         between passes isn't needed - timing prints below confirm that wait
+         is really blocking for a meaningful duration, not returning instantly.
+         If a single white clear still leaves ghosting, that's not a timing
+         bug - it's the panel's electrical/physical pixel state not fully
+         resetting in one pass, which a black-then-white flash addresses. */
+      /* Diagnostic: black->white double-flash (webcam-verifiable), gradient
+         temporarily disabled below - see USER CODE BEGIN 5. A single white
+         pass alone still showed 3 horizontal bands; this checks whether
+         that's ghosting (should clear with black->white) or a write-path
+         bug (would persist regardless). */
+      const UBYTE flashPasses[] = { 0x00, 0xFF }; /* black, then white */
+      for (unsigned pass = 0; pass < sizeof(flashPasses); pass++)
       {
-        UWORD blockX = (bx * 2) / TEST_BLOCK_PX;
-        UWORD blockY = y / TEST_BLOCK_PX;
-        UBYTE white = ((blockX + blockY) % 2 == 0);
-        testImgBuf[y * TEST_IMG_STRIDE + bx] = white ? 0xFF : 0x00;
+        uint32_t startTick = HAL_GetTick();
+        UBYTE fillValue = flashPasses[pass];
+
+        printf("stm32-epaper: flash pass %u/%u: filling panel with 0x%02X...\r\n",
+               pass + 1, (unsigned)sizeof(flashPasses), fillValue);
+        for (UWORD y = 0; y < panelH; y++)
+        {
+          for (UWORD bx = 0; bx < stride; bx++)
+          {
+            fullImgBuf[(UDOUBLE)y * stride + bx] = fillValue;
+          }
+        }
+        EPD_IT8951_4bp_Refresh_Chunked(fullImgBuf, 0, 0, panelW, panelH, true, targetMemAddr,
+                                       IT8951_WRITE_CHUNK_WORDS);
+        printf("stm32-epaper: flash pass %u/%u done (%lu ms).\r\n",
+               pass + 1, (unsigned)sizeof(flashPasses),
+               (unsigned long)(HAL_GetTick() - startTick));
       }
     }
 
-    UDOUBLE targetMemAddr = devInfo.Memory_Addr_L | ((UDOUBLE)devInfo.Memory_Addr_H << 16);
+    /* Full-panel 16-level grayscale gradient, sourced from a buffer living in
+       SDRAM (not a static SRAM array - a full 4bpp frame is ~758KB, far past
+       both internal SRAM and the 32KB FreeRTOS heap). SDRAM is memory-mapped,
+       so a raw pointer at its base address is all that's needed; no linker
+       script changes required. Proves the full-panel + SDRAM buffer path,
+       and shows all 16 gray levels distinctly, not just black/white. */
+    {
+      /* 16-level grayscale gradient across the full panel, sourced from SDRAM.
+         Real root cause of the "banded, top portion only" corruption seen
+         with earlier attempts at this: EPD_IT8951.c's
+         HostAreaPackedPixelWrite_* functions (1bp/2bp/4bp/4bp_Chunked) all
+         declared their word-count "Source_Buffer_Length" as UWORD (16-bit,
+         max 65535) - but Width*Height for a full panel at 4bpp is 388064,
+         which silently wrapped to 60384. Only ~15% of the transfer (~166 of
+         1072 rows) actually went out before LoadImgEnd cut it short, so the
+         rest of the panel kept showing whatever was already in the chip's
+         buffer - reproducing identically regardless of what we tried to
+         draw (solid white, solid black, gradient), which is what gave it
+         away: content-independent meant it was never a pixel-data bug.
+         Fixed by widening those Length locals to UDOUBLE (uint32_t) in
+         EPD_IT8951.c. Also fixed along the way: the IT8951 programming
+         guide documents P0 (the lower/first pixel) in the LOW nibble and P1
+         in the HIGH nibble of each 4bpp byte - had that backwards too. */
+      printf("stm32-epaper: filling %ux%u SDRAM-backed gradient (stride=%u, %lu bytes)...\r\n",
+             panelW, panelH, stride, (unsigned long)stride * panelH);
 
-    printf("stm32-epaper: drawing %ux%u test checkerboard...\r\n", TEST_IMG_W, TEST_IMG_H);
-    EPD_IT8951_4bp_Refresh(testImgBuf, 100, 100, TEST_IMG_W, TEST_IMG_H, false, targetMemAddr, true);
-    printf("stm32-epaper: test pattern displayed.\r\n");
+      for (UWORD y = 0; y < panelH; y++)
+      {
+        for (UWORD bx = 0; bx < stride; bx++)
+        {
+          UWORD px0 = bx * 2;
+          UBYTE nibble0 = (UBYTE)((px0 * 16) / panelW);       /* P0 - low nibble */
+          UBYTE nibble1 = (UBYTE)(((px0 + 1) * 16) / panelW); /* P1 - high nibble */
+          fullImgBuf[(UDOUBLE)y * stride + bx] = (UBYTE)((nibble1 << 4) | nibble0);
+        }
+      }
+
+      {
+        uint32_t startTick = HAL_GetTick();
+        printf("stm32-epaper: drawing full-panel gradient from SDRAM (chunked fast path, "
+               "%u words/chunk)...\r\n", (unsigned)IT8951_WRITE_CHUNK_WORDS);
+        EPD_IT8951_4bp_Refresh_Chunked(fullImgBuf, 0, 0, panelW, panelH, true, targetMemAddr,
+                                       IT8951_WRITE_CHUNK_WORDS);
+        printf("stm32-epaper: full-panel gradient displayed (%lu ms).\r\n",
+               (unsigned long)(HAL_GetTick() - startTick));
+      }
+    }
+
+    /* A2 mode: fast, black/white-only partial refresh - what a real page
+       turn would use instead of a full GC16 refresh. Moderate 400x400
+       region (not full panel yet) at top-left; X=0 satisfies 1bpp's "X must
+       be a multiple of 8" addressing rule trivially. Uniform fills (solid
+       black/white) sidestep any ambiguity in exactly how many logical
+       pixels the 1bpp path packs per host byte - correctness first, same
+       approach that worked for validating the 4bpp write path. Packed_Write
+       =false (proven-safe slow path) for this first test - once correctness
+       is confirmed, a chunked variant like the 4bpp one can speed this up. */
+    {
+      const UWORD testW = 400;
+      const UWORD testH = 400;
+      UDOUBLE bufLengthBytes = (UDOUBLE)((testW / 8) / 2) * testH * 2;
+      const UBYTE a2Passes[] = { 0x00, 0xFF, 0x00, 0xFF };
+
+      for (unsigned pass = 0; pass < sizeof(a2Passes); pass++)
+      {
+        uint32_t startTick = HAL_GetTick();
+        UBYTE fillValue = a2Passes[pass];
+
+        for (UDOUBLE i = 0; i < bufLengthBytes; i++)
+        {
+          fullImgBuf[i] = fillValue;
+        }
+        printf("stm32-epaper: A2 pass %u/%u: filling %ux%u with 0x%02X...\r\n",
+               pass + 1, (unsigned)sizeof(a2Passes), testW, testH, fillValue);
+        EPD_IT8951_1bp_Refresh(fullImgBuf, 0, 0, testW, testH, A2_Mode, targetMemAddr, false);
+        printf("stm32-epaper: A2 pass %u/%u done (%lu ms).\r\n",
+               pass + 1, (unsigned)sizeof(a2Passes),
+               (unsigned long)(HAL_GetTick() - startTick));
+      }
+    }
   }
 
   /* Infinite loop */

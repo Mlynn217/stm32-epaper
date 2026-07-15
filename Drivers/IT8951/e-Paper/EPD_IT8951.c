@@ -147,6 +147,61 @@ static void EPD_IT8951_WriteMuitiData(UWORD* Data_Buf, UDOUBLE Length)
 }
 
 
+/******************************************************************************
+function :	write multi data, but checking busy/HRDY every ChunkWords words
+            instead of only once before the whole transfer (like
+            EPD_IT8951_WriteMuitiData does). CS stays low for the whole
+            transfer, same as WriteMuitiData - only an HRDY poll is added
+            between chunks, no CS/preamble re-send.
+parameter:  data, length in words, chunk size in words
+description: EPD_IT8951_WriteMuitiData's one-check-then-blast-everything
+            approach corrupts data on large (~full-panel-scale) transfers:
+            the IT8951 has to keep draining incoming bytes into its own
+            internal SDRAM as they arrive, and nothing paces that for a
+            transfer of hundreds of thousands of words. Checking busy/HRDY
+            periodically during the transfer (instead of never) fixes that
+            while keeping most of the burst-write speed, since it's still
+            one continuous CS-low transfer, just with periodic backpressure.
+******************************************************************************/
+static void EPD_IT8951_WriteMuitiDataChunked(UWORD* Data_Buf, UDOUBLE Length, UDOUBLE ChunkWords)
+{
+    //Set Preamble for Write Command
+	UWORD Write_Preamble = 0x0000;
+    UDOUBLE i = 0;
+
+    EPD_IT8951_ReadBusy();
+
+    DEV_Digital_Write(EPD_CS_PIN, LOW);
+
+	DEV_SPI_WriteByte(Write_Preamble>>8);
+	DEV_SPI_WriteByte(Write_Preamble);
+
+    EPD_IT8951_ReadBusy();
+
+    while (i < Length)
+    {
+        UDOUBLE chunkEnd = i + ChunkWords;
+        if (chunkEnd > Length)
+        {
+            chunkEnd = Length;
+        }
+
+        for (; i < chunkEnd; i++)
+        {
+            DEV_SPI_WriteByte(Data_Buf[i]>>8);
+            DEV_SPI_WriteByte(Data_Buf[i]);
+        }
+
+        if (i < Length)
+        {
+            EPD_IT8951_ReadBusy();
+        }
+    }
+
+    DEV_Digital_Write(EPD_CS_PIN, HIGH);
+}
+
+
 
 /******************************************************************************
 function :	read data
@@ -399,7 +454,10 @@ parameter:
 static void EPD_IT8951_HostAreaPackedPixelWrite_1bp(IT8951_Load_Img_Info*Load_Img_Info,IT8951_Area_Img_Info*Area_Img_Info, bool Packed_Write)
 {
     UWORD Source_Buffer_Width, Source_Buffer_Height;
-    UWORD Source_Buffer_Length;
+    /* UDOUBLE, not UWORD (uint16_t) - Width*Height can exceed 65535 for a
+       full-panel area (e.g. 1448x1072 4bpp = 388064), which silently
+       wrapped/truncated the transfer length and cut writes short. */
+    UDOUBLE Source_Buffer_Length;
 
     UWORD* Source_Buffer = (UWORD*)Load_Img_Info->Source_Buffer_Addr;
     EPD_IT8951_SetTargetMemoryAddr(Load_Img_Info->Target_Memory_Addr);
@@ -441,7 +499,8 @@ parameter:
 static void EPD_IT8951_HostAreaPackedPixelWrite_2bp(IT8951_Load_Img_Info*Load_Img_Info, IT8951_Area_Img_Info*Area_Img_Info, bool Packed_Write)
 {
     UWORD Source_Buffer_Width, Source_Buffer_Height;
-    UWORD Source_Buffer_Length;
+    /* UDOUBLE, not UWORD - see the note in HostAreaPackedPixelWrite_1bp */
+    UDOUBLE Source_Buffer_Length;
 
     UWORD* Source_Buffer = (UWORD*)Load_Img_Info->Source_Buffer_Addr;
     EPD_IT8951_SetTargetMemoryAddr(Load_Img_Info->Target_Memory_Addr);
@@ -482,8 +541,9 @@ parameter:
 static void EPD_IT8951_HostAreaPackedPixelWrite_4bp(IT8951_Load_Img_Info*Load_Img_Info, IT8951_Area_Img_Info*Area_Img_Info, bool Packed_Write)
 {
     UWORD Source_Buffer_Width, Source_Buffer_Height;
-    UWORD Source_Buffer_Length;
-	
+    /* UDOUBLE, not UWORD - see the note in HostAreaPackedPixelWrite_1bp */
+    UDOUBLE Source_Buffer_Length;
+
     UWORD* Source_Buffer = (UWORD*)Load_Img_Info->Source_Buffer_Addr;
     EPD_IT8951_SetTargetMemoryAddr(Load_Img_Info->Target_Memory_Addr);
     EPD_IT8951_LoadImgAreaStart(Load_Img_Info,Area_Img_Info);
@@ -513,6 +573,35 @@ static void EPD_IT8951_HostAreaPackedPixelWrite_4bp(IT8951_Load_Img_Info*Load_Im
 }
 
 
+/******************************************************************************
+function :	EPD_IT8951_HostAreaPackedPixelWrite_4bp_Chunked
+parameter:  same as EPD_IT8951_HostAreaPackedPixelWrite_4bp, plus a chunk size
+            (in words) for EPD_IT8951_WriteMuitiDataChunked
+******************************************************************************/
+static void EPD_IT8951_HostAreaPackedPixelWrite_4bp_Chunked(IT8951_Load_Img_Info*Load_Img_Info, IT8951_Area_Img_Info*Area_Img_Info, UDOUBLE ChunkWords)
+{
+    UWORD Source_Buffer_Width, Source_Buffer_Height;
+    /* UDOUBLE, not UWORD - see the note in HostAreaPackedPixelWrite_1bp.
+       This is the one that actually mattered in practice: our full-panel
+       chunked writes were silently truncated to ~60384 of 388064 words
+       (16-bit wraparound), leaving ~85% of the panel showing stale data
+       from whatever was previously in the chip's buffer - not a chunking
+       or pacing bug at all, just this overflow. */
+    UDOUBLE Source_Buffer_Length;
+
+    UWORD* Source_Buffer = (UWORD*)Load_Img_Info->Source_Buffer_Addr;
+    EPD_IT8951_SetTargetMemoryAddr(Load_Img_Info->Target_Memory_Addr);
+    EPD_IT8951_LoadImgAreaStart(Load_Img_Info,Area_Img_Info);
+
+    //from byte to word
+    Source_Buffer_Width = (Area_Img_Info->Area_W*4/8)/2;
+    Source_Buffer_Height = Area_Img_Info->Area_H;
+    Source_Buffer_Length = Source_Buffer_Width * Source_Buffer_Height;
+
+    EPD_IT8951_WriteMuitiDataChunked(Source_Buffer, Source_Buffer_Length, ChunkWords);
+
+    EPD_IT8951_LoadImgEnd();
+}
 
 
 
@@ -889,8 +978,46 @@ void EPD_IT8951_4bp_Refresh(UBYTE* Frame_Buf, UWORD X, UWORD Y, UWORD W, UWORD H
 
 
 /******************************************************************************
+function :	EPD_IT8951_4bp_Refresh_Chunked
+parameter:  same as EPD_IT8951_4bp_Refresh, minus Packed_Write (always uses
+            the chunked bulk write) plus a chunk size in words
+description: use this instead of EPD_IT8951_4bp_Refresh(..., Packed_Write=true)
+            for full-panel-scale writes - see EPD_IT8951_WriteMuitiDataChunked.
+******************************************************************************/
+void EPD_IT8951_4bp_Refresh_Chunked(UBYTE* Frame_Buf, UWORD X, UWORD Y, UWORD W, UWORD H, bool Hold, UDOUBLE Target_Memory_Addr, UDOUBLE ChunkWords)
+{
+    IT8951_Load_Img_Info Load_Img_Info;
+    IT8951_Area_Img_Info Area_Img_Info;
+
+    EPD_IT8951_WaitForDisplayReady();
+
+    Load_Img_Info.Source_Buffer_Addr = Frame_Buf;
+    Load_Img_Info.Endian_Type = IT8951_LDIMG_L_ENDIAN;
+    Load_Img_Info.Pixel_Format = IT8951_4BPP;
+    Load_Img_Info.Rotate =  IT8951_ROTATE_0;
+    Load_Img_Info.Target_Memory_Addr = Target_Memory_Addr;
+
+    Area_Img_Info.Area_X = X;
+    Area_Img_Info.Area_Y = Y;
+    Area_Img_Info.Area_W = W;
+    Area_Img_Info.Area_H = H;
+
+    EPD_IT8951_HostAreaPackedPixelWrite_4bp_Chunked(&Load_Img_Info, &Area_Img_Info, ChunkWords);
+
+    if(Hold == true)
+    {
+        EPD_IT8951_Display_Area(X,Y,W,H, GC16_Mode);
+    }
+    else
+    {
+        EPD_IT8951_Display_AreaBuf(X,Y,W,H, GC16_Mode,Target_Memory_Addr);
+    }
+}
+
+
+/******************************************************************************
 function :	EPD_IT8951_8bp_Refresh
-parameter:  
+parameter:
 ******************************************************************************/
 void EPD_IT8951_8bp_Refresh(UBYTE *Frame_Buf, UWORD X, UWORD Y, UWORD W, UWORD H, bool Hold, UDOUBLE Target_Memory_Addr)
 {

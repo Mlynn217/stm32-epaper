@@ -202,6 +202,14 @@ void EPD_IT8951_2bp_Refresh(UBYTE* Frame_Buf, UWORD X, UWORD Y, UWORD W, UWORD H
 
 void EPD_IT8951_4bp_Refresh(UBYTE* Frame_Buf, UWORD X, UWORD Y, UWORD W, UWORD H, bool Hold, UDOUBLE Target_Memory_Addr, bool Packed_Write);
 
+/* Use this instead of EPD_IT8951_4bp_Refresh(..., Packed_Write=true) for
+   full-panel-scale writes - see EPD_IT8951_WriteMuitiDataChunked in the .c
+   file for why the plain Packed_Write=true bulk burst corrupts large
+   transfers. ChunkWords is how many 16-bit words to send between busy/HRDY
+   checks; ~2000-2500 is confirmed safe on this hardware (matches the size of
+   test transfers that worked fine as a single uninterrupted burst). */
+void EPD_IT8951_4bp_Refresh_Chunked(UBYTE* Frame_Buf, UWORD X, UWORD Y, UWORD W, UWORD H, bool Hold, UDOUBLE Target_Memory_Addr, UDOUBLE ChunkWords);
+
 void EPD_IT8951_8bp_Refresh(UBYTE *Frame_Buf, UWORD X, UWORD Y, UWORD W, UWORD H, bool Hold, UDOUBLE Target_Memory_Addr);
 
 

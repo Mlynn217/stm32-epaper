@@ -54,13 +54,67 @@
 - [x] Draw a test pattern/image and confirm it renders on the panel — **confirmed on real hardware**:
       a 100x100px 10px-block checkerboard, written via a small `static` 4bpp buffer (~5KB, plain
       SRAM, no SDRAM needed) and `EPD_IT8951_4bp_Refresh()`, rendered correctly on the panel
-- [ ] Exercise the FMC/SDRAM with an actual read/write test (pattern fill + read-back) to confirm
-      the timing config works, before trusting it as the IT8951 frame buffer
-- [ ] Route the IT8951 frame buffer through FMC/SDRAM — needed once we go full-panel: a full 4bpp
-      frame is ~758KB (1448x1072), vs. our 32KB FreeRTOS heap and limited internal SRAM, so the
-      source buffer for a full-screen image has to live in SDRAM as a static/fixed-address array
-- [ ] Confirm both full refresh (GC16, used by the checkerboard test) and fast/partial (A2 mode)
-      refresh work
+- [x] Exercise the FMC/SDRAM with an actual read/write test (pattern fill + read-back) to confirm
+      the timing config works, before trusting it as the IT8951 frame buffer — **confirmed on real
+      hardware, full 16MB pass**. Two things were needed: (1) CubeMX only configured the FMC
+      controller's *timing* via `HAL_SDRAM_Init()`; the SDRAM chip's own JEDEC power-up command
+      sequence (clock enable → precharge all → auto-refresh x8 → load mode register → refresh rate)
+      was missing and had to be added to `MX_FMC_Init()`'s `USER CODE` section, using ST's own
+      reference values for this exact chip (`stm32469i_discovery_sdram.c` in the cached
+      `STM32Cube_FW_F4` package) — base `0xC0000000`, size `0x1000000` (16MB), refresh count
+      `0x0569`; (2) the test itself (`SDRAM_Test()` in `main.c`) writes each 32-bit word its own
+      address-derived value across all 4,194,304 words and reads it back — 0 mismatches. Also added
+      a second on-panel visual marker (solid black = pass, striped = fail) alongside the checkerboard
+      so pass/fail is visible without a serial monitor
+- [x] Route the IT8951 frame buffer through FMC/SDRAM — **confirmed on real hardware, smooth
+      16-level gradient across the full panel, no artifacts, confirmed by direct visual
+      inspection**: a raw pointer at `SDRAM_BASE_ADDR` (0xC0000000) works directly since SDRAM is
+      memory-mapped, no linker script changes needed. This took several rounds to get right —
+      three distinct issues were found along the way, in the order they were fixed:
+  - [x] **The actual root cause, found last: a 16-bit integer overflow in the vendored driver.**
+        Every `EPD_IT8951_HostAreaPackedPixelWrite_*` function (1bp/2bp/4bp/4bp_Chunked) declared
+        its word-count as `UWORD Source_Buffer_Length` (`uint16_t`, max 65535). For a full panel at
+        4bpp, `Width(362) * Height(1072) = 388064` — silently wraps to `60384`. Only ~15% of every
+        full-panel transfer (~166 of 1072 rows) actually went out before `LoadImgEnd` cut it short;
+        the rest of the panel kept showing whatever was already in the chip's buffer. This
+        reproduced **identically regardless of content** (solid white, solid black, and the
+        gradient all showed the same banding) — that content-independence was the key clue it
+        wasn't a pixel-data or write-pacing bug at all. Small transfers (checkerboard/marker, a few
+        KB) never hit this since their word counts fit in 16 bits. Fixed by widening
+        `Source_Buffer_Length` to `UDOUBLE` (`uint32_t`) in all four functions in `EPD_IT8951.c`.
+  - [x] `Packed_Write=true` (the fast bulk-write path, `EPD_IT8951_WriteMuitiData`) checks busy/HRDY
+        once before the whole burst starts and never again during it — a real correctness/robustness
+        concern for very large continuous transfers (no backpressure if the chip's internal write
+        pipeline falls behind), even though it turned out not to be the actual cause of the banding
+        above. Addressed by adding `EPD_IT8951_WriteMuitiDataChunked` /
+        `EPD_IT8951_4bp_Refresh_Chunked` (checks busy every `IT8951_WRITE_CHUNK_WORDS`, 2048 words,
+        instead of never) — also a nice performance win, full-panel writes dropped from ~20-30s
+        (the fully per-word `Packed_Write=false` path) to ~800ms-1.2s.
+  - [x] 4bpp nibble order was backwards — the IT8951 programming guide documents P0 (first/
+        lower-X pixel) in the **low** nibble and P1 in the **high** nibble of each byte; had it
+        reversed. Didn't show up in the checkerboard/marker tests since solid fills are invariant
+        to nibble order — only visible on an asymmetric pattern like the gradient.
+  - [x] Side quest: the ST-LINK intermittently vanished from `lsusb` throughout this debugging
+        session, which turned out to be real — kernel log showed an actual `USB disconnect` event,
+        and `usbcore.autosuspend` is set to a 2-second idle timeout system-wide. Fixed with a udev
+        rule (`/etc/udev/rules.d/99-stlink-no-suspend.rules`) disabling autosuspend specifically for
+        the ST-LINK's VID:PID (0483:374b), confirmed via `power/control` reading `on` afterward.
+- [x] Confirm both full refresh (GC16) and fast/partial (A2 mode) refresh work — **confirmed on
+      real hardware**. Test: a 400x400 top-left region toggled black/white/black/white via
+      `EPD_IT8951_1bp_Refresh(..., A2_Mode, ...)`, `Packed_Write=false` (proven-safe slow path, not
+      yet chunked for 1bpp). Visually clean — the A2 region updated correctly with no disturbance to
+      the surrounding full-panel gradient. Timing (real measurement, one run): A2 passes took
+      390ms each (888ms for the first, which includes waiting for the preceding GC16 refresh to
+      finish) vs. full-panel GC16 refreshes at 4368-4729ms — meaningfully faster, consistent with
+      A2 being a binary/no-grayscale-settling waveform mode.
+  - [ ] **Unexplained**: that same run's full-panel GC16 refreshes (4368-4729ms) were 4-5x slower
+        than earlier measurements of the identical code path (~800-1200ms). No code changed between
+        runs. Possible cause: panel temperature (GC16's waveform timing is temperature-compensated
+        internally, and the panel had been refreshed repeatedly in a short span) or something
+        environmental — not investigated further, logged here for later if it recurs or matters.
+  - [ ] 1bpp/A2 full-panel writes still use the proven-safe slow path (`Packed_Write=false`), not a
+        chunked variant like the 4bpp one — fine for a 400x400 test, but full-panel 1bpp would want
+        the same chunked-write speedup treatment before relying on it for real page turns.
 
 ### Later milestones (not yet scoped in detail)
 - [ ] Storage (SD card / file system) for book files

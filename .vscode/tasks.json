@@ -24,7 +24,7 @@
     {
       "label": "Serial Monitor (minicom)",
       "type": "shell",
-      "command": "minicom -D /dev/ttyACM0 -b 115200 -o",
+      "command": "minicom -D /dev/ttyACM0 -b 115200 -o -C uart.log",
       "isBackground": false,
       "problemMatcher": [],
       "presentation": { "panel": "dedicated", "focus": true }

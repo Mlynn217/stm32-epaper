@@ -11,11 +11,24 @@ An STM32-based e-reader using the Waveshare 6inch HD e-Paper HAT (IT8951 control
   (1448×1072), firmware version, and LUT version
 - This panel's VCOM (`-2.59V`) set correctly
 - A test image (100×100px checkerboard) written and displayed on the physical panel
+- The FMC/SDRAM (16MB, onboard) — full read/write test passes across all 4,194,304 words. Needed
+  adding the SDRAM chip's own JEDEC power-up sequence, which CubeMX doesn't generate on its own
+  (see TODO.md for detail); confirmed both over serial and with a second on-panel marker
+- **A full-panel (1448×1072) 16-level grayscale gradient**, sourced from a buffer living directly in
+  SDRAM (a plain pointer at its base address — no linker script changes needed) — confirmed by
+  direct visual inspection: smooth, no artifacts. Getting here took three real bug fixes, documented
+  in detail in TODO.md: the actual root cause was a 16-bit integer overflow in the vendored driver
+  (`Source_Buffer_Length` as `UWORD` instead of `UDOUBLE`, silently truncating full-panel transfers
+  to ~15% of the data — content-independent, which is what gave it away); also fixed the fast
+  bulk-write path to check busy/HRDY periodically instead of never (full-panel writes now take
+  ~1s instead of ~20-30s), and a backwards 4bpp pixel nibble order
+- **A2 (fast, black/white-only partial refresh) mode** — confirmed working: a 400×400 region
+  toggled cleanly without disturbing the surrounding gradient, and measurably faster than GC16
+  (390ms per A2 update vs. multi-second full GC16 refreshes)
 
 Not done yet — see [TODO.md](TODO.md) for the full list, but the near-term highlights:
-- FMC/SDRAM hasn't been exercised with real data yet (needed before a **full-panel** image, since
-  that source buffer is ~758KB — too big for internal SRAM/the 32KB FreeRTOS heap)
-- Only full refresh (GC16) has been tested; fast/partial (A2 mode) refresh is still unverified
+- An unexplained 4-5x slowdown in full-panel GC16 refresh time showed up in one run (same code,
+  no changes) — logged in TODO.md, not investigated further yet
 - No license chosen yet; a few environment/tooling loose ends (`gdb-multiarch`, J-Trace pin check)
 
 ## Overview

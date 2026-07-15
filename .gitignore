@@ -58,6 +58,10 @@ dkms.conf
 /build/
 /compile_commands.json
 
+# minicom session capture (see .vscode/tasks.json, launch.json)
+/uart.log
+minicom-*.log
+
 # IAR EWARM build output, if the EWARM/ project is ever opened in IAR
 # (not part of our normal workflow - we build via CMake, see README)
 EWARM/*/Exe/
