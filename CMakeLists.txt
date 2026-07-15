@@ -61,6 +61,16 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     Drivers/IT8951/e-Paper/EPD_IT8951.c
     Drivers/IT8951/Config/DEV_Config.c
+    Drivers/Fonts/EPD_Text.c
+    Drivers/Fonts/EPD_Layout.c
+    Drivers/Fonts/font8.c
+    Drivers/Fonts/font12.c
+    Drivers/Fonts/font16.c
+    Drivers/Fonts/font20.c
+    Drivers/Fonts/font24.c
+    Drivers/Fonts/Font32.c
+    Drivers/Fonts/Font44.c
+    Drivers/Fonts/Font60Bold.c
 )
 
 # Add include paths
@@ -68,6 +78,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     Drivers/IT8951/e-Paper
     Drivers/IT8951/Config
+    Drivers/Fonts
 )
 
 # Add project symbols (macros)

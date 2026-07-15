@@ -28,6 +28,8 @@
 #include <stdarg.h>
 #include <string.h>
 #include "EPD_IT8951.h"
+#include "EPD_Text.h"
+#include "EPD_Layout.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -1174,6 +1176,33 @@ static uint32_t SDRAM_Test(void)
 
   return errors;
 }
+
+/* Page-layout test content: public-domain text (opening of "Alice's
+   Adventures in Wonderland"), long enough to exercise both word-wrap and
+   pagination (EPD_Layout_DrawParagraph's returned continuation pointer)
+   rather than just a one-line sample. */
+static const char PageLayoutTestText[] =
+  "Alice was beginning to get very tired of sitting by her sister on the "
+  "bank, and of having nothing to do: once or twice she had peeped into "
+  "the book her sister was reading, but it had no pictures or "
+  "conversations in it, 'and what is the use of a book,' thought Alice "
+  "'without pictures or conversations?'\n\n"
+  "So she was considering in her own mind (as well as she could, for the "
+  "hot day made her feel very sleepy and stupid), whether the pleasure of "
+  "making a daisy-chain would be worth the trouble of getting up and "
+  "picking the daisies, when suddenly a White Rabbit with pink eyes ran "
+  "close by her.\n\n"
+  "There was nothing so very remarkable in that; nor did Alice think it "
+  "so very much out of the way to hear the Rabbit say to itself, 'Oh "
+  "dear! Oh dear! I shall be late!' (when she thought it over afterwards, "
+  "it occurred to her that she ought to have wondered at this, but at the "
+  "time it all seemed quite natural); but when the Rabbit actually took a "
+  "watch out of its waistcoat-pocket, and looked at it, and then hurried "
+  "on, Alice started to her feet, for it flashed across her mind that she "
+  "had never before seen a rabbit with either a waistcoat-pocket, or a "
+  "watch to take out of it, and burning with curiosity, she ran across "
+  "the field after it, and fortunately was just in time to see it pop "
+  "down a large rabbit-hole under the hedge.";
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -1405,6 +1434,60 @@ void StartDefaultTask(void const * argument)
         EPD_IT8951_1bp_Refresh(fullImgBuf, 0, 0, testW, testH, A2_Mode, targetMemAddr, false);
         printf("stm32-epaper: A2 pass %u/%u done (%lu ms).\r\n",
                pass + 1, (unsigned)sizeof(a2Passes),
+               (unsigned long)(HAL_GetTick() - startTick));
+      }
+    }
+
+    /* Page layout test: word-wraps real prose (PageLayoutTestText, see
+       "USER CODE BEGIN 4") into the panel with margins via
+       EPD_Layout_DrawParagraph(), paginating (looping on its returned
+       continuation pointer) until the whole text is drawn or a sane page
+       cap is hit. Each page gets a heading + body text, GC16 refresh, so
+       both word-wrap and pagination are exercised on real hardware rather
+       than just a single-line font sample. fgNibble=0x0 (black),
+       bgNibble=0xF (white). */
+    {
+      const uint16_t marginLeft = 40;
+      const uint16_t marginRight = (uint16_t)(panelW - 40);
+      const uint16_t marginTop = 130;
+      const uint16_t marginBottom = (uint16_t)(panelH - 40);
+      const uint16_t lineSpacing = 10;
+      const uint32_t maxPages = 4;
+
+      const char *remaining = PageLayoutTestText;
+      uint32_t pageNum = 0;
+
+      while (remaining != NULL && pageNum < maxPages)
+      {
+        pageNum++;
+
+        printf("stm32-epaper: clearing panel to white before layout page %lu...\r\n",
+               (unsigned long)pageNum);
+        for (UDOUBLE i = 0; i < (UDOUBLE)stride * panelH; i++)
+        {
+          fullImgBuf[i] = 0xFF;
+        }
+
+        char heading[24];
+        snprintf(heading, sizeof(heading), "Chapter I (%lu/%lu)", (unsigned long)pageNum,
+                 (unsigned long)maxPages);
+        EPD_Text_DrawStringAA(fullImgBuf, stride, panelW, panelH, marginLeft, 40, heading,
+                               &Font60Bold, 0x0, 0xF);
+
+        const char *before = remaining;
+        remaining = EPD_Layout_DrawParagraph(fullImgBuf, stride, panelW, panelH, marginLeft,
+                                              marginTop, marginRight, marginBottom, remaining,
+                                              &Font44, 0x0, 0xF, lineSpacing);
+        printf("stm32-epaper: layout page %lu: consumed %ld chars, %s\r\n",
+               (unsigned long)pageNum,
+               (long)(remaining != NULL ? (remaining - before) : (long)strlen(before)),
+               remaining != NULL ? "more text remains" : "all text drawn");
+
+        uint32_t startTick = HAL_GetTick();
+        printf("stm32-epaper: drawing layout page %lu...\r\n", (unsigned long)pageNum);
+        EPD_IT8951_4bp_Refresh_Chunked(fullImgBuf, 0, 0, panelW, panelH, true, targetMemAddr,
+                                       IT8951_WRITE_CHUNK_WORDS);
+        printf("stm32-epaper: layout page %lu displayed (%lu ms).\r\n", (unsigned long)pageNum,
                (unsigned long)(HAL_GetTick() - startTick));
       }
     }

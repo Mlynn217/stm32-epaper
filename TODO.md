@@ -46,9 +46,14 @@
       configure time — checks/re-applies known CubeMX regressions on every `cmake --preset`,
       idempotent (only touches the file when a fix is actually needed, so no spurious rebuilds).
       Tested: deliberately reverted the prescaler, ran `cmake --preset Debug`, confirmed it
-      self-healed. Still worth doing the "proper" fix too: CubeMX → SPI1 → Configuration →
-      Parameter Settings → Prescaler for Baud Rate → select `16` directly in the GUI, so the
-      project's own state is correct at the source (not yet done).
+      self-healed.
+  - [x] Also did the "proper" fix at the source: CubeMX → SPI1 → Configuration → Parameter
+        Settings → Prescaler for Baud Rate → `16`, set directly in the GUI rather than hand-editing
+        the `.ioc` text (which hadn't reliably round-tripped before). The `.ioc` now tracks an
+        explicit `SPI1.BaudRatePrescaler` key that wasn't present before, and `patch-cubemx.sh` is a
+        confirmed no-op against the regenerated `main.c` — reflashed and confirmed on real hardware
+        that the IT8951 still reads back correctly (`Panel=1448x1072 FWVer=SWv_0.6.
+        LUTVer=M841_TFAB512`) after this regeneration.
 
 ### Firmware — display bring-up milestone (current focus)
 - [x] Vendor + adapt Waveshare's IT8951 driver source (SPI mode) into this repo — used their
@@ -150,7 +155,102 @@
         base filename over 8 characters (e.g. `epaper_test.txt`) fails with `FR_INVALID_NAME`
         (FRESULT 6). Fixed by using `EPTEST.TXT` for the test; worth remembering for real ebook
         filenames later, unless LFN gets enabled.
-- [ ] Page rendering / text layout
+### Rendering
+- [x] **Font rendering — first step confirmed on real hardware.** Decided against a runtime outline
+      rasterizer (stb_truetype/FreeType): an e-reader only needs a handful of fixed sizes, so baking
+      glyphs offline costs nothing and keeps render time (and therefore awake/battery time — see
+      below) minimal and predictable. Also decided against pulling in LVGL's AA font pipeline for
+      now — real quality upgrade, but more moving parts (LVGL font descriptor structs + `lv_font_conv`
+      tooling) for a first pass.
+  - [x] Vendored the plain `sFONT`-format bitmap fonts from the companion repo
+        (`~/git/epaper/stm32f469i-disco-lvgl-demo/Utilities/Fonts/font{8,12,16,20,24}.c` — classic ST
+        BSP format, 1bpp fixed-width glyph tables, no AA, no external tooling) into
+        `Drivers/Fonts/` in this repo (all 5 sizes copied; `fonts.h`'s `LINE()` macro dropped since
+        it depended on `BSP_LCD_GetFont()`, not applicable here)
+  - [x] Wrote `Drivers/Fonts/EPD_Text.c/h`: `EPD_Text_DrawChar`/`DrawString` walk each glyph's row
+        bitmap (MSB-first, `(Width+7)/8` bytes/row) and set the corresponding 4bpp nibble in the
+        SDRAM framebuffer via a `SetPixel4bpp` read-modify-write helper (needed since the IT8951's
+        4bpp packing is 2 pixels/byte — P0 low nibble/even x, P1 high nibble/odd x, same convention
+        established by the gradient test)
+  - [x] Test: rendered "Hello, e-paper!" (Font24) plus two lines of Font12 (an a-z/A-Z/0-9 sweep) into
+        the SDRAM buffer, GC16 refresh — **confirmed on real hardware via webcam capture**, legible,
+        rest of panel stayed clean white, no artifacts
+  - [ ] **Observed, not yet addressed**: these BSP fonts were designed for small low-res TFTs, and at
+        this panel's ~300 PPI they render physically small (Font24, the largest available, is
+        legible but far from a comfortable reading size) — real body text will need either much
+        larger bitmap fonts baked at this resolution, or the AA/`lv_font_conv` route below sized
+        appropriately; worth deciding once page layout (line wrapping, margins) is in place and an
+        actual target reading size is picked
+- [x] **Proper anti-aliased fonts at reading-appropriate sizes — confirmed on real hardware.**
+      Went with a custom lightweight format instead of LVGL's font pipeline (avoids a Node.js/
+      `lv_font_conv` dependency; this project has no other Node tooling):
+  - [x] `tools/gen_font.py` — Python/Pillow script that rasterizes a real TTF/OTF at a given pixel
+        size (Pillow's built-in FreeType text rendering gives 8-bit AA coverage per pixel for free),
+        quantizes to 4 bits (0=no ink, 15=full ink, matching the panel's 16 GC16 gray levels), packs
+        2px/byte (same nibble convention as everywhere else: low nibble=even x, high nibble=odd x),
+        and emits a ready-to-compile `.c` file. Proportional per-glyph widths (from the font's real
+        advance metrics), not forced monospace — matters for a serif face to look right. Re-run this
+        script to add sizes/typefaces; the generated `.c` files are not meant to be hand-edited.
+  - [x] Typeface: **Liberation Serif** (Regular + Bold), SIL Open Font License 1.1, already installed
+        system-wide (`fonts-liberation` package) — avoided introducing a new font download/dependency
+        and its license permits embedding the rasterized glyph data in firmware. Attribution belongs
+        in the README if a license file gets added to the repo.
+  - [x] Generated three sizes into `Drivers/Fonts/`: `Font32` (Regular, 32px/36px line height),
+        `Font44` (Regular, 44px/50px line height, the intended default body-text size), `Font60Bold`
+        (Bold, 60px/67px line height, headings/chapter titles) — chosen against the earlier finding
+        that the sFONT sizes (max 24px) were too small for comfortable reading at this panel's
+        ~300 PPI; these are large enough to read normally in a hardware photo at arm's length.
+  - [x] Added `EPD_FontAA.h` (glyph/font struct definitions for this format, separate from the plain
+        sFONT structs) and `EPD_Text_DrawCharAA`/`DrawStringAA` in `EPD_Text.c/h` — per-pixel linear
+        blend between fg/bg nibble by ink coverage (`bg + coverage*(fg-bg)/15`), which is what makes
+        the AA edges look smooth instead of the old hard on/off bit test used for sFONT.
+  - [x] Test: rendered the same string at all three sizes plus a "Chapter One"-style heading —
+        **confirmed on real hardware via webcam capture**, clean smooth serif letterforms, correct
+        proportional spacing, no artifacts; visually a clear step up from the bilevel sFONT test.
+  - [ ] Not yet covered: only printable ASCII (0x20-0x7E) — real book text will eventually want
+        curly quotes/em-dash/ellipsis (Latin-1 range) from `gen_font.py`, plus Italic weights if
+        wanted
+  - [ ] Floyd-Steinberg (below) could still apply here as an optional refinement — dithering AA
+        glyph-edge coverage down to the 16 gray levels instead of direct quantization — but plain
+        4-bit quantization already looks clean at these sizes, so not pursuing unless it's actually
+        needed
+- [x] **Page layout (word wrap + pagination) — confirmed on real hardware.**
+  - [x] Added `Drivers/Fonts/EPD_Layout.c/h`: `EPD_Layout_DrawParagraph()` word-wraps text into a
+        given rectangle (greedy wrap - measures each word via the new `EPD_Text_MeasureCharAA`/
+        `MeasureSubstringAA` helpers in `EPD_Text.c/h` before committing pixels, breaks to a new
+        line when the word wouldn't fit, drops the leading space after a wrap). Draws word-by-word
+        directly (no intermediate line buffer/string copy needed). `'\n'` in the source text forces
+        a paragraph break. Words wider than the available width are drawn as-is (not
+        hyphenated/clipped) - acceptable for now, no real prose hits this.
+  - [x] **Pagination via a continuation pointer**: `EPD_Layout_DrawParagraph()` returns a pointer
+        into the input text where it stopped (because the next line wouldn't fit above the bottom
+        margin), or `NULL` if all the text was drawn. This lets a caller paginate through arbitrarily
+        long text one screen at a time - re-call with the returned pointer for the next page -
+        without laying out (or holding in memory) more than one page at a time. Important for later
+        reading a whole book off the SD card without needing the full text resident in RAM.
+  - [x] Test: rendered the opening ~1300 characters of "Alice's Adventures in Wonderland" (public
+        domain, embedded as a test string in `main.c`) with a bold "Chapter I (n/4)" heading
+        (`Font60Bold`) + wrapped body text (`Font44`), looping on the continuation pointer —
+        **confirmed on real hardware via webcam capture**: page 1 consumed 982 characters before
+        running out of vertical room, page 2 consumed the remaining 346 and reported "all text
+        drawn"; visually, page 2 correctly resumes mid-sentence with no word cut across the page
+        break, clean word wrap throughout, no artifacts. This is the first genuinely book-page-like
+        render in the project.
+  - [ ] Not yet done: centered/justified text (current is left-aligned/ragged-right only),
+        paragraph indentation or blank-line spacing beyond what `\n\n` already gives, hyphenation for
+        oversized words, RTL/multi-column layouts (not needed for this project's scope)
+- [ ] **Floyd-Steinberg dithering — filed for later image/cover-art rendering.** Needed when source
+      image data doesn't already come as clean grayscale/16-level data (e.g. photos, book cover art,
+      anything with more tonal range than the panel's 16 GC16 gray levels, or content going to 1bpp
+      for A2 fast-refresh mode) — classic error-diffusion kernel (7/16, 3/16, 5/16, 1/16 to
+      right/below-left/below/below-right neighbors) approximates continuous tone as a static dot
+      pattern, which suits e-paper well since there's no motion/flicker to reveal the pattern. Not
+      needed for plain bitmap-font text (see above) or for any source image that's already
+      pre-quantized to grayscale — only add this step when an image's tonal range actually exceeds
+      what the panel can represent directly.
 - [ ] Ebook format parsing (EPUB/TXT)
 - [ ] UI / input handling
-- [ ] Power management / battery life
+- [ ] Power management / battery life — key lever is deep-sleep between page turns (STOP mode,
+      SDRAM either in self-refresh or fully powered down and repopulated from SD on wake), not
+      rendering speed — the IT8951 holds the displayed image with zero host involvement once a
+      refresh completes
