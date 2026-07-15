@@ -4,36 +4,31 @@ An STM32-based e-reader using the Waveshare 6inch HD e-Paper HAT (IT8951 control
 
 ## Current Status
 
-**Display bring-up milestone: core goal achieved.** On real hardware, confirmed working:
+**Reads a real EPUB off an SD card and renders actual book pages on the physical panel.** On real
+hardware, confirmed working end to end:
 - STM32CubeMX → CMake → arm-none-eabi-gcc/Ninja → OpenOCD → ST-LINK build/flash/debug loop, from
   inside VSCode (tasks + launch configs for build, flash, debug, and a serial monitor)
-- SPI1 communication with the IT8951 — `EPD_IT8951_Init()` reads back the correct panel resolution
-  (1448×1072), firmware version, and LUT version
-- This panel's VCOM (`-2.59V`) set correctly
-- A test image (100×100px checkerboard) written and displayed on the physical panel
-- The FMC/SDRAM (16MB, onboard) — full read/write test passes across all 4,194,304 words. Needed
-  adding the SDRAM chip's own JEDEC power-up sequence, which CubeMX doesn't generate on its own
-  (see TODO.md for detail); confirmed both over serial and with a second on-panel marker
-- **A full-panel (1448×1072) 16-level grayscale gradient**, sourced from a buffer living directly in
-  SDRAM (a plain pointer at its base address — no linker script changes needed) — confirmed by
-  direct visual inspection: smooth, no artifacts. Getting here took three real bug fixes, documented
-  in detail in TODO.md: the actual root cause was a 16-bit integer overflow in the vendored driver
-  (`Source_Buffer_Length` as `UWORD` instead of `UDOUBLE`, silently truncating full-panel transfers
-  to ~15% of the data — content-independent, which is what gave it away); also fixed the fast
-  bulk-write path to check busy/HRDY periodically instead of never (full-panel writes now take
-  ~1s instead of ~20-30s), and a backwards 4bpp pixel nibble order
-- **A2 (fast, black/white-only partial refresh) mode** — confirmed working: a 400×400 region
-  toggled cleanly without disturbing the surrounding gradient, and measurably faster than GC16
-  (390ms per A2 update vs. multi-second full GC16 refreshes)
-- **SD card storage** — mount, write, and read-back confirmed on a real SD card, byte-for-byte.
-  Needed adding SDIO's DMA/interrupt config (CubeMX generated the peripheral basics but not what the
-  DMA-based FatFS driver actually needs — same pattern as the SDRAM gap); also learned the hard way
-  that `ffconf.h` disables long filenames (`_USE_LFN=0`), so filenames need to fit 8.3 (see TODO.md)
+- SPI1 communication with the IT8951 (panel resolution/FW/LUT version read back correctly, this
+  panel's VCOM `-2.59V` set), the FMC/SDRAM (16MB, full read/write test passes), full-panel GC16
+  grayscale refresh, and A2 (fast black/white-only partial refresh) mode
+- **SD card storage** — SDIO+FatFS mount/read/write, a directory listing on every boot, and long
+  filename support (`_USE_LFN=3`, heap-based — see TODO.md for why not `1`/`2`)
+- **Fonts and page layout** — anti-aliased proportional bitmap fonts at reading-appropriate sizes
+  (generated from a real TTF via `tools/gen_font.py`, not the tiny fixed-width fonts a low-res TFT
+  would use), word-wrap, and pagination (a continuation-pointer API that can paginate arbitrarily
+  long text one screen at a time without holding more than one page in memory)
+- **An EPUB reader** (`Drivers/Epub/`, `Drivers/Inflate/`) — a minimal ZIP reader, a vendored
+  reference DEFLATE decompressor, and tiny XML/HTML helpers, enough to parse `container.xml` → the
+  OPF's manifest/spine → a chapter's XHTML → clean plain text, fed straight into the page-layout
+  pipeline above. Validated against a real book (a purchased copy of *Mistborn: Secret History*) —
+  see TODO.md for the debugging story, including a real FatFs/SDIO stale-read bug found and worked
+  around along the way
 
 Not done yet — see [TODO.md](TODO.md) for the full list, but the near-term highlights:
-- An unexplained 4-5x slowdown in full-panel GC16 refresh time showed up in one run (same code,
-  no changes) — logged in TODO.md, not investigated further yet
-- No license chosen yet; a few environment/tooling loose ends (`gdb-multiarch`, J-Trace pin check)
+- No page-turn/chapter-navigation UI yet (currently auto-picks the first chapter with real text and
+  shows up to 4 pages of it); no physical input handling
+- Power management/battery life not started
+- No license chosen yet
 
 ## Overview
 
@@ -126,10 +121,23 @@ Notes:
   thin layer needed rewriting for STM32 HAL — `EPD_IT8951.c/h` is vendored essentially unchanged.
   Lives at `Drivers/IT8951/` (`e-Paper/` = vendored protocol driver, `Config/` = our HAL port of
   `DEV_Config`).
-- Bare-metal for now, no RTOS — revisit once UI/storage/input concurrency makes task separation
-  worthwhile
+- **Fonts**: `Drivers/Fonts/` has two font formats side by side — the plain fixed-width, bilevel
+  `sFONT` tables (vendored from ST's BSP Fonts module, still used for a couple of test strings) and
+  a custom anti-aliased proportional format generated by `tools/gen_font.py` (rasterizes a real TTF
+  via Pillow, quantizes to the panel's 16 gray levels) — see `EPD_FontAA.h`/`EPD_Text.c`. Page
+  layout (word-wrap + pagination) is `EPD_Layout.c/h`.
+- **EPUB reading**: `Drivers/Epub/` (ZIP reader, tiny XML/HTML helpers, EPUB orchestration) plus
+  `Drivers/Inflate/` (vendored DEFLATE decompressor) — see TODO.md for how this was built and
+  validated (native test harness first, then real hardware).
+- FreeRTOS (CMSIS-RTOS v1 API, `cmsis_os.h`) — a single application task (`StartDefaultTask` in
+  `Core/Src/main.c`) does all the work; kept mainly because CubeMX's F469-Disco board template
+  defaults to it and it built/booted cleanly as-is, not because concurrency is needed yet
 - Whenever the `.ioc` changes (new pin, new peripheral), regenerate in CubeMX — it only touches its
-  own generated blocks, so hand-written application code (in `USER CODE BEGIN/END` blocks) survives
+  own generated blocks, so hand-written application code (in `USER CODE BEGIN/END` blocks) survives.
+  CubeMX regeneration has, more than once, silently reverted hand-tuned settings in generated code
+  (e.g. the SPI1 clock prescaler) — `scripts/patch-cubemx.sh` re-applies known cases automatically
+  at every `cmake` configure as a safety net; if you hand-tune something in CubeMX-generated code,
+  add a check there too.
 
 ## Development Environment Setup
 
@@ -152,6 +160,10 @@ still needs the `arm-none-eabi-gcc` toolchain, OpenOCD, Ninja, and the relevant 
   CubeMX-generated HAL/CMSIS/FreeRTOS/FatFS/USB Host scaffolding (regenerated by CubeMX; hand-written
   code lives in the `USER CODE BEGIN/END` blocks within, which survive regeneration)
 - `Drivers/IT8951/` — vendored + adapted IT8951 SPI driver (see Architecture above)
+- `Drivers/Fonts/` — bitmap fonts (plain + anti-aliased) and the text/page-layout drawing code
+- `Drivers/Epub/`, `Drivers/Inflate/` — EPUB reader (ZIP + XML/HTML) and its DEFLATE decompressor
+- `tools/gen_font.py` — regenerates the anti-aliased fonts in `Drivers/Fonts/` from a TTF/OTF
+- `scripts/patch-cubemx.sh` — self-heals known CubeMX regeneration regressions (see Architecture)
 - `cmake/`, `CMakeLists.txt`, `CMakePresets.json` — CubeMX's CMake export + our toolchain file
 - `.vscode/` — `tasks.json` (build/flash/serial-monitor), `launch.json` (debug via OpenOCD or J-Link,
   plus a `node-terminal` entry for the minicom serial monitor), `c_cpp_properties.json`,
