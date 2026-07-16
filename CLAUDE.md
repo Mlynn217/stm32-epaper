@@ -15,24 +15,71 @@ README.md's Overview/Architecture sections for the hardware and design rationale
 
 ## Build / flash
 
+First-time (or after `CMakeLists.txt`/`.ioc` changes) configure:
 ```sh
 cmake --preset Debug
+```
+Then see "Iterating on hardware changes" below for the build-flash-validate loop, or use the
+equivalent VSCode tasks (`Build (Debug)`, `Flash (OpenOCD / ST-LINK)`) — see README.md's
+Building/Flashing/Debugging section.
+
+## Iterating on hardware changes
+
+The standard loop for validating any firmware change: build → flash → read the serial log →
+(for anything visual) capture a photo of the panel.
+
+**1. Confirm the ST-LINK is connected** before flashing:
+```sh
+lsusb | grep -i 0483
+```
+
+**2. Build and flash, checking the result:**
+```sh
 cmake --build --preset Debug
 openocd -f interface/stlink.cfg -f target/stm32f4x.cfg \
   -c "program build/Debug/stm32-epaper.elf verify reset exit"
 ```
+Look for `** Verified OK **` in the output. `program ... reset exit` resets and starts the board
+running immediately, so the next boot's log output starts arriving right away.
 
-Or the equivalent VSCode tasks (`Build (Debug)`, `Flash (OpenOCD / ST-LINK)`) — see README.md's
-Building/Flashing/Debugging section.
+**3. Read the serial log.** A `minicom` session logging to a timestamped file
+(`minicom-YYYYMMDD-HHMMSS.log`, in the repo root) is typically *already running* in the
+background for the whole session — check before starting a new one:
+```sh
+pgrep -af minicom                        # is one already running?
+ls -t minicom-*.log | head -1            # most recent log file, if so
+```
+If none is running, start one (it's a TUI app, but with nothing sent to its stdin it just sits
+capturing serial data to the log file — fine to background):
+```sh
+minicom -D /dev/ttyACM0 -b 115200 -C "minicom-$(date +%Y%m%d-%H%M%S).log" &
+```
+The log file accumulates across every reflash in the session (each reboot's output just appends),
+so after flashing, `tail`/`grep` the *end* of the current log rather than assuming it's fresh — the
+per-boot `[   123]` millisecond-since-boot prefix resets to near-zero at each new boot, which is
+the easiest way to tell where the latest one starts. Boot takes a few seconds to reach anything
+interesting; poll for a specific expected line instead of guessing a fixed sleep, e.g.:
+```sh
+until tail -5 minicom-*.log | grep -q "IT8951 init done"; do sleep 2; done
+```
+
+**4. For anything visual, capture a photo of the panel** (a webcam works better than a phone/HEIC
+round-trip — no format-conversion hassle):
+```sh
+ffmpeg -y -f v4l2 -video_size 1280x720 -i /dev/video0 \
+  -vframes 15 -vf "select=eq(n\,14)" -frames:v 1 output.jpg
+```
+Capturing several frames and selecting the last one (`-vframes 15` + `select=eq(n\,14)`) gives the
+webcam's auto-exposure a moment to settle — the very first frame is often too dark/black.
+
+Don't report a hardware-facing change as working without having actually done steps 2-4 in the
+current session and looked at the result yourself.
 
 ## Working conventions established in this repo
 
-- **Validate on real hardware, not just compilation.** This project's standing practice is: flash
-  every change and confirm it via the serial log (`minicom -C ...` produces a plain-text log file
-  you can read directly) and, for anything visual, a webcam photo of the panel
-  (`ffmpeg -f v4l2 ...`, see recent commits/TODO.md for the exact invocation). Don't report a
-  feature as working without this. If hardware access isn't possible in a given session, say so
-  explicitly rather than claiming success from a clean build.
+- **Validate on real hardware, not just compilation** — see "Iterating on hardware changes" above
+  for the actual commands. If hardware access isn't possible in a given session, say so explicitly
+  rather than claiming success from a clean build.
 - **Commit only when explicitly asked.** Use a HEREDOC commit message, and never push without being
   asked separately.
 - **CubeMX regenerations silently revert hand-tuned settings** in generated code (this has actually
