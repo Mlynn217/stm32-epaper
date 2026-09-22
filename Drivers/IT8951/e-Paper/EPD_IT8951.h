@@ -192,7 +192,9 @@ void EPD_IT8951_Sleep(void);
 
 IT8951_Dev_Info EPD_IT8951_Init(UWORD VCOM);
 
-void EPD_IT8951_Clear_Refresh(IT8951_Dev_Info Dev_Info,UDOUBLE Target_Memory_Addr, UWORD Mode);
+/* Frame_Buf is caller-owned (see the .c file) - must point to at least
+   ceil(Dev_Info.Panel_W*4/8) * Dev_Info.Panel_H bytes. */
+void EPD_IT8951_Clear_Refresh(UBYTE* Frame_Buf, IT8951_Dev_Info Dev_Info,UDOUBLE Target_Memory_Addr, UWORD Mode);
 
 void EPD_IT8951_1bp_Refresh(UBYTE* Frame_Buf, UWORD X, UWORD Y, UWORD W, UWORD H, UBYTE Mode, UDOUBLE Target_Memory_Addr, bool Packed_Write);
 void EPD_IT8951_1bp_Multi_Frame_Write(UBYTE* Frame_Buf, UWORD X, UWORD Y, UWORD W, UWORD H,UDOUBLE Target_Memory_Addr, bool Packed_Write);

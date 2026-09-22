@@ -781,13 +781,18 @@ IT8951_Dev_Info EPD_IT8951_Init(UWORD VCOM)
 
 /******************************************************************************
 function :	EPD_IT8951_Clear_Refresh
-parameter:  
+parameter:  Frame_Buf must point to at least
+            ceil(Dev_Info.Panel_W*4/8) * Dev_Info.Panel_H bytes - caller-owned,
+            like every other *_Refresh function's Frame_Buf below, rather than
+            heap-allocated internally (newlib malloc/free have no locking
+            hooks wired up for FreeRTOS in this project - see sysmem.c/
+            FreeRTOSConfig.h - so heap use from more than one task would risk
+            corrupting the heap; this sidesteps the question entirely).
 ******************************************************************************/
-void EPD_IT8951_Clear_Refresh(IT8951_Dev_Info Dev_Info,UDOUBLE Target_Memory_Addr, UWORD Mode)
+void EPD_IT8951_Clear_Refresh(UBYTE* Frame_Buf, IT8951_Dev_Info Dev_Info,UDOUBLE Target_Memory_Addr, UWORD Mode)
 {
 
     UDOUBLE ImageSize = ((Dev_Info.Panel_W * 4 % 8 == 0)? (Dev_Info.Panel_W * 4 / 8 ): (Dev_Info.Panel_W * 4 / 8 + 1)) * Dev_Info.Panel_H;
-    UBYTE* Frame_Buf = malloc (ImageSize);
     memset(Frame_Buf, 0xFF, ImageSize);
 
 
@@ -810,9 +815,6 @@ void EPD_IT8951_Clear_Refresh(IT8951_Dev_Info Dev_Info,UDOUBLE Target_Memory_Add
     EPD_IT8951_HostAreaPackedPixelWrite_4bp(&Load_Img_Info, &Area_Img_Info, false);
 
     EPD_IT8951_Display_Area(0, 0, Dev_Info.Panel_W, Dev_Info.Panel_H, Mode);
-
-    free(Frame_Buf);
-    Frame_Buf = NULL;
 }
 
 
