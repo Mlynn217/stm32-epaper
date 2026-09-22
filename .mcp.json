@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "freerouting": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@freerouting/freerouting-mcp-server"
+      ],
+      "env": {}
+    }
+  }
+}
