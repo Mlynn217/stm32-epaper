@@ -70,8 +70,37 @@
         instead of `-2.59V`). Fixed by adding `-u _printf_float` to linker flags in `CMakeLists.txt`.
 - [x] Set the panel's VCOM value in firmware — `EPD_IT8951_Init(2590)` (this panel's `-2.59V`),
       confirmed via the VCOM confirmation printout after the printf-float fix
-- [ ] Note: `EPD_IT8951_Clear_Refresh()` calls stdlib `malloc`/`free` — check this is safe under
-      FreeRTOS (newlib heap locking) before relying on it, or swap for a static buffer
+- [x] **`EPD_IT8951_Clear_Refresh()`'s stdlib `malloc`/`free` usage — checked and fixed.** This
+      project's newlib/FreeRTOS integration provides **no** heap locking at all: `Core/Src/sysmem.c`'s
+      `_sbrk()` (newlib's only allocation primitive here) has no critical section/mutex around the
+      heap-end bump, `Core/Inc/FreeRTOSConfig.h` doesn't set `configUSE_NEWLIB_REENTRANT`, and there
+      are no `__malloc_lock`/`__malloc_unlock` hooks anywhere in the repo — so concurrent newlib
+      `malloc`/`free` calls from more than one task genuinely would race and could corrupt the heap.
+      In *current* practice this specific call was never actually exercised: `grep` found no call
+      sites anywhere in the app (only the function's own definition/declaration), and the app only
+      ever runs one FreeRTOS task (`StartDefaultTask`) regardless. Fixed anyway rather than leaving a
+      footgun for whoever wires it in next: `EPD_IT8951_Clear_Refresh()` was the *only* one of the
+      `*_Refresh` family that allocated its own scratch buffer internally — every sibling
+      (`1bp`/`2bp`/`4bp`/`8bp_Refresh`) already takes `Frame_Buf` as a caller-supplied parameter.
+      Brought `Clear_Refresh` in line with that existing convention instead of introducing a static
+      buffer: it now takes `UBYTE* Frame_Buf` as its first parameter (matching the others) and just
+      `memset`s it to `0xFF`, with no heap involved at all
+      (`Drivers/IT8951/e-Paper/EPD_IT8951.c/h`). A static buffer wasn't viable here anyway — this
+      panel's clear buffer is ~758KB (`1448*4/8 * 1072`), far too big for the F469's 384KB internal
+      SRAM; a caller-supplied SDRAM buffer (e.g. the existing `fullImgBuf`/`SDRAM_BASE_ADDR` frame
+      buffer in `main.c`) is the only buffer big enough anyway, and this way the driver doesn't need
+      its own hardcoded SDRAM address alongside `main.c`'s existing partitioning scheme. **Validated
+      on real hardware**: temporarily called it from `StartDefaultTask` right after `EPD_IT8951_Init()`
+      (passing `fullImgBuf`, `GC16_Mode`), reflashed, confirmed via serial log a clean 9279ms run
+      (consistent with previously logged full-panel GC16 timings) with no fault/hang, followed by
+      both book pages rendering and displaying correctly exactly as before — then reverted the temp
+      call (consistent with this project's practice of not leaving one-off bring-up test code
+      permanently wired into boot, see the "Removed the boot-time visual demo/bring-up blocks" entry
+      below) and reflashed again to confirm the board returns to its normal boot sequence
+      byte-for-byte. Didn't get a webcam photo of the mid-test blank-white state specifically (camera
+      was blocked by someone in frame at the time) — the serial-log evidence (successful completion,
+      correct timing, no corruption in the pages rendered immediately afterward) was judged sufficient
+      for what is a heap-safety fix with no change to rendered output.
 - [x] Draw a test pattern/image and confirm it renders on the panel — **confirmed on real hardware**:
       a 100x100px 10px-block checkerboard, written via a small `static` 4bpp buffer (~5KB, plain
       SRAM, no SDRAM needed) and `EPD_IT8951_4bp_Refresh()`, rendered correctly on the panel
@@ -375,8 +404,26 @@
         chapter-navigation UI yet - see below); accented Latin letters and any other non-ASCII
         character without a specific fold are silently dropped rather than transliterated; only
         tested against one real book so far.
-- [ ] UI / input handling
+- [ ] UI / input handling — physical input (encoder, cap touch, button) and the navigation state
+      machine are both not started; see the Custom PCB section below for the settled input hardware
+      (CAP1188 cap touch for prev/next, EC11 encoder for menu scroll/select, tactile power button)
 - [ ] Power management / battery life — key lever is deep-sleep between page turns (STOP mode,
       SDRAM either in self-refresh or fully powered down and repopulated from SD on wake), not
       rendering speed — the IT8951 holds the displayed image with zero host involvement once a
       refresh completes
+
+### Custom PCB (not started — hardware decisions settled, do not re-litigate)
+See README.md's [Custom PCB (Planned)](README.md#custom-pcb-planned) section for the full
+component/part list, power tree, and rejected alternatives (analog joystick, on-glass ITO bezel).
+Immediate next steps, in order:
+- [ ] **KiCad schematic — power sheet first** (MCP73123, TPS63070, TPS61023, USB-C, Schottky, VBAT,
+      decoupling, JST connector). Self-contained; captures the safety-critical section (LFP charge
+      termination) before touching the MCU sheet.
+- [ ] **KiCad — MCU sheet** (STM32F469, HSE/RTC crystals, SDRAM via FMC, QSPI flash, microSD via
+      SDIO, SPI to IT8951, I²C to CAP1188, GPIO for encoder/button, SWD via TC2050).
+- [ ] **KiCad — peripheral sheet** (IT8951 IC or HAT connector, CAP1188, encoder, button, ESD
+      protection).
+- [ ] **Firmware — input handling**: encoder (CLK/DT interrupt, SW GPIO), CAP1188 (I²C init +
+      interrupt handler), power button (WKUP EXTI); wire all three to a simple event queue.
+- [ ] **Firmware — navigation state machine**: page-turn events → next/prev page via the existing
+      pagination API; chapter jump; library screen listing books from the SD card.

@@ -28,12 +28,17 @@ Not done yet — see [TODO.md](TODO.md) for the full list, but the near-term hig
 - No page-turn/chapter-navigation UI yet (currently auto-picks the first chapter with real text and
   shows up to 4 pages of it); no physical input handling
 - Power management/battery life not started
+- Custom PCB / KiCad schematic not started — hardware decisions are settled (see
+  [Custom PCB (Planned)](#custom-pcb-planned)), layout work hasn't begun
 - No license chosen yet
 
 ## Overview
 
-Goal: a standalone e-reader built around Waveshare's [6inch HD e-Paper HAT](https://www.waveshare.com/6inch-hd-e-paper-hat.htm)
-(1448×1072, 16-level grayscale, IT8951 controller), driven by an STM32 host.
+Goal: a standalone, **handheld, Kindle-style** e-reader built around Waveshare's
+[6inch HD e-Paper HAT](https://www.waveshare.com/6inch-hd-e-paper-hat.htm) (1448×1072, 16-level
+grayscale, IT8951 controller), driven by an STM32 host. The Discovery board is a bring-up platform;
+the end goal is a custom PCB — see [Custom PCB (Planned)](#custom-pcb-planned) below for the settled
+hardware decisions for that board.
 
 **Phase 1 host: STM32F469I-DISCO.** It has its own onboard RGB LCD, but that's not why it was
 picked — it's the FMC-attached SDRAM that matters. The IT8951 needs a host-side frame buffer too
@@ -103,6 +108,121 @@ Notes:
   (no pull-up/down) — a defensive pull-up was considered for the brief post-reset window before
   `MX_GPIO_Init()` runs, but wasn't applied; not required since these are actively driven once init
   runs, just an optional safety margin if boot-order issues ever show up.
+
+## Custom PCB (Planned)
+
+Not started yet (see TODO.md) — these are the **settled hardware decisions** for the final custom
+board, captured so they don't get re-litigated. The Discovery board + Waveshare HAT above remains
+the bring-up platform until this is built.
+
+### Input System
+
+| Control | Component | Interface | Notes |
+|---|---|---|---|
+| Prev / Next page | CAP1188-1-SL (Microchip) | I²C + ALERT interrupt | 8-channel; side-wall electrodes |
+| Side-wall electrodes | PCB copper pads ×4 | — | 2 per side; plastic wall as dielectric; up to ~4mm wall thickness |
+| Library / menu scroll | EC11 rotary encoder (Bourns PEC11R or Alps EC11) | 2× GPIO (CLK, DT) | 30-detent |
+| Confirm / select | Encoder push | 1× GPIO (SW) | Built into encoder |
+| Power / wake | Tactile switch | 1× GPIO (WKUP pin) | Top edge of device; physical, not capacitive |
+
+Layout: cap-touch zones on left/right side walls (thumb rest), encoder on the bottom edge, power
+button on the top edge.
+
+**Rejected — do not suggest again:**
+- PSP-style analog joystick (COM-09426): analog noise, no click function, draws continuous current
+  from a resistive divider — wrong for a sleep-heavy device.
+- On-glass bezel capacitive (ITO film): manufacturing complexity; side-wall PCB copper pads achieve
+  the same result more simply.
+
+### Memory & Storage
+
+| Component | Part | Interface | Role |
+|---|---|---|---|
+| SDRAM | IS42S16400J-6TLI (16MB) | FMC parallel | Framebuffer + render scratch (volatile) |
+| QSPI NOR Flash | N25Q128A or W25Q128JV (16MB) | QSPI | Firmware + fonts (non-volatile) |
+| microSD slot | Molex 1040310811 or GCT MSD-4-A | SDIO 4-bit | Book library (non-volatile, user-swappable) |
+
+SDRAM is volatile — it does **not** replace storage; book files live on microSD.
+
+### Display
+
+Prototype uses the Waveshare HAT as a module. The final board pairs the bare **IT8951 IC** with a
+**TPS65185/TPS65186 PMIC**. The Waveshare HAT requires 5V input while the IT8951 SPI interface
+itself is 3.3V logic; going to the bare IC + PMIC on the final board eliminates the 5V rail
+entirely — everything runs from 3.3V.
+
+### Power Architecture
+
+**Cell chemistry: LiFePO4 (LFP)** — chosen over standard LiPo for safety (no thermal runaway below
+~270°C vs ~150°C for LiCoO2), 2000–3000 cycle life, and a flat discharge curve. Trade-off: lower
+energy density (~120Wh/kg vs ~200 for LiPo), and 3.2V nominal means an LDO alone can't hold 3.3V
+across the full discharge range — a buck-boost is mandatory. Running the whole system at 1.8V was
+evaluated and rejected: the SDRAM and IT8951 HAT both need 3.3V/5V anyway, so a 1.8V MCU rail would
+still need a 3.3V boost for peripherals, adding a level-shifter headache for no real gain.
+
+**Power tree — prototype (Waveshare HAT):**
+```
+LiFePO4 cell (2.5–3.65V)
+  ├── MCP73123 ← USB-C (VBUS)      LFP-specific charger (terminates 3.65V, not 4.2V)
+  ├── TPS63070 buck-boost → 3.3V   STM32, SDRAM, QSPI Flash, microSD, CAP1188, encoder, buttons
+  ├── TPS61023 boost → 5V          IT8951 Waveshare HAT only
+  └── Schottky diode → MCU VBAT    Keeps RTC ticking when the main rail is off
+```
+
+**Power tree — final board (bare IT8951 IC):**
+```
+LiFePO4 cell (2.5–3.65V)
+  ├── MCP73123 ← USB-C
+  ├── TPS63070 → 3.3V              Everything, including IT8951 IC + TPS65185 PMIC
+  └── Schottky → VBAT
+```
+
+**Sleep current:** current design floor ~53µA (TPS63070 quiescent ~50µA + MCU STANDBY ~2.4µA +
+CAP1188 sleep ~1µA). Target <10µA (not a v1 priority) via a two-rail power island — MAX17222
+nanoPower (~300nA quiescent) as an always-on rail for MCU standby + CAP1188, with the TPS63070
+peripheral rail (IT8951, SDRAM, microSD) gated behind a TPS22965 load switch. E-ink retains its
+image without power, so this enables near-complete peripheral shutdown between page turns. **Reserve
+MAX17222 + load-switch footprints on the v1 PCB, unpopulated — don't redesign the power tree to
+chase this for v1.**
+
+### Connectivity & Debug
+
+| Component | Part | Notes |
+|---|---|---|
+| USB-C connector | — | Dual role: charging + SWD programming |
+| ESD protection | USBLC6-2SC6 (SOT-23-6) | On USB-C |
+| SWD debug header | TC2050-IDC (Tag-Connect) | No pins on the production board |
+| Battery connector | JST-PH 2.0 2-pin | Standard LFP pouch/cylinder connector |
+
+### Clocks & Passives
+
+| Component | Value / Part | Notes |
+|---|---|---|
+| HSE crystal | 8MHz (Abracon ABM8 or equiv.) | PLL source → 180MHz system clock |
+| RTC crystal | 32.768kHz | Low-power sleep timekeeping |
+| Decoupling caps | 100nF + 10µF per supply pin | Standard STM32 layout |
+| I²C pull-ups | 4.7kΩ to 3.3V | For I²C bus (CAP1188, fuel gauge) |
+| Ferrite bead | Optional | Between analog and digital GND if needed |
+
+### Full System Block Diagram
+
+```
+USB-C ──VBUS──► MCP73123 ──charge──► LiFePO4 cell ──3.2V──► TPS63070 ──3.3V──► STM32F469
+                                                         ├──────────────────────────────► IS42S16400J  (FMC)
+                                                         ├──────────────────────────────► N25Q128A     (QSPI)
+                                                         ├──────────────────────────────► microSD slot (SDIO)
+                                                         ├──────────────────────────────► IT8951 IC    (SPI)
+                                                         ├──────────────────────────────► CAP1188      (I²C)
+                                                         ├──────────────────────────────► Encoder      (GPIO)
+                                                         └──────────────────────────────► Power btn    (WKUP)
+LiFePO4 cell ──► TPS61023 ──5V────────────────────────────────────────────────────────► IT8951 HAT VCC (prototype only)
+LiFePO4 cell ──► Schottky ─────────────────────────────────────────────────────────────► MCU VBAT (RTC backup)
+STM32F469 ◄──SWD──────────────────────────────────────────────────────────────────────── TC2050 header
+IT8951 IC ──FPC──► 6" E-ink panel (1448×1072)
+```
+
+**Known gotcha:** LFP charger must terminate at 3.65V, not 4.2V — MCP73123 is correct, do not
+substitute MCP73831 (4.2V termination; will damage LFP cells).
 
 ## Architecture / Approach
 
