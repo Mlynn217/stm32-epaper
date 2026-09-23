@@ -198,7 +198,26 @@ The safety gap is handled the way phones and e-readers handle it:
 - An undervoltage cutoff.
 - A sensible enclosure: leave room for the pouch to swell.
 
-~300–500 cycles is still years of use for a reader charged every few weeks. The cell swings from
+~300–500 cycles is still years of use for a reader charged every few weeks.
+
+**Candidate cells (ordered 2026-09-23):** both are EEMB protected LiPo pouches with JST-PH 2.0
+leads. They share a 34.5 × ~52 mm footprint and differ only in thickness, so the battery bay can be
+designed for the thicker one and the thinner one fitted with a spacer.
+
+| | EEMB LP603449 | EEMB 963450 |
+|---|---|---|
+| Capacity | 1100 mAh (1000 min) | 1800 mAh |
+| Size (max) | 6.3 × 34.5 × 51 mm, 22 g | ~9.9 × 34.5 × 52 mm |
+| Charge | 4.20 V CC/CV, max 1C (1100 mA) | 4.2 V CC/CV |
+| Discharge | max 2C (2200 mA), cutoff 2.75 V | cutoff ~2.75 V |
+| Charge temp | 0–45 °C | 0–45 °C |
+| Cycle life | ≥ 500 at 0.5C, ≥ 800 at 0.2C | — |
+| Source | [EEMB datasheet](https://www.eemb.com/product-147) | [listing](https://www.amazon.com/EEMB-Battery-1800mAh-Rechargeable-Connector/dp/B08ZCQXFX4) |
+
+Both work with the board as designed: ~500 mA charge (0.45C / 0.28C), and a hardware cutoff at
+~3.20 V, well above the cells' 2.75 V. **The cells' 45 °C charge limit is below the BQ24073's
+default ~50 °C thermistor window** (see TODO). EEMB's listing says to confirm connector polarity, so
+check which contact the red lead is on before plugging a cell in (J2 pin 1 = +). The cell swings from
 ~3.0 V to 4.2 V, which is both above and below 3.3 V, so the buck-boost is still needed.
 
 Running the whole system at 1.8 V was evaluated and rejected: the SDRAM and the HAT need 3.3 V/5 V
