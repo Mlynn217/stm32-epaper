@@ -455,15 +455,20 @@ Next steps, in order:
         standby. LiPo's sloped curve also makes this a usable fuel estimate (see Fuel gauge).
   - [x] **Choose the cell** — two EEMB protected LiPo pouches ordered 2026-09-23 (README
         "Candidate cells"): LP603449 1100 mAh (6.3 × 34.5 × 51 mm) and 963450 1800 mAh (~9.9 ×
-        34.5 × 52 mm). Same footprint, so size the battery bay for the thicker one. The ~500 mA
-        charge current suits both.
+        34.5 × 52 mm). Same outline, so size the battery bay for the thicker one. Pack specs,
+        protection-board thresholds and the bay dimensions are in README "Candidate cells".
   - [ ] **When the cells arrive:** check lead polarity against J2 (pin 1 = +) with a meter and
-        re-pin the JST housing if needed; measure the real dimensions for the enclosure (allow
-        ~0.5 mm for swelling); keep spares at 40–60% charge (EEMB storage guidance).
-  - [ ] **Charge temperature 45 °C vs 50 °C:** both cells allow charging only at 0–45 °C, but the
-        BQ24073's default TS window with a 10k NTC is ~0–50 °C. Either retune the TS network
-        (TI SLUS810N shows adding resistors around the NTC to shift the thresholds), or route
-        CE to an MCU GPIO so firmware can also block charging. Decide before layout.
+        re-pin the JST housing if needed (EEMB's drawings only say red = +, not which contact);
+        measure the real dimensions, especially the LP603449, whose pack envelope is inferred
+        from its cell spec; keep spares at 40–60% charge (EEMB storage guidance).
+  - [x] **Charge temperature / current vs the cell specs** — ISET 3.01k (~296 mA, ≤ 0.3C of 1100 mAh:
+        EEMB's 0–20 °C limit), TMR 72k (7.2–12 h timer). The cells' 45 °C limit can't be met with
+        resistors (see README), so CE is now `CHG_DIS` (PD6, 100k pull-down) and TS is readable on
+        `TS_SENSE` (PC1).
+  - [ ] **Firmware: charge-temperature supervision** — while charging (CHG_STAT low), read
+        TS_SENSE (V = 75 µA × R_NTC; NCP15XH103: ~5.2k at 43 °C, ~4.7k at 46 °C), assert
+        CHG_DIS above ~43 °C with a few degrees of hysteresis. The charger's own 0/50 °C window
+        still applies with the MCU off.
   - [ ] **Fit the peripheral load switch on v1?** With R13 bypassing U4, SDRAM/microSD/QSPI stay
         powered in STANDBY, a ~2–20 mA idle floor (~70 mAh/day idle). Fitting the TPS22965
         drops idle to ~0.5–2 mAh/day. Recommended; not yet decided.

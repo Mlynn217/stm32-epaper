@@ -40,7 +40,8 @@ EXPECTED = {
     '3V3_AON': 'C7.1 R18.2 U6.6',
     'GND': ('TP6.1 C1.2 C11.2 C12.2 C13.2 C14.2 C15.2 C16.2 C17.2 C2.2 C3.2 C4.2 C5.2 C6.2 '
             'C7.2 C8.2 C9.2 J1.A1 J1.A12 J1.B1 J1.B12 J1.SH J2.2 R1.2 R11.2 R12.2 R14.2 R15.2 '
-            'R16.2 R19.2 R2.2 R22.2 R3.2 R8.2 RT1.2 U1.15 U1.17 U1.4 U1.5 U1.8 U2.2 U2.3 U2.8 '
+            'R16.2 R19.2 R2.2 R22.2 R23.2 R24.2 R3.2 R8.2 RT1.2 C18.2 U1.15 U1.17 U1.5 U1.8 U2.2 '
+            'U2.3 U2.8 '
             'U3.4 U4.5 U4.9 U5.2 U6.11 U6.2 U6.3 U6.4 U6.8 U7.1'),
     # signals leaving the sheet
     'USB_DP': 'J1.A6 J1.B6 U5.1 U5.6',
@@ -55,7 +56,10 @@ EXPECTED = {
     '/Power/CC2': 'J1.B5 R2.1',
     '/Power/ISET': 'R3.1 U1.16',
     '/Power/ILIM': 'R19.1 U1.12',
-    '/Power/TS': 'RT1.1 U1.1',
+    '/Power/TS': 'R25.1 RT1.1 U1.1',
+    '/Power/TMR': 'R23.1 U1.14',
+    'CHG_DIS': 'R24.1 U1.4',
+    'TS_SENSE': 'C18.1 R25.2',
     '/Power/CHG_EN1': 'R20.2 U1.6',
     'VBAT_SENSE': 'C17.1 R21.2 R22.1',
     '/Power/CHG_LED': 'D2.2 R4.2',
@@ -74,7 +78,6 @@ EXPECTED = {
     'unconnected-(J1-SBU1-PadA8)': 'J1.A8',
     'unconnected-(J1-SBU2-PadB8)': 'J1.B8',
     'unconnected-(U1-~{PGOOD}-Pad7)': 'U1.7',
-    'unconnected-(U1-TMR-Pad14)': 'U1.14',
 }
 ENV_ONLY = ('[lib_symbol_issues]', '[footprint_link_issues]')
 

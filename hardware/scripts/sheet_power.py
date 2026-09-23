@@ -5,7 +5,7 @@ from common import C0402, C0603, C0805, R0402, R0603, flag, new_sheet, two_pin
 # Signals that leave this sheet for the (future) MCU sheet.
 GLOBAL = {'USB_DP': 'bidirectional', 'USB_DM': 'bidirectional', 'CHG_STAT': 'output',
           '3V3_PG': 'output', 'EPD_5V_EN': 'input', 'VBAT_RTC': 'output', 'PERIPH_EN': 'input',
-          'VBAT_SENSE': 'output'}
+          'VBAT_SENSE': 'output', 'CHG_DIS': 'input', 'TS_SENSE': 'output'}
 
 
 def build():
@@ -38,21 +38,29 @@ def build():
     s.text('BQ24073 1-cell Li-ion/LiPo charger with power path (TI SLUS810N): 4.2V CV, OUT =\n'
            'VSYS regulated to 4.4V with USB present (keeps the 5.5V-max converters safe), battery\n'
            'supplement when the load exceeds the input limit, 6.6V input OVP.\n'
-           'ISET 1.78k -> 890/1.78k = ~500mA charge (0.4-0.5C for a 1-1.2Ah cell; retune to cell).\n'
+           'ISET 3.01k -> 890/3.01k = ~296mA (265-324mA worst case): <= 0.3C of the 1100mAh cell,\n'
+           'which is EEMB\'s limit for charging at 0-20C (either candidate cell is in spec anywhere).\n'
            'EN2=0/EN1=1 -> USB500 input limit (USB-C default power, no CC advertisement read).\n'
            'ILIM 1.54k (1.0A) must be fitted anyway: an open ILIM disables charging.\n'
-           'TS: on-board 10k NTC (place against the cell) - off-the-shelf LiPos have no NTC lead;\n'
-           'blocks charging outside ~0-50C. CE/TD low (charge + termination on), TMR open\n'
-           '(default safety timers). CHG: LED from VBUS + CHG_STAT to an FT GPIO.',
+           'TS: on-board 10k NTC against the cell; charger blocks charging outside ~0-50C. The\n'
+           'cells allow only 0-45C and no NTC can narrow the window (TI eq. 8 needs a cold/hot\n'
+           'resistance ratio of 7), so firmware reads TS_SENSE and drives CHG_DIS (CE, 100k\n'
+           'pull-down = charging on while the MCU is off) to suspend charging at 43-50C.\n'
+           'TMR 72k: fast-charge timer 7.2-12h (default 4-6h would expire on the 1800mAh cell).\n'
+           'TD low (termination on). CHG: LED from VBUS + CHG_STAT to an FT GPIO.',
            137.16, 30.48)
     u1 = s.part('U1', 'Battery_Management:BQ24073RGT', 'BQ24073RGT', 177.8, 83.82,
                 fields={'MPN': 'BQ24073RGTR'})
     s.conns(u1, {'13': 'VBUS', '2': '+BATT', '10': 'VSYS', '16': 'ISET', '12': 'ILIM',
                  '1': 'TS', '9': 'CHG_STAT', '7': None, '5': 'GND', '6': 'CHG_EN1',
-                 '4': 'GND', '15': 'GND', '14': None, '8': 'GND', '17': 'GND'})
+                 '4': 'CHG_DIS', '15': 'GND', '14': 'TMR', '8': 'GND', '17': 'GND'})
     two_pin(s, 'C1', 'C', '4.7uF', 142.24, 111.76, 'VBUS', 'GND', C0603,
             fields={'Voltage': '10V'})
-    two_pin(s, 'R3', 'R', '1.78k 1%', 152.4, 111.76, 'ISET', 'GND', R0402)
+    two_pin(s, 'R3', 'R', '3.01k 1%', 152.4, 111.76, 'ISET', 'GND', R0402)
+    two_pin(s, 'R23', 'R', '72k 1%', 182.88, 111.76, 'TMR', 'GND', R0402)
+    two_pin(s, 'R24', 'R', '100k', 193.04, 111.76, 'CHG_DIS', 'GND', R0402)
+    two_pin(s, 'R25', 'R', '10k', 256.54, 111.76, 'TS', 'TS_SENSE', R0402)
+    two_pin(s, 'C18', 'C', '100nF', 266.7, 111.76, 'TS_SENSE', 'GND', C0402)
     two_pin(s, 'R19', 'R', '1.54k 1%', 162.56, 111.76, 'ILIM', 'GND', R0402)
     two_pin(s, 'R20', 'R', '100k', 132.08, 111.76, 'VBUS', 'CHG_EN1', R0402)
     rt = s.part('RT1', 'Device:Thermistor_NTC', '10k NTC', 172.72, 111.76,
