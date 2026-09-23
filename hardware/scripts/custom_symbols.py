@@ -34,7 +34,7 @@ SYMBOLS = {
         ]),
     'TPS63802': dict(
         ref='U', width=20.32, slots=4,
-        footprint='',  # TODO: no stock DLA (VSON-HR 10, 1.4x2.3mm HotRod) footprint - build from TI land pattern
+        footprint='epaper:Texas_DLA0010A_VSON-HR-10_2x3mm_P0.5mm',  # project fp, see gen_footprints.py
         datasheet='https://www.ti.com/lit/ds/symlink/tps63802.pdf',
         description='1.3-5.5V in (start >1.8V), 2A buck-boost, 11uA Iq, precise EN threshold, VSON-HR 10 (DLA)',
         pins=[

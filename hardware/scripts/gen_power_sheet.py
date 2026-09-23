@@ -130,7 +130,7 @@ def build_power():
            'R6/R15 from VSYS turn the rail OFF below ~2.80V and back ON above ~3.08V (+-3%),\n'
            '~1.2uA. Hardware backstop only: firmware should shut down gracefully first\n'
            '(~3.0V, via the STM32 internal VBAT ADC channel on VBAT_RTC). The charger does NOT\n'
-           'protect against over-discharge. FOOTPRINT TODO: DLA (VSON-HR 10) not in stock lib.',
+           'protect against over-discharge. Footprint: project lib (TI DLA0010A land pattern).',
            137.16, 129.54)
     u2 = s.part('U2', 'epaper:TPS63802', 'TPS63802DLA', 177.8, 175.26,
                 fields={'MPN': 'TPS63802DLAR'})
@@ -249,6 +249,9 @@ def main():
         'sym-lib-table': '(sym_lib_table\n  (version 7)\n  (lib (name "epaper")(type "KiCad")'
                          '(uri "${KIPRJMOD}/epaper.kicad_sym")(options "")'
                          '(descr "Project-local parts missing from stock libraries"))\n)\n',
+        'fp-lib-table': '(fp_lib_table\n  (version 7)\n  (lib (name "epaper")(type "KiCad")'
+                        '(uri "${KIPRJMOD}/epaper.pretty")(options "")'
+                        '(descr "Project-local footprints, see hardware/scripts/gen_footprints.py"))\n)\n',
     }
     pro = os.path.join(OUT, PROJECT + '.kicad_pro')
     if not os.path.exists(pro):

@@ -291,7 +291,7 @@
 				(justify left bottom)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "epaper:Texas_DLA0010A_VSON-HR-10_2x3mm_P0.5mm"
 			(at 0 -11.43 0)
 			(hide yes)
 			(effects
