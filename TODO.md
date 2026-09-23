@@ -485,10 +485,34 @@ Next steps, in order:
   - [ ] **Firmware changes for the custom board:** FMC 16-bit data width; SD detect on PG10; HAT
         pins held low or floating while `EPD_5V_EN` is low (back-powering); TIM3 encoder mode;
         CAP1188 at 0x29; VBUS sensing on PA9.
-- [ ] **PCB layout** — the next milestone: board outline and enclosure, stackup (4 layers is
-      likely, given the FMC bus and LQFP176), placement, then routing. The Freerouting MCP is
-      configured for autorouting once parts are placed.
+- [ ] **Mechanical / enclosure** — gates layout, so do it first: board outline; where the external
+      HAT and the panel mount; side-wall thickness and material for the CAP1188 electrodes (the
+      README draft assumes ≤ ~4 mm plastic); encoder (bottom edge) and power button (top edge)
+      positions; battery bay sized to the chosen cell; USB-C and microSD openings. The electrode
+      geometry and the ESD decisions both wait on this.
+- [ ] **PCB layout** — the next milestone after the enclosure: stackup (4 layers is likely, given
+      the FMC bus and LQFP176), placement, then routing. The Freerouting MCP is configured for
+      autorouting once parts are placed.
+- [ ] **Fabrication outputs and ordering** — DRC clean; Gerbers + drill, pick-and-place and BoM
+      with real MPNs (several values are still "verify" placeholders); pick a fab/assembler and
+      check part availability (LQFP176 F469, IS42S16400J, TPS63802/TPS63900 stock); order boards,
+      a stencil and parts.
+- [ ] **Custom-board bring-up** — a phase of its own, done in order:
+  - [ ] Power only (no MCU flashed): check each rail at the test points; the UVLO cut-off and
+        restart thresholds (bench supply on the battery connector); charging and termination at
+        3.6 V; load sharing with USB plugged/unplugged.
+  - [ ] First flash over the TC2050 pads, and confirm ROM USB DFU via the BOOT button.
+  - [ ] Port the firmware to the board (see "Firmware changes for the custom board" above), then
+        bring up SDRAM (16-bit), microSD, the HAT, CAP1188 and the encoder one at a time, with
+        serial-log evidence for each, as done on the Discovery board.
+  - [ ] Measure real active and sleep current against the README's sleep-current estimate.
 - [ ] **Firmware — input handling**: encoder (CLK/DT interrupt, SW GPIO), CAP1188 (I²C init +
       interrupt handler), power button (WKUP EXTI); wire all three to a simple event queue.
 - [ ] **Firmware — navigation state machine**: page-turn events → next/prev page via the existing
       pagination API; chapter jump; library screen listing books from the SD card.
+- [ ] **Firmware — reading state persistence**: remember the position in each book (and which
+      book was open last) across sleep and power cycles. Store it on the SD card, or in the RTC
+      backup registers/backup SRAM for the "last open" pointer, so waking resumes on the same page.
+- [ ] **Firmware — getting books onto the device**: today the only way is pulling the microSD
+      card. Add USB mass-storage (MSC) mode over the USB-C port (OTG_FS is already wired, see
+      README pin table), with FatFs unmounted on the device side while the host has the card.
