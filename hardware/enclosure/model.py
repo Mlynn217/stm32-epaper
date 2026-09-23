@@ -56,7 +56,7 @@ BOSSES = [(sx * BOSS_X, y, z_top)
           for sx in (-1, 1)
           for (y, z_top) in ((BOSS_Y_BOT, Z_BEZEL), (BOSS_Y_TOP, Z_BACKER))]
 
-PCB_X0, PCB_X1 = IN_L + FIT_CLEAR, IN_R - FIT_CLEAR
+PCB_X0, PCB_X1 = IN_L + PCB_SIDE_GAP, IN_R - PCB_SIDE_GAP
 PCB_Y0 = IN_B + FIT_CLEAR
 PCB_Y1 = PCB_Y0 + PCB_H
 PCB_NOTCH_D = BOSS_OD + 2 * FIT_CLEAR
@@ -68,7 +68,7 @@ PCB_HOLES = [(sx * (PCB_X1 - 6.0), y) for sx in (-1, 1) for y in (PCB_Y0 + 12.0,
 HAT_X = 0.0
 HAT_Y1 = PANEL_TOP - 2.0                     # under the backer, clear of the FPC fold
 HAT_Y0 = HAT_Y1 - HAT_H
-BATT_X0 = IN_L + 1.5
+BATT_X0 = IN_L + PCB_SIDE_GAP
 BATT_Y1 = HAT_Y0 - 2.0
 BATT_ZONE_W = BATT_W + 2 * BATT_SWELL
 BATT_ZONE_L = BATT_L + 2 * BATT_SWELL
@@ -88,7 +88,20 @@ USB_ZC = Z_PCB_TOP + USB_T / 2
 SD_ZC = Z_PCB_TOP + SD_SOCKET_T / 2
 SD_SOCKET_W, SD_SOCKET_D = 14.0, 15.0        # PH: Molex 104031 body, check drawing
 
-BTN_ZC = (Z_BACK_IN + Z_BACKER) / 2
+# Power button: plunger tip on the PCB's bottom edge, pressed by a nub on a flexure tab.
+BTN_ZC = Z_PCB_TOP + BTN_BODY_T / 2
+BTN_TIP_Y = PCB_Y0                           # plunger tip flush with the PCB edge
+BTN_TAB_Z0 = BTN_ZC - BTN_TAB_L / 2          # free end (towards the back)
+BTN_TAB_Z1 = BTN_TAB_Z0 + BTN_TAB_L          # hinge (towards the front)
+BTN_NUB_Y = BTN_TIP_Y - BTN_PRELOAD_GAP      # nub face
+
+# Electrode boards: against the inner side walls, pads outwards, slid into channels from the back.
+EB_Y0 = min(ELECTRODE_Y) - ELECTRODE_H / 2 - EB_MARGIN
+EB_Y1 = max(ELECTRODE_Y) + ELECTRODE_H / 2 + EB_MARGIN
+EB_Z0 = Z_BACK_IN + 0.2
+EB_Z1 = EB_Z0 + EB_W
+EB_CH_WALL = 1.0                             # channel lip thickness
+EB_CH_LAP = 1.5                              # how far the lip overlaps the board end
 PA12_DENSITY = 1.01e-3                       # g/mm^3, MJF PA12 (HP datasheet)
 
 
@@ -115,6 +128,21 @@ def components():
     # The card's insertion path, from outside the wall into the socket.
     c["sd_card_path"] = span(SD_X - SD_CARD_W / 2, SD_X + SD_CARD_W / 2, OUT_B - 5, PCB_Y0 + 1,
                              SD_ZC - SD_CARD_T / 2, SD_ZC + SD_CARD_T / 2)
+    body_y0 = BTN_TIP_Y + BTN_ACT_L
+    c["power_switch"] = (
+        span(BTN_X - BTN_BODY_W / 2, BTN_X + BTN_BODY_W / 2, body_y0, body_y0 + BTN_BODY_D,
+             Z_PCB_TOP, Z_PCB_TOP + BTN_BODY_T)
+        + span(BTN_X - BTN_ACT_W / 2, BTN_X + BTN_ACT_W / 2, BTN_TIP_Y, body_y0 + 0.1,
+               BTN_ZC - 0.6, BTN_ZC + 0.6))
+    cw, cz, cx = EB_CONN
+    ezc = (EB_Z0 + EB_Z1) / 2
+    for sx, side in ((-1, "L"), (1, "R")):
+        face = sx * IN_R
+        xa, xb = face, face - sx * EB_T
+        c[f"electrode_board_{side}"] = span(min(xa, xb), max(xa, xb), EB_Y0, EB_Y1, EB_Z0, EB_Z1)
+        xc = xb - sx * cx
+        c[f"electrode_conn_{side}"] = span(min(xb, xc), max(xb, xc), EB_CONN_Y - cw / 2,
+                                           EB_CONN_Y + cw / 2, ezc - cz / 2, ezc + cz / 2)
     return c
 
 
@@ -162,9 +190,29 @@ def front_shell():
     s -= wall_hole(SD_CARD_W + 2 * SLIDE_CLEAR, SD_CARD_T + 2 * 0.4, SD_X, SD_ZC, IN_B + 1, OUT_B - 1)
     s -= Pos(SD_X, OUT_B, SD_ZC) * Rot(90, 0, 0) * Cylinder(SD_FINGER_NOTCH / 2 + 2, 2 * 1.0)
 
-    # Top wall: power button opening (mechanism TBD, see README open items).
-    s -= wall_hole(BTN_W + 2 * SLIDE_CLEAR, BTN_T + 2 * SLIDE_CLEAR, BTN_X, BTN_ZC,
-                   IN_T - 1, OUT_T + 1, r=1.0)
+    # Bottom wall: power button flexure. A U-shaped slot frees a tab hinged on its front edge; the
+    # tab is thinned from the inside and a nub on it rests just off the switch plunger.
+    x0, x1 = BTN_X - BTN_TAB_W / 2, BTN_X + BTN_TAB_W / 2
+    y_out, y_in = OUT_B - 1, IN_B + 1
+    for sx0, sx1 in ((x0 - BTN_SLOT, x0), (x1, x1 + BTN_SLOT)):
+        s -= span(sx0, sx1, y_out, y_in, BTN_TAB_Z0 - BTN_SLOT, BTN_TAB_Z1)
+    s -= span(x0 - BTN_SLOT, x1 + BTN_SLOT, y_out, y_in, BTN_TAB_Z0 - BTN_SLOT, BTN_TAB_Z0)
+    s -= span(x0, x1, OUT_B + BTN_TAB_T, y_in, BTN_TAB_Z0 - 1, BTN_TAB_Z1)
+    s += span(BTN_X - 1.5, BTN_X + 1.5, OUT_B + BTN_TAB_T - 0.05, BTN_NUB_Y,
+              BTN_ZC - 1.0, BTN_ZC + 1.0)
+
+    # Electrode board channels: a lipped block at each end of each board, open towards the back
+    # so the boards slide in before the back cover closes them in.
+    for sx in (-1, 1):
+        def xr(d0, d1):  # x range d0..d1 mm in from this side's inner wall face
+            a, b = sx * (IN_R - d0), sx * (IN_R - d1)
+            return min(a, b), max(a, b)
+        for y_end, d in ((EB_Y0, -1), (EB_Y1, 1)):
+            ya, yb = y_end - d * EB_CH_LAP, y_end + d * (FIT_CLEAR + EB_CH_WALL)
+            s += span(*xr(-0.1, EB_T + 0.15 + EB_CH_WALL), min(ya, yb), max(ya, yb),
+                      Z_BACK_IN, EB_Z1 + 1.0)
+            ya, yb = y_end - d * (EB_CH_LAP + 1), y_end + d * FIT_CLEAR
+            s -= span(*xr(0, EB_T + 0.15), min(ya, yb), max(ya, yb), Z_BACK_IN - 1, EB_Z1 + 0.2)
 
     # Thumb dimples marking the capacitive zones (thin the wall a little, too).
     for sx in (-1, 1):

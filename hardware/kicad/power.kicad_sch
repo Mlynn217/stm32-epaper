@@ -8671,7 +8671,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+		(property "Footprint" "Connector_Wire:SolderWire-0.1sqmm_1x02_P3.6mm_D0.4mm_OD1mm"
 			(at 172.72 111.76 0)
 			(hide yes)
 			(effects
@@ -8698,7 +8698,7 @@
 				)
 			)
 		)
-		(property "MPN" "NCP15XH103F03RC (10k, B=3380; TS thresholds assume 103AT, B=3435) - place touching the cell"
+		(property "MPN" "NXFT15XH103FA2B (Murata leaded film NTC: same 10k/B=3380 curve as NCP15XH103; TS thresholds assume 103AT, B=3435) - leads soldered here, head taped to the cell (it sits beside the PCB)"
 			(at 172.72 111.76 0)
 			(hide yes)
 			(effects

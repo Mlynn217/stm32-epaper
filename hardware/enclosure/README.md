@@ -26,7 +26,8 @@ git-ignored (regenerate the files rather than committing them):
 | `assembly.step` | Everything, including the bought-in parts, coloured and named. For viewing, and for KiCad's 3D viewer |
 | `pcb_outline.dxf` | Main PCB outline with mounting holes. KiCad: *File → Import → Graphics*, layer Edge.Cuts |
 | `pcb_placement.json` | Where the enclosure needs things on the PCB: encoder axis, USB-C and microSD on the edge, holes, height limits, battery and electrode zones |
-| `render_*.png` | Headless previews: front, interior, exploded, section |
+| `electrode_board.json` | The side electrode board design: size, pad rectangles, connector position and pinout |
+| `render_*.png` | Headless previews: front, interior, exploded, bottom edge, section |
 
 **Viewing:**
 - **Just the files:** open `out/assembly.step` (or any per-part `.step` or `.stl`) in a desktop
@@ -58,8 +59,8 @@ git-ignored (regenerate the files rather than committing them):
 | Cavity layout | HAT at the top, battery at the left below it, main PCB a full-width 60 mm strip at the bottom | Nothing stacks on anything else. Thickness = the deepest single part |
 | Encoder | Knob on the **front face, in the chin** | The PEC11R is a vertical part (shaft normal to the PCB). With the PCB behind the panel, the shaft points out the front, not the bottom edge. The knob's hub reaches through the front face so it grips 7.7 mm of shaft |
 | USB-C, microSD | Bottom wall at x = +25 / −25 mm | Either side of the encoder. The USB opening admits a USB-IF maximum-size plug overmold (12.4 × 6.5 mm) |
-| Power button | Opening in the top wall | See the open items: the KMR2 can't be pressed from the edge |
-| Electrodes | 2 zones per side (25 mm tall), marked by 0.4 mm thumb dimples. The side wall is 2.2 mm (1.8 at the dimples) | README allows ≤ ~4 mm of plastic |
+| Power button | Bottom edge, x = −40 mm: an Alps SKRTLAE010 side-actuated switch on the PCB edge, pressed through a **flexure tab** in the wall (U-shaped slot, tab thinned to 1.2 mm, nub 0.1 mm off the plunger) | Keeps the switch on the main PCB; PA12 makes a durable living hinge, so there is no separate button part |
+| Electrodes | 2 zones per side (25 mm tall), marked by 0.4 mm thumb dimples. The side wall is 2.2 mm (1.8 at the dimples). The pads are on **two identical 74 × 10 mm electrode boards** (0.8 mm FR4), pads facing the wall, slid into printed channels at each end and held by the back cover. A JST-SH cable runs to J302/J303 on the main PCB | README allows ≤ ~4 mm of plastic. The main PCB and the battery sit 2.5 mm in from the side walls to make room |
 | Parts | Front shell, panel backer, back cover, knob | Back cover: 4 × M2 screws into heat-set inserts (Ø3.2 mm holes) in the shell's bosses. PCB: 4 × M2 thread-forming screws into standoffs on the back cover. Battery: L-shaped corner rails, sized for the 963450 + swell |
 | Panel retention | Bezel ribs locate the panel and backer. The top bosses clamp the backer | Also stick the panel to the bezel with thin double-sided tape, as commercial e-readers do |
 
@@ -70,7 +71,8 @@ git-ignored (regenerate the files rather than committing them):
   for a smoother finish.
 - Upload the `.step` files, one per part. Tolerances assume a typical MJF service (±0.3 mm).
 - Hardware: 4 × M2 heat-set inserts (3.2 mm OD, ~3 mm long), 4 × M2×6 screws (back cover),
-  4 × M2×5 thread-forming screws (PCB), thin double-sided tape for the panel.
+  4 × M2×5 thread-forming screws (PCB), thin double-sided tape for the panel, 2 × JST-SH 3-pin
+  cables (~50 mm, both ends SHR-03V-S), and 2 electrode boards (order with the main PCB).
 - Before paying for the full set, consider ordering only the front shell's **chin section** (or the
   whole shell alone) as a fit check against the real panel, encoder and connectors.
 
@@ -78,22 +80,13 @@ git-ignored (regenerate the files rather than committing them):
 
 1. **Measure the placeholders** (`PH` in `params.py`; `build.py` lists them): the panel's
    active-area offset and FPC width/bend, the HAT's size and height, the PEC11R body height and push
-   travel, and the microSD socket height.
-2. **HAT height drives the device thickness.** With its 2×20 Pi header the HAT is ~12 mm tall. If
-   the header is desoldered (we only use the 1×8 SPI header), the battery sets the depth at
-   10.9 mm and the device loses ~1.1 mm.
-3. **Power button:** the schematic's KMR2 is pressed from above, and the main PCB is at the other
-   end of the device. Options: a side-actuated switch on a small daughterboard with a wire/flex to
-   the main PCB, a flexure lever, or moving the button to the bottom edge (then it can be a
-   right-angle switch on the main PCB).
-4. **Electrodes:** the zones sit on the side walls at y = −37.5…−12.5 and +7.5…+32.5 mm. Only
-   the lower zone overlaps the PCB strip (by about 14 mm), and the upper one is entirely above it. Pads on the
-   PCB surface also face the wrong way to sense a finger on the side wall. Likely answer: copper tape
-   or a small flex on the inside of each wall, connected to CAP1188 pads by a spring contact. This
-   also settles the ESD question in TODO.md.
-5. **RT1 (charger NTC)** must touch the pouch, but the battery sits beside the PCB, not over it.
-   Put RT1 on a short pigtail, or extend a PCB tongue under the cell edge.
-6. **Encoder shaft reference plane:** the model assumes the "15 mm" is measured from the PCB
+   travel, the microSD socket height, the SKRT switch height and travel, and the JST-SH envelope.
+2. **Encoder shaft reference plane:** the model assumes the "15 mm" is measured from the PCB
    seating plane. If Bourns measures it from the bushing, the knob sits higher. Check the drawing.
-7. **Panel active-area position:** the window is centred on the panel. If the real active area is
+3. **Panel active-area position:** the window is centred on the panel. If the real active area is
    offset (usually away from the FPC edge), set `ACTIVE_DX/DY`.
+4. **Electrode board KiCad project** (see TODO.md): the geometry is in `out/electrode_board.json`.
+
+Decided 2026-09-23: keep the HAT's 2×20 Pi header for v1 (it sets the cavity depth, ~1.1 mm more
+than the battery would); power button on the bottom edge; electrodes on small boards; knob on the
+front face; RT1 as a leaded NTC taped to the pouch.

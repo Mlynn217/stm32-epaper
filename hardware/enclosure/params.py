@@ -89,17 +89,34 @@ SD_SOCKET_T = dim("SD_SOCKET_T", 1.9, "PH", "socket height above PCB; card slot 
 SD_X = dim("SD_X", -25.0, "DC", "bottom edge, left of the encoder")
 SD_FINGER_NOTCH = dim("SD_FINGER_NOTCH", 8.0, "DC", "radius of the finger scoop so a flush card can be pushed/pulled")
 
-# --- Power button: CK KMR2 (top-actuated SMD) -------------------------------------------------
-BTN_W = dim("BTN_W", 6.0, "DC", "top-edge button cap width")
-BTN_T = dim("BTN_T", 3.0, "DC", "top-edge button cap height (Z)")
-BTN_X = dim("BTN_X", 30.0, "DC", "towards the right on the top edge")
-# README puts the button on the top edge, but the KMR2 is pressed from above and the main PCB is at
-# the bottom: needs a side-actuated switch on a small daughterboard/flex. Modelled as an opening.
+# --- Power button: Alps SKRTLAE010 side-actuated tact switch on the PCB's bottom edge -----------
+# Pressed through a flexure tab cut into the bottom wall (PA12 makes a good living hinge).
+BTN_BODY_W = dim("BTN_BODY_W", 4.5, "DOC", "KiCad SKRTLAE010 footprint F.Fab body 4.5 x 2.56")
+BTN_BODY_D = dim("BTN_BODY_D", 2.56, "DOC", "as BTN_BODY_W")
+BTN_ACT_W = dim("BTN_ACT_W", 2.0, "DOC", "plunger width (footprint F.Fab)")
+BTN_ACT_L = dim("BTN_ACT_L", 0.83, "DOC", "plunger protrusion beyond the body (footprint F.Fab)")
+BTN_BODY_T = dim("BTN_BODY_T", 2.5, "PH", "body height above PCB; check the Alps SKRT drawing")
+BTN_TRAVEL = dim("BTN_TRAVEL", 0.25, "PH", "SKRT travel; check the Alps SKRT drawing")
+BTN_X = dim("BTN_X", -40.0, "DC", "bottom edge, left of the microSD slot")
+BTN_TAB_W = dim("BTN_TAB_W", 8.0, "DC", "flexure tab width (X)")
+BTN_TAB_L = dim("BTN_TAB_L", 8.0, "DC", "flexure tab length (Z), hinged on the front side")
+BTN_TAB_T = dim("BTN_TAB_T", 1.2, "DC", "flexure tab thickness (wall thinned from inside)")
+BTN_SLOT = dim("BTN_SLOT", 0.6, "DC", "slot width around the tab")
+BTN_PRELOAD_GAP = dim("BTN_PRELOAD_GAP", 0.1, "DC", "nub to plunger gap at rest")
 
 # --- Capacitive side-wall electrodes (CAP1188, README "Input System") -------------------------
+# Two identical electrode boards (one per side), pads facing the wall, each on a JST-SH cable.
 ELECTRODE_WALL_MAX = dim("ELECTRODE_WALL_MAX", 4.0, "DOC", "README: up to ~4 mm plastic dielectric")
 ELECTRODE_H = dim("ELECTRODE_H", 25.0, "DC", "height of each of the 2 zones per side")
 ELECTRODE_Y = dim("ELECTRODE_Y", (-25.0, 20.0), "DC", "zone centres (Y), lower = next page")
+EB_T = dim("EB_T", 0.8, "DC", "electrode board thickness (JLC 0.8 mm FR4)")
+EB_W = dim("EB_W", 10.0, "DC", "electrode board width (Z)")
+EB_MARGIN = dim("EB_MARGIN", 2.0, "DC", "board length beyond the zones at each end")
+EB_CONN_Y = dim("EB_CONN_Y", -15.0, "DC", "connector position (Y): between the PCB top and battery")
+EB_CONN = dim("EB_CONN", (6.0, 4.3, 3.0), "PH", "JST SM03B-SRSS-TB envelope Y x Z x X (height off "
+              "the board); check the JST drawing")
+PCB_SIDE_GAP = dim("PCB_SIDE_GAP", 2.5, "DC", "main PCB / battery edge to side wall: room for an "
+                   "electrode board and its retaining channel")
 
 # --- Shell -------------------------------------------------------------------------------------
 SIDE_WALL = dim("SIDE_WALL", 2.2, "DC", "left/right walls: the electrode dielectric; <= ELECTRODE_WALL_MAX")

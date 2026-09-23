@@ -64,9 +64,10 @@ def build():
     two_pin(s, 'R19', 'R', '1.54k 1%', 162.56, 111.76, 'ILIM', 'GND', R0402)
     two_pin(s, 'R20', 'R', '100k', 132.08, 111.76, 'VBUS', 'CHG_EN1', R0402)
     rt = s.part('RT1', 'Device:Thermistor_NTC', '10k NTC', 172.72, 111.76,
-                footprint='Resistor_SMD:R_0402_1005Metric',
-                fields={'MPN': 'NCP15XH103F03RC (10k, B=3380; TS thresholds assume 103AT, '
-                               'B=3435) - place touching the cell'})
+                footprint='Connector_Wire:SolderWire-0.1sqmm_1x02_P3.6mm_D0.4mm_OD1mm',
+                fields={'MPN': 'NXFT15XH103FA2B (Murata leaded film NTC: same 10k/B=3380 curve '
+                               'as NCP15XH103; TS thresholds assume 103AT, B=3435) - leads '
+                               'soldered here, head taped to the cell (it sits beside the PCB)'})
     s.conns(rt, {'1': 'TS', '2': 'GND'})
     two_pin(s, 'C2', 'C', '10uF', 203.2, 111.76, '+BATT', 'GND', C0603,
             fields={'Voltage': '10V'})

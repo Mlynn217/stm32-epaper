@@ -488,9 +488,11 @@ Next steps, in order:
         table, which may be enough. For an accurate % (load- and age-compensated), add a
         gauge IC; MAX17261 is in KiCad's stock library.
   - [x] **Cold-charge protection** — solved by the switch to LiPo: the BQ24073's TS input with an
-        on-board NTC blocks charging outside ~0–50 °C. Place RT1 against the cell at layout.
-  - [ ] **NTC coupling** — RT1 is a 0402 on the board. It only protects the cell if it's thermally
-        coupled to it (under or against the pouch). Settle at layout/enclosure.
+        NTC blocks charging outside ~0–50 °C.
+  - [x] **NTC coupling** (2026-09-23) — the cell sits beside the PCB, so RT1 is now a leaded
+        Murata NXFT15XH103FA2B (same 10k/B3380 curve as the NCP15XH103 it replaces, so the TS
+        thresholds don't move) on two solder pads, head taped to the pouch. Check the lead
+        diameter against the 0.4 mm pad holes and pick the lead-length suffix.
       Gotcha found while building it: a **hidden `power_in` pin in a KiCad symbol creates an
       implicit global net named after the pin**. The first draft's stacked duplicate VIN pins
       silently shorted VSYS to +3V3. Only the netlist check caught it; ERC just printed a
@@ -501,8 +503,12 @@ Next steps, in order:
         e.g. the dense VDD pin row on the MCU).
   - [ ] **Crystals:** choose the actual 8 MHz and 32.768 kHz parts and recompute the load caps
         (drawn for CL = 10 pF / 6 pF). Check the LSE part against ST AN2867.
-  - [ ] **Electrode pads:** the CAP1188 CS1–4 pads are placeholder 4×4 mm test-point pads. Settle
-        the real geometry and position (side walls) at layout.
+  - [x] **Electrode pads** (2026-09-23): two small electrode boards (one design, fitted on both
+        sides) on JST-SH cables to J302/J303 (touch / GND / touch). Geometry is in
+        `hardware/enclosure/out/electrode_board.json`.
+  - [ ] **Electrode board KiCad project**: 74 × 10 mm, 0.8 mm FR4, two 25 × 8 mm pads on the
+        wall side, SM03B-SRSS-TB centred on the back, 1.5 mm clear at each end for the channels.
+        Consider hatched GND on the back side (shields the pads from the internals).
   - [ ] **ESD:** there's none on the HAT header, encoder or electrodes (only USB has a TVS). Decide
         once the enclosure is known.
   - [ ] **HRDY floats** while the HAT is unpowered: use the MCU's internal pull-down then, or add
@@ -525,13 +531,14 @@ Next steps, in order:
         Found while building it: the **PEC11R is vertical-mount**, so the knob goes on the front
         face (in the chin), not the bottom edge. The **KMR2 power button can't work from the top
         edge** as drawn.
+  - [x] **Decisions** (2026-09-23): keep the HAT's 2×20 Pi header for v1 (~1.1 mm thicker, not
+        worth the rework yet); power button moves to the bottom edge (SKRTLAE010 side-actuated on
+        the main PCB, pressed through a flexure tab in the wall); side-wall electrodes on two small
+        boards in printed channels; keep the front-face knob; RT1 on leads to the pouch. Schematic
+        updated to match (SW302, J302/J303, RT1), `check_schematic.py` passes.
   - [ ] **Measure the placeholders** (`PH` in `params.py`, listed on every build): panel
         active-area offset, FPC width/bend, HAT size/height, PEC11R body height/push travel/shaft
-        reference plane, microSD socket height.
-  - [ ] **Decide:** desolder the HAT's 2×20 Pi header (saves ~1.1 mm of thickness); the power
-        button mechanism (side switch on a daughterboard, a lever, or move it to the bottom edge);
-        how the side-wall electrodes connect (copper tape/flex + spring contact; only the lower
-        zone overlaps the PCB, and only partly); RT1 on a pigtail to reach the pouch.
+        reference plane, microSD socket height, SKRT body height/travel, JST-SH envelope.
   - [ ] **Human review** of the renders / OCP viewer, then a fit-check print (the shell alone or
         its chin section) against the real panel, encoder and connectors before the full set.
   - [ ] Import `out/pcb_outline.dxf` into Edge.Cuts when layout starts. The DXF import itself
