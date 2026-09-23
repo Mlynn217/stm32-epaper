@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "filename": "stm32-epaper.kicad_pro",
+    "version": 3
+  },
+  "sheets": [
+    [
+      "6f1d3c2a-5b7e-4c1d-9a0f-000000000001",
+      "Root"
+    ],
+    [
+      "6f1d3c2a-5b7e-4c1d-9a0f-000000000002",
+      "Power"
+    ]
+  ]
+}
