@@ -174,17 +174,23 @@ def build():
     two_pin(s, 'C7', 'C', '22uF', 383.54, 104.14, '3V3_AON', 'GND', C0603, dnp=True)
     two_pin(s, 'R18', 'R', '0R', 393.7, 104.14, '+3V3', '3V3_AON', R0603)
 
-    # ---- Reserved: peripheral load switch (DNP on v1) -----------------------------------
-    s.text('RESERVED for low-power v2 (README "Sleep current"): TPS22965 gating 3V3_PERIPH\n'
-           '(SDRAM, microSD). v1: U4/R14/C14 DNP, R13 0R bypass fitted.',
+    # ---- Peripheral load switch (FITTED on v1) ---------------------------------------------
+    s.text('TPS22965 load switch gating 3V3_PERIPH (SDRAM, QSPI, microSD) - FITTED on v1: without\n'
+           'it those parts stay powered in STANDBY (~2-20mA idle floor). ON = PERIPH_EN (PD7) with a\n'
+           '100k pull-down, so the rail is OFF at reset and in STANDBY (GPIO hi-Z) automatically.\n'
+           'CT 1nF (25V, per datasheet) -> ~1.3ms rise at 3.3V -> ~50mA inrush into ~21uF of load\n'
+           'decoupling (no dip on +3V3). QOD: 225R discharges the rail when off. R13 = 0R bypass\n'
+           '(DNP fallback). FIRMWARE: raise PERIPH_EN before FMC/QSPI/SDIO init; before dropping it,\n'
+           'set those pins to analog/low so the MCU does not back-power the unpowered parts.',
            137.16, 236.22)
-    u4 = s.part('U4', 'epaper:TPS22965', 'TPS22965DSG', 177.8, 264.16, dnp=True,
+    u4 = s.part('U4', 'epaper:TPS22965', 'TPS22965DSG', 177.8, 264.16,
                 fields={'MPN': 'TPS22965DSGR'})
     s.conns(u4, {'1': '+3V3', '4': '+3V3', '3': 'PERIPH_EN', '7': '3V3_PERIPH', '6': 'LS_CT',
                  '5': 'GND', '9': 'GND'})
-    two_pin(s, 'R13', 'R', '0R', 205.74, 269.24, '+3V3', '3V3_PERIPH', R0603)
-    two_pin(s, 'R14', 'R', '100k', 147.32, 276.86, 'PERIPH_EN', 'GND', R0402, dnp=True)
-    two_pin(s, 'C14', 'C', '1nF', 215.9, 269.24, 'LS_CT', 'GND', C0402, dnp=True)
+    two_pin(s, 'R13', 'R', '0R', 205.74, 269.24, '+3V3', '3V3_PERIPH', R0603, dnp=True)
+    two_pin(s, 'R14', 'R', '100k', 147.32, 276.86, 'PERIPH_EN', 'GND', R0402)
+    two_pin(s, 'C14', 'C', '1nF', 215.9, 269.24, 'LS_CT', 'GND', C0402,
+            fields={'Voltage': '25V X7R (CT pin can reach 12V)'})
 
     # ---- bring-up test points -------------------------------------------------------------
     s.text('Bring-up test points (one per rail).', 20.32, 228.6)

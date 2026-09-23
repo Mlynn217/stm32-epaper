@@ -469,9 +469,13 @@ Next steps, in order:
         TS_SENSE (V = 75 µA × R_NTC; NCP15XH103: ~5.2k at 43 °C, ~4.7k at 46 °C), assert
         CHG_DIS above ~43 °C with a few degrees of hysteresis. The charger's own 0/50 °C window
         still applies with the MCU off.
-  - [ ] **Fit the peripheral load switch on v1?** With R13 bypassing U4, SDRAM/microSD/QSPI stay
-        powered in STANDBY, a ~2–20 mA idle floor (~70 mAh/day idle). Fitting the TPS22965
-        drops idle to ~0.5–2 mAh/day. Recommended; not yet decided.
+  - [x] **Peripheral load switch fitted on v1** (2026-09-23): U4 TPS22965 populated, R13 bypass
+        DNP, R14 100k pull-down on PERIPH_EN (off at reset / in STANDBY), CT 1 nF 25 V (~1.3 ms
+        rise, ~50 mA inrush). Cuts the idle floor from ~2–20 mA to µA.
+  - [ ] **Firmware: peripheral rail sequencing** — PERIPH_EN (PD7) high before FMC/QSPI/SDIO
+        init; before dropping it, put those pins in analog/low (no back-powering); on re-enable,
+        redo the SDRAM JEDEC init and re-mount SD. Idle policy: STOP + SDRAM self-refresh
+        between page turns, STANDBY + rail off after a few minutes idle.
   - [ ] **Soft power / EN control** — TPS63802 EN is currently just the undervoltage divider. The
         power-button scheme (if the button should cut the rail, not just wake the MCU) has to
         combine with it.

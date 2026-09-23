@@ -16893,7 +16893,7 @@
 			)
 		)
 	)
-	(text "RESERVED for low-power v2 (README \"Sleep current\"): TPS22965 gating 3V3_PERIPH\n(SDRAM, microSD). v1: U4/R14/C14 DNP, R13 0R bypass fitted."
+	(text "TPS22965 load switch gating 3V3_PERIPH (SDRAM, QSPI, microSD) - FITTED on v1: without\nit those parts stay powered in STANDBY (~2-20mA idle floor). ON = PERIPH_EN (PD7) with a\n100k pull-down, so the rail is OFF at reset and in STANDBY (GPIO hi-Z) automatically.\nCT 1nF (25V, per datasheet) -> ~1.3ms rise at 3.3V -> ~50mA inrush into ~21uF of load\ndecoupling (no dip on +3V3). QOD: 225R discharges the rail when off. R13 = 0R bypass\n(DNP fallback). FIRMWARE: raise PERIPH_EN before FMC/QSPI/SDIO init; before dropping it,\nset those pins to analog/low so the MCU does not back-power the unpowered parts."
 		(exclude_from_sim no)
 		(at 137.16 236.22 0)
 		(effects
@@ -16911,7 +16911,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp yes)
+		(dnp no)
 		(uuid "62e29c92-65c6-58b9-9356-fd5cc672b382")
 		(property "Reference" "U4"
 			(at 170.18 254 0)
@@ -17336,7 +17336,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp no)
+		(dnp yes)
 		(uuid "6546c7aa-0a13-5449-9b0d-29566f79ec02")
 		(property "Reference" "R13"
 			(at 207.772 269.24 90)
@@ -17555,7 +17555,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp yes)
+		(dnp no)
 		(uuid "4d531d18-ded8-5328-a01e-473bcb3b5fdd")
 		(property "Reference" "R14"
 			(at 149.352 276.86 90)
@@ -17731,7 +17731,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp yes)
+		(dnp no)
 		(uuid "be9c9da0-f048-5bf8-a421-090a85f18ff2")
 		(property "Reference" "C14"
 			(at 216.535 266.7 0)
@@ -17770,6 +17770,15 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 215.9 269.24 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Voltage" "25V X7R (CT pin can reach 12V)"
 			(at 215.9 269.24 0)
 			(hide yes)
 			(effects

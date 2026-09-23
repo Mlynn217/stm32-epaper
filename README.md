@@ -264,17 +264,20 @@ over-discharge. Protection is layered:
 **Sleep current:** the regulator's own draw is now ~11 µA (TPS63802), down from ~50 µA for the
 TPS63070 it replaced. Total design floor ≈ 11 µA (TPS63802) + ~1.1 µA (cutoff divider) + ~2 µA
 (battery sense divider) + ~1.6 µA (RTC LDO) + ~2.4 µA (MCU standby) + CAP1188 (5 µA deep sleep,
-~50 µA if it watches for a touch). That's before SDRAM self-refresh (~2 mA max) if the SDRAM is
-kept alive. The
-target is <10 µA (not a v1 priority), via a two-rail power island:
-- A **TPS63900** nanopower buck-boost (75 nA quiescent) as an always-on `3V3_AON` rail for the MCU
-  and CAP1188. It replaced the earlier MAX17222 idea: that part is boost-only and can't bring a
-  full cell down to 3.3 V.
-- The TPS63802 rail for the peripherals (SDRAM, microSD), gated behind a TPS22965 load switch.
+~50 µA if it watches for a touch). That's with the peripheral rail switched off; keeping the SDRAM
+in self-refresh instead adds ~2 mA max.
 
-E-ink keeps its image without power, so this allows near-complete peripheral shutdown between page
-turns. **Both are reserved on the v1 PCB as unpopulated footprints, with 0Ω links fitted. Don't
-redesign the power tree to chase this for v1.**
+**Peripheral load switch: fitted on v1** (decided 2026-09-23).
+- **What it does:** a TPS22965 gates `3V3_PERIPH` (SDRAM, QSPI flash, microSD). Without it those
+  parts stay powered in STANDBY, a ~2–20 mA idle floor (~70 mAh/day). With it, idle is ~0.5–2 mAh/day,
+  which means months on the shelf.
+- **Firmware policy:** STOP with SDRAM self-refresh between page turns; STANDBY with the peripheral
+  rail off after a few minutes idle, reloading the book from SD on wake.
+
+**Still reserved for v2** (target < 10 µA): a **TPS63900** nanopower buck-boost (75 nA quiescent)
+as an always-on `3V3_AON` rail for the MCU and CAP1188. It replaced the earlier MAX17222 idea: that
+part is boost-only and can't bring a full cell down to 3.3 V. It's an unpopulated footprint on v1,
+with `3V3_AON` fed from +3V3 through a fitted 0Ω link.
 
 ### Connectivity & Debug
 
@@ -341,11 +344,19 @@ it:
   VBAT follows the cell (VBAT minimum is 1.65 V).
 - **Battery sense:** 1M/1M from the cell → `VBAT_SENSE` (100 nF) → PA3 / ADC1_IN3, for the firmware
   cutoff and fuel estimate.
-- **Reserved, DNP:**
-  - TPS63900 always-on rail, CFG3 = 16.2k → 3.3 V. `3V3_AON` is fed from +3V3 through the fitted
-    0Ω R18 on v1. **The MCU sheet should power the MCU and CAP1188 from `3V3_AON`**, so v2 only needs
-    a BoM change.
-  - TPS22965 load switch for `3V3_PERIPH`, with a fitted 0Ω bypass (R13).
+- **Peripheral load switch (fitted):** TPS22965 (U4) from +3V3 to `3V3_PERIPH`.
+  - ON = `PERIPH_EN` (PD7) with a 100k pull-down, so the rail is off at reset and switches off by
+    itself in STANDBY (the GPIO goes high-impedance).
+  - CT = 1 nF, rated 25 V (the CT pin can reach 12 V) → ~1.3 ms rise → ~50 mA inrush into ~21 µF of
+    downstream decoupling, so +3V3 doesn't dip.
+  - The built-in 225 Ω quick-discharge pulls the rail down when off. R13 (0 Ω bypass) is DNP,
+    kept as a fallback.
+  - **Firmware:** raise `PERIPH_EN` before the FMC/QSPI/SDIO init. Before dropping it, set those
+    pins to analog or low so the MCU doesn't back-power the unpowered parts. After re-enabling,
+    re-run the SDRAM JEDEC init sequence and re-mount the SD card.
+- **Reserved, DNP:** TPS63900 always-on rail, CFG3 = 16.2k → 3.3 V. `3V3_AON` is fed from +3V3
+  through the fitted 0Ω R18 on v1. **The MCU sheet powers the MCU and CAP1188 from `3V3_AON`**, so v2
+  only needs a BoM change.
 - **Off-sheet connections:** signals leaving the sheet are global labels: `USB_DP`, `USB_DM`,
   `CHG_STAT`, `CHG_DIS`, `TS_SENSE`, `3V3_PG`, `EPD_5V_EN`, `VBAT_RTC`, `VBAT_SENSE`, `PERIPH_EN`. Rails are power symbols: `VBUS`,
   `VSYS`, `+BATT`, `+3V3`, `+5V`, `3V3_AON`, `3V3_PERIPH`, `GND`.
