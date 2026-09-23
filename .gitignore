@@ -82,3 +82,6 @@ fp-info-cache
 _autosave-*
 ~*.lck
 __pycache__/
+
+# Enclosure build outputs (regenerate with hardware/enclosure/build.py)
+hardware/enclosure/out/

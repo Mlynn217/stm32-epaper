@@ -1,0 +1,4 @@
+build123d>=0.13
+ocp_vscode>=4.1
+matplotlib>=3.9
+ocp_viewer>=1.0
