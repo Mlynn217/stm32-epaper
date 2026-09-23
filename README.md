@@ -179,12 +179,27 @@ was). It needs:
 
 ### Power Architecture
 
-**Cell chemistry: LiFePO4 (LFP).** Chosen over standard LiPo for safety (no thermal runaway below
-~270°C, vs ~150°C for LiCoO2), 2000–3000 cycle life, and a flat discharge curve. The trade-offs:
-- Lower energy density (~120 Wh/kg vs ~200 for LiPo).
-- 3.2 V nominal means an LDO alone can't hold 3.3 V across the full discharge range, so a
-  buck-boost is mandatory.
-- The flat curve makes voltage-based fuel gauging nearly useless (see TODO.md).
+**Cell chemistry: 1-cell LiPo pouch (3.7 V nominal, 4.2 V full), with a protection board.**
+Switched from LiFePO4 on 2026-09-23. Small, flat LFP pouches turned out to be practically
+unobtainable in the US: sample requests to overseas cell makers only. Protected LiPo pouches with
+JST-PH 2.0 leads are stocked everywhere (Adafruit, SparkFun, DigiKey). What each chemistry offers:
+
+| | LiFePO4 (previous choice) | LiPo (now) |
+|---|---|---|
+| Thermal runaway onset | ~270 °C | ~150 °C |
+| Cycle life | 2000–3000 | ~300–500 |
+| Energy density | lower | ~2× |
+| Flat pouches in the US | poor | excellent |
+| Discharge curve | flat (voltage says little about charge) | sloped (voltage is a usable fuel estimate) |
+
+The safety gap is handled the way phones and e-readers handle it:
+- A protected cell.
+- A charger that watches cell temperature through an NTC and refuses to charge outside ~0–50 °C.
+- An undervoltage cutoff.
+- A sensible enclosure: leave room for the pouch to swell.
+
+~300–500 cycles is still years of use for a reader charged every few weeks. The cell swings from
+~3.0 V to 4.2 V, which is both above and below 3.3 V, so the buck-boost is still needed.
 
 Running the whole system at 1.8 V was evaluated and rejected: the SDRAM and the HAT need 3.3 V/5 V
 anyway, so a 1.8 V MCU rail would still need a 3.3 V converter for peripherals, plus level shifters,
@@ -192,36 +207,37 @@ for no real gain.
 
 **Power tree, v1 (external Waveshare HAT):**
 ```
-USB-C VBUS ──► MCP73123 ──► LiFePO4 cell (2.5–3.65V)       LFP charger (3.6V CV, NOT 4.2V)
-VBUS ──Schottky──┐                                         load sharing (AN1149): USB feeds the
-cell ──P-FET─────┴──► VSYS                                  system directly when present
-VSYS ──► TPS63802 buck-boost → 3.3V                         STM32, SDRAM, QSPI, microSD, CAP1188, encoder, buttons
-           └── EN = VSYS divider: OFF < ~2.80V, ON > ~3.08V (undervoltage cutoff)
-VSYS ──► TPS61023 boost → 5V                                external Waveshare HAT (MCU-enabled)
-cell ──► Schottky → MCU VBAT                                RTC backup + firmware battery measurement
+USB-C VBUS ──► BQ24073 charger + power path ──► VSYS (4.4V regulated with USB; = cell on battery)
+                      └──► LiPo cell (3.0–4.2V)          4.2V CV, NTC-qualified, ~500mA
+VSYS ──► TPS63802 buck-boost → 3.3V                        STM32, SDRAM, QSPI, microSD, CAP1188, encoder, buttons
+           └── EN = VSYS divider: OFF < ~3.20V, ON > ~3.52V (undervoltage cutoff)
+VSYS ──► TPS61023 boost → 5V                               external Waveshare HAT (MCU-enabled)
+cell ──► MCP1700 3.0V LDO → MCU VBAT                       RTC backup
+cell ──► 1M/1M divider → PA3 (ADC)                         firmware battery measurement
 ```
 
-**Battery protection (undervoltage).** The MCP73123 only charges; it does **nothing** to stop
+**Battery protection (undervoltage).** The charger only charges; it does **nothing** to stop
 over-discharge. Protection is layered:
-1. **Firmware (primary).** Measure the cell through the STM32's internal VBAT ADC channel (the VBAT
-   pin is fed from the cell through the RTC Schottky, so allow for the diode drop). At ~3.0 V, shut
-   down gracefully: save state, leave a "please charge" screen on the e-ink (it holds with no
-   power), then enter standby.
+1. **Firmware (primary).** Measure the cell on `VBAT_SENSE` (PA3, 1M/1M divider, ~2 µA). At about
+   3.4 V under light load, shut down gracefully: save state, leave a "please charge" screen on the
+   e-ink (it holds with no power), then enter standby. LiPo's sloped curve makes this voltage a
+   reasonable fuel estimate too.
 2. **Hardware backstop.** The TPS63802's EN pin has a precise threshold (1.10 V rising / 1.00 V
-   falling). A 1.8 MΩ/1.0 MΩ divider from VSYS therefore turns the 3.3 V rail off below ~2.80 V and
-   back on above ~3.08 V (±3%), costing ~1.2 µA. This catches a hung firmware or a drain during
-   sleep.
-3. **Cell level (recommended).** Buy the LFP cell with a protection board (PCM). Only a PCM truly
-   disconnects the cell, stopping the remaining µA leakage (RTC, divider) and protecting against
-   shorts.
+   falling). A 2.2 MΩ/1.0 MΩ divider from VSYS turns the 3.3 V rail off below ~3.20 V and back on
+   above ~3.52 V (±3%), costing ~1.1 µA. This catches a hung firmware or a drain during sleep.
+3. **Cell protection board (required).** Buy only protected cells. The protection board is the
+   only thing that truly disconnects the cell (typically ~2.5–3.0 V), and it also handles shorts
+   and overcurrent.
 
 **Sleep current:** the regulator's own draw is now ~11 µA (TPS63802), down from ~50 µA for the
-TPS63070 it replaced. Total design floor ≈ 11 µA (TPS63802) + ~1.2 µA (cutoff divider) + ~2.4 µA
-(MCU standby) + ~1 µA (CAP1188 sleep), before SDRAM self-refresh if the SDRAM is kept alive. The
+TPS63070 it replaced. Total design floor ≈ 11 µA (TPS63802) + ~1.1 µA (cutoff divider) + ~2 µA
+(battery sense divider) + ~1.6 µA (RTC LDO) + ~2.4 µA (MCU standby) + CAP1188 (5 µA deep sleep,
+~50 µA if it watches for a touch). That's before SDRAM self-refresh (~2 mA max) if the SDRAM is
+kept alive. The
 target is <10 µA (not a v1 priority), via a two-rail power island:
 - A **TPS63900** nanopower buck-boost (75 nA quiescent) as an always-on `3V3_AON` rail for the MCU
   and CAP1188. It replaced the earlier MAX17222 idea: that part is boost-only and can't bring a
-  3.65 V cell down to 3.3 V.
+  full cell down to 3.3 V.
 - The TPS63802 rail for the peripherals (SDRAM, microSD), gated behind a TPS22965 load switch.
 
 E-ink keeps its image without power, so this allows near-complete peripheral shutdown between page
@@ -235,7 +251,7 @@ redesign the power tree to chase this for v1.**
 | USB-C connector | GCT USB4105-GF-A | Charging + USB FS data to the MCU (DFU/CDC). *Not* SWD: USB can't carry SWD on its own |
 | ESD protection | USBLC6-2SC6 (SOT-23-6) | On USB-C D+/D− and VBUS |
 | SWD debug header | TC2050-IDC (Tag-Connect) | No pins on the production board |
-| Battery connector | JST-PH 2.0 2-pin | Pin 1 = +. LFP lead polarity isn't standardised, so check against the actual cell |
+| Battery connector | JST-PH 2.0 2-pin | Pin 1 = +. Lead polarity isn't standardised across LiPo vendors, so check against the actual cell before plugging it in |
 | Waveshare HAT connector | TBD (peripheral sheet) | SPI + HRDY + RST + 5V + GND |
 
 ### Clocks & Passives
@@ -253,16 +269,22 @@ redesign the power tree to chase this for v1.**
 `hardware/kicad/power.kicad_sch` implements the v1 power tree above. Details decided while drawing
 it:
 
-- **Load sharing (Microchip AN1149):** VBUS → Schottky (D1) → VSYS. An AO3401A P-FET (Q1, gate on
-  VBUS, 10k pull-down) connects the cell to VSYS only when USB is absent. Without it the system
-  load would draw through the charger and confuse its charge termination. The pull-down is 10k
-  rather than the app note's 100k, so D1's reverse leakage when hot can't lift Q1's gate.
-- **Charge current:** R_PROG = 2.37k → ~495 mA (MCP73123 Eq. 5-1: I = 1104·R^-0.93). Adjust it to
-  the chosen cell. The linear charger dissipates ~0.9 W at that current, so it needs thermal vias
-  under the exposed pad. The MCP73123 has **no thermistor input**, so it can't block charging below
-  0 °C (which damages LFP). That's acceptable for an indoor device, but it's a known gap.
-- **Charge status:** a red LED from VBUS to STAT (works with the MCU off), plus `CHG_STAT` to the
-  MCU. That must go to a 5V-tolerant (FT) pin, because the LED path lets the line float up toward
+- **Charger: TI BQ24073** (SLUS810N), 1-cell Li-ion with a built-in power path:
+  - **Power path:** `OUT` (= VSYS) is regulated to 4.4 V while USB is present, which keeps the
+    5.5 V-max TPS63802 and TPS61023 safe. The battery supplements OUT when the load exceeds the
+    input limit. This replaced the earlier discrete load-sharing FET and Schottky diode.
+  - **Charge current:** R_ISET = 1.78k → 890/1.78k ≈ **500 mA**, 0.4–0.5C for a 1–1.2 Ah cell.
+    Retune for the chosen cell.
+  - **Input current:** EN2 = 0, EN1 = 1 (pulled up to VBUS) → **USB500**, the USB-C default,
+    because the board doesn't read the source's CC advertisement. R_ILIM = 1.54k (1.0 A) must be
+    fitted anyway: an open ILIM disables charging.
+  - **Temperature:** TS goes to an **on-board 10k NTC** (NCP15XH103, placed touching the cell),
+    because off-the-shelf LiPos have no thermistor lead. Charging is blocked outside ~0–50 °C.
+    If the chosen cell has a 3-wire thermistor lead, use that instead.
+  - **Other pins:** CE and TD are low (charging and termination enabled). TMR is open (default
+    safety timers). PGOOD is unused; VBUS sensing is on PA9 instead.
+- **Charge status:** a red LED from VBUS to CHG (works with the MCU off), plus `CHG_STAT` to the MCU.
+  That must go to a 5V-tolerant (FT) pin, because the LED path lets the line float up toward
   VBUS.
 - **USB-C:** sink-only (5.1k Rd on each CC). A USBLC6-2SC6 protects D+/D−, which go to the MCU as
   `USB_DP`/`USB_DM` (OTG_FS).
@@ -271,15 +293,18 @@ it:
   undecided and will have to work alongside this divider.
 - **TPS61023 → +5V (external HAT):** 732k/100k → 4.99 V. EN is `EPD_5V_EN` from the MCU, with a 1M
   pull-down. It truly disconnects in shutdown, so the HAT is fully unpowered until enabled.
-- **RTC:** cell → BAT54J → `VBAT_RTC`. A full 3.65 V cell minus the diode drop stays under the VBAT
-  pin's 3.6 V max.
+- **RTC:** cell → MCP1700 3.0 V LDO (1.6 µA quiescent) → `VBAT_RTC`. A full LiPo (4.2 V) minus a
+  Schottky drop would still exceed the VBAT pin's 3.6 V max. Below ~3.2 V the LDO drops out and
+  VBAT follows the cell (VBAT minimum is 1.65 V).
+- **Battery sense:** 1M/1M from the cell → `VBAT_SENSE` (100 nF) → PA3 / ADC1_IN3, for the firmware
+  cutoff and fuel estimate.
 - **Reserved, DNP:**
   - TPS63900 always-on rail, CFG3 = 16.2k → 3.3 V. `3V3_AON` is fed from +3V3 through the fitted
     0Ω R18 on v1. **The MCU sheet should power the MCU and CAP1188 from `3V3_AON`**, so v2 only needs
     a BoM change.
   - TPS22965 load switch for `3V3_PERIPH`, with a fitted 0Ω bypass (R13).
 - **Off-sheet connections:** signals leaving the sheet are global labels: `USB_DP`, `USB_DM`,
-  `CHG_STAT`, `3V3_PG`, `EPD_5V_EN`, `VBAT_RTC`, `PERIPH_EN`. Rails are power symbols: `VBUS`,
+  `CHG_STAT`, `3V3_PG`, `EPD_5V_EN`, `VBAT_RTC`, `VBAT_SENSE`, `PERIPH_EN`. Rails are power symbols: `VBUS`,
   `VSYS`, `+BATT`, `+3V3`, `+5V`, `3V3_AON`, `3V3_PERIPH`, `GND`.
 
 ### MCU, Memory and Peripherals Sheets (drafted in KiCad)
@@ -299,11 +324,12 @@ working:
 | Encoder | TIM3 CH1/CH2 on PA6/PA7 (encoder mode) | Switch on PD3 (EXTI3) |
 | Power button | PA0 = WKUP | Wakes from standby on a **rising** edge, so the button pulls up |
 | Power-sheet signals | CHG_STAT PD4, 3V3_PG PD5, PERIPH_EN PD7 | |
+| Battery sense | PA3 = ADC1_IN3 (`VBAT_SENSE`) | 1M/1M divider from the cell |
 | USB OTG FS | PA11/PA12, VBUS sense PA9 through 1k | |
 | Debug | SWD PA13/PA14, SWO PB3 | Tag-Connect TC2050-IDC-NL pads, pinned 1:1 like the standard ARM 10-pin connector |
 | Status LED | PG6 | |
 
-All 83 assigned pins were checked in two ways: automatically against the KiCad symbol's
+All 84 assigned pins were checked in two ways: automatically against the KiCad symbol's
 alternate-function list, and by hand against the LQFP176 pin table in ST's DS11189. Every signal
 that can see more than 3.3 V (VBUS sense, CHG_STAT) is on a 5V-tolerant (FT) pin.
 
@@ -366,8 +392,8 @@ ERC alone isn't enough: it missed a real VSYS↔+3V3 short in the first draft (s
 ### Full System Block Diagram (v1)
 
 ```
-USB-C ──VBUS──► MCP73123 ──charge──► LiFePO4 cell
-VBUS / cell ──(load sharing)──► VSYS ──► TPS63802 ──3.3V──► STM32F469IIT6
+USB-C ──VBUS──► BQ24073 (charger + power path) ◄──► LiPo cell
+                     └──► VSYS ──► TPS63802 ──3.3V──► STM32F469IIT6
                                                    ├──────────────► IS42S16400J  (FMC, 8 MB)
                                                    ├──────────────► W25Q128JV    (QSPI)
                                                    ├──────────────► microSD slot (SDIO)
@@ -381,8 +407,9 @@ STM32F469 ◄──SWD── TC2050 pads
 USB-C D+/D− ──► STM32F469 OTG_FS
 ```
 
-**Known gotcha:** an LFP charger must terminate at 3.6 V, not 4.2 V. The MCP73123 is correct; do
-not substitute an MCP73831 (4.2 V termination, will damage LFP cells).
+**Known gotcha:** the charger voltage must match the chemistry. The BQ24073 (4.2 V) is correct for
+LiPo. If the design ever goes back to LiFePO4, the charger must change too (3.6 V; the earlier
+design used an MCP73123). A 4.2 V charger on an LFP cell, or a 3.6 V one on LiPo, is wrong.
 
 ## Architecture / Approach
 

@@ -76,6 +76,7 @@ PINMAP = [
     ('PD4', 'CHG_STAT', None),  # FT: the charge LED path lets it float toward VBUS
     ('PD5', '3V3_PG', None),
     ('PD7', 'PERIPH_EN', None),
+    ('PA3', 'VBAT_SENSE', 'ADC1_IN3'),  # cell voltage via 1M/1M divider on the Power sheet
     # Misc
     ('PG6', 'LED_STATUS', None),
     ('PB2', 'BOOT1', None),  # BOOT1: pulled low so BOOT0=1 selects the system (DFU) bootloader
@@ -154,7 +155,6 @@ def build():
             fields={'Note': 'ESR < 2 ohm'})
     two_pin(s, 'C121', 'C', '2.2uF', x + 101.6, 96.52, 'VCAP2', 'GND', C0402,
             fields={'Note': 'ESR < 2 ohm'})
-    flag(s, 'VBAT_RTC', x + 111.76, 88.9)
 
     # ---- clocks ----------------------------------------------------------------------------
     s.text('HSE 8MHz (PLL -> 180MHz). Load caps C = 2*(CL - Cstray): for a CL = 10pF crystal\n'

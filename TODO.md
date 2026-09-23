@@ -420,7 +420,12 @@ See README.md's [Custom PCB (Planned)](README.md#custom-pcb-planned) section for
 power tree, board scope and alternatives considered. **BoM review done 2026-09-22.** Decisions:
 - v1 keeps the Waveshare HAT external on an SPI connector; the bare IT8951 moves to a later revision.
 - TPS63070 → TPS63802 (starts from 1.8 V instead of 3.0 V; 11 µA quiescent instead of 50 µA).
-- MAX17222 → TPS63900 (the MAX17222 is boost-only and can't regulate a 3.65 V cell down to 3.3 V).
+- MAX17222 → TPS63900 (the MAX17222 is boost-only and can't regulate a full cell down to 3.3 V).
+- **2026-09-23: cell chemistry LiFePO4 → 1-cell LiPo pouch** (small flat LFP pouches aren't
+  buyable in the US; protected LiPo pouches with JST-PH leads are). Power sheet changes:
+  MCP73123 + discrete load sharing → BQ24073 (4.2 V, power path with OUT regulated to 4.4 V,
+  on-board NTC); RTC backup via an MCP1700 3.0 V LDO (a full LiPo exceeds VBAT's 3.6 V max);
+  new 1M/1M `VBAT_SENSE` divider to PA3; UVLO divider 2.2M/1M (off ~3.20 V, on ~3.52 V).
 - STM32F469IIT6 (LQFP176); W25Q128JV QSPI flash; PEC11R-4215F-S0024 encoder (24 detents).
 - Layered undervoltage protection added (see README "Battery protection").
 - Corrections: the IS42S16400J is 8 MB, not 16 MB. The bare IT8951 needs a 1.8 V core supply
@@ -431,7 +436,7 @@ Next steps, in order:
       Power, MCU (STM32F469IIT6 LQFP176), Memory (SDRAM/QSPI/microSD) and Peripherals (HAT header,
       CAP1188, PEC11R, power button). ERC reports 0 violations; `hardware/scripts/check_schematic.py`
       checks nets, pin mux, memory buses, single-connection nets and footprint pads (187 nets, 83
-      MCU pins, 604 pin/pad connections OK). All 83 pin numbers were also cross-checked by hand
+      MCU pins, 604 pin/pad connections OK; 190 nets / 84 pins after the LiPo swap). All pin numbers were also cross-checked by hand
       against DS11189. README "MCU, Memory and Peripherals Sheets" has the decisions. **Not yet
       reviewed by a person.** Power-sheet open items:
   - [x] **TPS63802 footprint** — built from TI's DLA0010A land pattern (`epaper.pretty`).
@@ -441,31 +446,35 @@ Next steps, in order:
         the stock 2016 footprint, which needs checking against the part's land pattern. L2 is a
         placeholder DFE201610P 1 µH; check its saturation current against the TPS61023's 3.7 A
         limit. L3 (TPS63900, DNP) is still to be chosen.
-  - [ ] **Undervoltage cutoff thresholds** — R6/R15 = 1.8M/1.0M on TPS63802 EN (off below ~2.80 V,
-        on above ~3.08 V). Check against the chosen cell's datasheet, and check that the ~3.08 V
-        turn-on doesn't cause restart cycling as a nearly empty cell recovers after load
-        is removed.
-  - [ ] **Firmware battery measurement + graceful shutdown** — read the cell through the STM32's
-        internal VBAT ADC channel (VBAT_RTC, one Schottky drop below the cell; calibrate the offset).
-        At ~3.0 V: save state, draw a "please charge" screen, enter standby.
-  - [ ] **Choose the cell** — capacity and format; prefer an LFP cell **with a protection board**
-        (the only true disconnect for over-discharge and shorts). Charge current R_PROG follows
-        from it.
+  - [ ] **Undervoltage cutoff thresholds** — R6/R15 = 2.2M/1.0M on TPS63802 EN (off below ~3.20 V,
+        on above ~3.52 V). Check against the chosen cell's protection-board cutoff, and check
+        that a nearly empty cell recovering after the load is removed doesn't cause restart
+        cycling.
+  - [ ] **Firmware battery measurement + graceful shutdown** — read `VBAT_SENSE` (PA3, ADC1_IN3,
+        cell/2). At ~3.4 V under light load: save state, draw a "please charge" screen, enter
+        standby. LiPo's sloped curve also makes this a usable fuel estimate (see Fuel gauge).
+  - [ ] **Choose the cell** — a protected 1-cell LiPo pouch with a JST-PH 2.0 lead, ~1.0–1.5 Ah
+        (see the current estimate in README "Power Architecture"). Then set R_ISET for the
+        charge current (currently ~500 mA) and confirm the pouch dimensions for the enclosure,
+        allowing ~0.5 mm for swelling.
+  - [ ] **Fit the peripheral load switch on v1?** With R13 bypassing U4, SDRAM/microSD/QSPI stay
+        powered in STANDBY, a ~2–20 mA idle floor (~70 mAh/day idle). Fitting the TPS22965
+        drops idle to ~0.5–2 mAh/day. Recommended; not yet decided.
   - [ ] **Soft power / EN control** — TPS63802 EN is currently just the undervoltage divider. The
         power-button scheme (if the button should cut the rail, not just wake the MCU) has to
         combine with it.
   - [ ] **TPS63900 EN (v2)** — its EN is a plain logic input (no precise threshold), so when the
         always-on rail is fitted it needs its own undervoltage cutoff.
-  - [ ] **Battery connector polarity** — J2 pin 1 = +. LFP pouch cells with JST-PH leads aren't
-        consistent; confirm against the actual cell.
+  - [ ] **Battery connector polarity** — J2 pin 1 = +. JST-PH lead polarity isn't consistent
+        across LiPo vendors; confirm against the actual cell before plugging it in.
   - [ ] **USB-C shield** — tied straight to GND for now; decide on an RC/ferrite.
-  - [ ] **Fuel gauge** — LFP's flat voltage curve makes voltage-based charge estimates nearly
-        useless, so a real % gauge needs coulomb counting. MAX17261 (in KiCad's stock library) is
-        a candidate; check its LFP support. Firmware VBAT reading is enough for the cutoff, not
-        for a % display.
-  - [ ] **No cold-charge protection** — the MCP73123 has no thermistor input. Accept that (indoor
-        device), or add firmware gating via `PROG` (a floating PROG disables charging) plus a
-        temperature sensor.
+  - [ ] **Fuel gauge** — with LiPo, the `VBAT_SENSE` voltage gives a rough % from a lookup
+        table, which may be enough. For an accurate % (load- and age-compensated), add a
+        gauge IC; MAX17261 is in KiCad's stock library.
+  - [x] **Cold-charge protection** — solved by the switch to LiPo: the BQ24073's TS input with an
+        on-board NTC blocks charging outside ~0–50 °C. Place RT1 against the cell at layout.
+  - [ ] **NTC coupling** — RT1 is a 0402 on the board. It only protects the cell if it's thermally
+        coupled to it (under or against the pouch). Settle at layout/enclosure.
       Gotcha found while building it: a **hidden `power_in` pin in a KiCad symbol creates an
       implicit global net named after the pin**. The first draft's stacked duplicate VIN pins
       silently shorted VSYS to +3V3. Only the netlist check caught it; ERC just printed a

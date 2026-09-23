@@ -1,10 +1,11 @@
-"""Power sheet: USB-C input, LFP charger, load sharing, 3V3/5V converters, RTC backup, reserved
+"""Power sheet: USB-C input, LiPo charger with power path, 3V3/5V converters, RTC backup, reserved
 low-power islands. See README "Power Sheet (drafted in KiCad)" for the design decisions."""
 from common import C0402, C0603, C0805, R0402, R0603, flag, new_sheet, two_pin
 
 # Signals that leave this sheet for the (future) MCU sheet.
 GLOBAL = {'USB_DP': 'bidirectional', 'USB_DM': 'bidirectional', 'CHG_STAT': 'output',
-          '3V3_PG': 'output', 'EPD_5V_EN': 'input', 'VBAT_RTC': 'output', 'PERIPH_EN': 'input'}
+          '3V3_PG': 'output', 'EPD_5V_EN': 'input', 'VBAT_RTC': 'output', 'PERIPH_EN': 'input',
+          'VBAT_SENSE': 'output'}
 
 
 def build():
@@ -33,59 +34,77 @@ def build():
     flag(s, 'VBUS', 91.44, 50.8)
     flag(s, 'GND', 114.3, 50.8)
 
-    # ---- LiFePO4 charger ---------------------------------------------------------------
-    s.text('MCP73123-22S/MF: LiFePO4 linear charger, 3.6V CV (NOT MCP73831 — 4.2V kills LFP).\n'
-           'R_PROG 2.37k -> I_REG = 1104*R^-0.93 = ~495mA (DS22191E Eq. 5-1). Pick to suit cell.\n'
-           'Dissipation ~ (5V-3.2V)*0.5A = 0.9W: needs thermal vias under EP.\n'
-           'STAT: LED from VBUS (works with MCU off) + CHG_STAT to an FT (5V-tolerant) GPIO.',
+    # ---- LiPo charger with power path ---------------------------------------------------
+    s.text('BQ24073 1-cell Li-ion/LiPo charger with power path (TI SLUS810N): 4.2V CV, OUT =\n'
+           'VSYS regulated to 4.4V with USB present (keeps the 5.5V-max converters safe), battery\n'
+           'supplement when the load exceeds the input limit, 6.6V input OVP.\n'
+           'ISET 1.78k -> 890/1.78k = ~500mA charge (0.4-0.5C for a 1-1.2Ah cell; retune to cell).\n'
+           'EN2=0/EN1=1 -> USB500 input limit (USB-C default power, no CC advertisement read).\n'
+           'ILIM 1.54k (1.0A) must be fitted anyway: an open ILIM disables charging.\n'
+           'TS: on-board 10k NTC (place against the cell) - off-the-shelf LiPos have no NTC lead;\n'
+           'blocks charging outside ~0-50C. CE/TD low (charge + termination on), TMR open\n'
+           '(default safety timers). CHG: LED from VBUS + CHG_STAT to an FT GPIO.',
            137.16, 30.48)
-    u1 = s.part('U1', 'epaper:MCP73123', 'MCP73123-22S/MF', 177.8, 76.2,
-                fields={'MPN': 'MCP73123-22SI/MF'})
-    s.conns(u1, {'1': 'VBUS', '10': 'PROG', '5': None, '6': None, '3': '+BATT',
-                 '7': 'CHG_STAT', '8': 'GND', '11': 'GND'})
-    two_pin(s, 'C1', 'C', '4.7uF', 142.24, 104.14, 'VBUS', 'GND', C0603)
-    two_pin(s, 'R3', 'R', '2.37k 1%', 152.4, 104.14, 'PROG', 'GND', R0402)
-    two_pin(s, 'C2', 'C', '4.7uF', 203.2, 104.14, '+BATT', 'GND', C0603)
-    two_pin(s, 'R4', 'R', '1k', 213.36, 104.14, 'VBUS', 'CHG_LED', R0402)
-    d2 = s.part('D2', 'Device:LED', 'CHG (red)', 231.14, 88.9,
+    u1 = s.part('U1', 'Battery_Management:BQ24073RGT', 'BQ24073RGT', 177.8, 83.82,
+                fields={'MPN': 'BQ24073RGTR'})
+    s.conns(u1, {'13': 'VBUS', '2': '+BATT', '10': 'VSYS', '16': 'ISET', '12': 'ILIM',
+                 '1': 'TS', '9': 'CHG_STAT', '7': None, '5': 'GND', '6': 'CHG_EN1',
+                 '4': 'GND', '15': 'GND', '14': None, '8': 'GND', '17': 'GND'})
+    two_pin(s, 'C1', 'C', '4.7uF', 142.24, 111.76, 'VBUS', 'GND', C0603,
+            fields={'Voltage': '10V'})
+    two_pin(s, 'R3', 'R', '1.78k 1%', 152.4, 111.76, 'ISET', 'GND', R0402)
+    two_pin(s, 'R19', 'R', '1.54k 1%', 162.56, 111.76, 'ILIM', 'GND', R0402)
+    two_pin(s, 'R20', 'R', '100k', 132.08, 111.76, 'VBUS', 'CHG_EN1', R0402)
+    rt = s.part('RT1', 'Device:Thermistor_NTC', '10k NTC', 172.72, 111.76,
+                footprint='Resistor_SMD:R_0402_1005Metric',
+                fields={'MPN': 'NCP15XH103F03RC (10k, B=3380; TS thresholds assume 103AT, '
+                               'B=3435) - place touching the cell'})
+    s.conns(rt, {'1': 'TS', '2': 'GND'})
+    two_pin(s, 'C2', 'C', '10uF', 203.2, 111.76, '+BATT', 'GND', C0603,
+            fields={'Voltage': '10V'})
+    two_pin(s, 'C15', 'C', '10uF', 213.36, 111.76, 'VSYS', 'GND', C0603,
+            fields={'Voltage': '10V'})
+    two_pin(s, 'R4', 'R', '1k', 223.52, 111.76, 'VBUS', 'CHG_LED', R0402)
+    d2 = s.part('D2', 'Device:LED', 'CHG (red)', 241.3, 99.06,
                 footprint='LED_SMD:LED_0603_1608Metric')
     s.conns(d2, {'2': 'CHG_LED', '1': 'CHG_STAT'})
 
     # ---- RTC backup ---------------------------------------------------------------------
-    s.text('RTC backup: cell -> Schottky -> STM32 VBAT.\nFull LFP 3.65V - ~0.3V drop keeps '
-           'VBAT under its 3.6V max.', 266.7, 30.48)
-    d3 = s.part('D3', 'Device:D_Schottky', 'BAT54J', 287.02, 60.96,
-                footprint='Diode_SMD:D_SOD-323F', fields={'MPN': 'BAT54J,115'})
-    s.conns(d3, {'2': '+BATT', '1': 'VBAT_RTC'})
-    two_pin(s, 'C3', 'C', '100nF', 309.88, 68.58, 'VBAT_RTC', 'GND', C0402)
+    s.text('RTC backup: cell -> MCP1700 3.0V LDO (1.6uA Iq) -> STM32 VBAT.\n'
+           'A full LiPo (4.2V) minus a Schottky drop would still exceed VBAT\'s 3.6V max.\n'
+           'Below ~3.2V the LDO drops out and VBAT tracks the cell (VBAT min 1.65V).',
+           266.7, 30.48)
+    u7 = s.part('U7', 'Regulator_Linear:MCP1700x-300xxTT', 'MCP1700T-3002E/TT', 292.1, 68.58,
+                fields={'MPN': 'MCP1700T-3002E/TT'})
+    s.conns(u7, {'3': '+BATT', '2': 'VBAT_RTC', '1': 'GND'})
+    two_pin(s, 'C16', 'C', '1uF', 274.32, 81.28, '+BATT', 'GND', C0402)
+    two_pin(s, 'C3', 'C', '1uF', 314.96, 81.28, 'VBAT_RTC', 'GND', C0402)
 
-    # ---- Battery + load sharing ---------------------------------------------------------
-    s.text('Battery: JST-PH 2-pin (pin 1 = +). CHECK cell lead polarity — not standardised.\n'
-           'Load sharing (Microchip AN1149): with USB present, D1 feeds VSYS from VBUS and\n'
-           'Q1 is off, so the charger sees only the cell and terminates correctly.\n'
-           'On battery, R5 pulls Q1 gate low -> Q1 on, cell feeds VSYS. R5 = 10k (not 100k)\n'
-           'so D1 reverse leakage (tens of uA hot) cannot lift the gate and half-close Q1.',
+    # ---- Battery -----------------------------------------------------------------------
+    s.text('Battery: 1-cell LiPo pouch (3.7V nominal, 4.2V full) WITH a protection board,\n'
+           'JST-PH 2.0 lead. J2 pin 1 = + (Adafruit/SparkFun cells: check polarity before\n'
+           'plugging in - it is not standardised across vendors). Power path is inside U1,\n'
+           'so no discrete load-sharing parts are needed.',
            20.32, 129.54)
-    j2 = s.part('J2', 'Connector_Generic:Conn_01x02', 'BATT (LiFePO4)', 50.8, 170.18,
+    j2 = s.part('J2', 'Connector_Generic:Conn_01x02', 'BATT (1S LiPo)', 50.8, 170.18,
                 footprint='Connector_JST:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal')
     s.conns(j2, {'1': '+BATT', '2': 'GND'})
-
-    d1 = s.part('D1', 'Device:D_Schottky', 'PMEG2010AEH', 81.28, 154.94,
-                footprint='Diode_SMD:D_SOD-123F', fields={'MPN': 'PMEG2010AEH,115'})
-    s.conns(d1, {'2': 'VBUS', '1': 'VSYS'})
-    q1 = s.part('Q1', 'Transistor_FET:AO3401A', 'AO3401A', 86.36, 175.26)
-    s.conns(q1, {'1': 'VBUS', '2': 'VSYS', '3': '+BATT'})
-    two_pin(s, 'R5', 'R', '10k', 71.12, 195.58, 'VBUS', 'GND', R0402)
-    flag(s, 'VSYS', 106.68, 154.94)
+    s.text('Cell voltage sense for firmware (fuel estimate + graceful shutdown at ~3.4V):\n'
+           '1M/1M divider -> VBAT_SENSE (4.2V -> 2.1V) to PA3 / ADC1_IN3, 100nF for the ADC\n'
+           'sample. ~2uA continuous. (VBAT_RTC can no longer be used: it sits behind the 3.0V LDO.)',
+           20.32, 195.58)
+    two_pin(s, 'R21', 'R', '1M 1%', 81.28, 170.18, '+BATT', 'VBAT_SENSE', R0402)
+    two_pin(s, 'R22', 'R', '1M 1%', 91.44, 170.18, 'VBAT_SENSE', 'GND', R0402)
+    two_pin(s, 'C17', 'C', '100nF', 101.6, 170.18, 'VBAT_SENSE', 'GND', C0402)
 
     # ---- 3.3V buck-boost + battery undervoltage cutoff -----------------------------------
     s.text('TPS63802 buck-boost -> +3V3 (VOUT = 0.5V*(1+R7/R8) = 3.308V, datasheet Fig. 10-1).\n'
            'MODE low = power-save (PFM). Starts from VIN > 1.8V, 11uA Iq.\n'
            'UNDERVOLTAGE CUTOFF: EN has a precise threshold (1.10V rising / 1.00V falling), so\n'
-           'R6/R15 from VSYS turn the rail OFF below ~2.80V and back ON above ~3.08V (+-3%),\n'
-           '~1.2uA. Hardware backstop only: firmware should shut down gracefully first\n'
-           '(~3.0V, via the STM32 internal VBAT ADC channel on VBAT_RTC). The charger does NOT\n'
-           'protect against over-discharge. Footprint: project lib (TI DLA0010A land pattern).',
+           'R6/R15 (2.2M/1M) from VSYS turn the rail OFF below ~3.20V and back ON above\n'
+           '~3.52V (+-3%), ~1.1uA. Backstop only: firmware shuts down gracefully first (~3.4V,\n'
+           'measured via an ADC). The charger does NOT stop over-discharge; the cell\n'
+           'protection board is the last line. Footprint: project lib (TI DLA0010A).',
            137.16, 129.54)
     u2 = s.part('U2', 'epaper:TPS63802', 'TPS63802DLA', 177.8, 175.26,
                 fields={'MPN': 'TPS63802DLAR'})
@@ -95,7 +114,7 @@ def build():
             fields={'Voltage': '10V'})
     two_pin(s, 'C5', 'C', '10uF', 139.70, 210.82, 'VSYS', 'GND', C0603,
             fields={'Voltage': '10V'})
-    two_pin(s, 'R6', 'R', '1.8M 1%', 149.86, 210.82, 'VSYS', 'BB_EN', R0402)
+    two_pin(s, 'R6', 'R', '2.2M 1%', 149.86, 210.82, 'VSYS', 'BB_EN', R0402)
     two_pin(s, 'R15', 'R', '1M 1%', 160.02, 210.82, 'BB_EN', 'GND', R0402)
     two_pin(s, 'L1', 'L', '0.47uH', 180.34, 210.82, 'BB_L1', 'BB_L2',
             'Inductor_SMD:L_Murata_DFE201610P',

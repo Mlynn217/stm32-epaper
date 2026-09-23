@@ -1,7 +1,6 @@
 """Project-local symbols for parts missing from KiCad's stock libraries.
 
 Pin numbers/names are transcribed from the manufacturer datasheets:
-  MCP73123  Microchip DS22191E, Table 3-1 (DFN-10 3x3 "MF", EP = pin 11)
   TPS63802  TI SLVSEU9D, "Pin Functions" (VSON-HR 10-pin "DLA", no exposed pad)
   TPS63900  TI SLVSET3D, Table 5-1 (WSON-10 2.5x2.5 "DSK", thermal pad = pin 11)
   TPS61023  TI SLVSF14B, "Pin Functions" (SOT-563 "DRL")
@@ -15,24 +14,6 @@ which silently shorted every "VIN" in the design together in the first draft.
 """
 
 SYMBOLS = {
-    'MCP73123': dict(
-        ref='U', width=20.32, slots=6,
-        footprint='Package_DFN_QFN:DFN-10-1EP_3x3mm_P0.5mm_EP1.55x2.48mm',
-        datasheet='https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/22191E.pdf',
-        description='Single-cell LiFePO4 linear charger, 3.6V regulation, 6.5V OVP, DFN-10',
-        pins=[
-            ('1', 'VDD', 'power_in', 'L', 0, False),
-            ('2', 'VDD', 'power_in', 'L', 0, True),
-            ('10', 'PROG', 'passive', 'L', 3, False),
-            ('5', 'NC', 'no_connect', 'L', 5, False),
-            ('6', 'NC', 'no_connect', 'R', 5, False),
-            ('3', 'VBAT', 'power_out', 'R', 0, False),
-            ('4', 'VBAT', 'power_out', 'R', 0, True),
-            ('7', 'STAT', 'open_collector', 'R', 2, False),
-            ('8', 'VSS', 'power_in', 'B', 0, False),
-            ('9', 'VSS', 'power_in', 'B', 0, True),
-            ('11', 'EP', 'passive', 'B', 1, False),
-        ]),
     'TPS63802': dict(
         ref='U', width=20.32, slots=4,
         footprint='epaper:Texas_DLA0010A_VSON-HR-10_2x3mm_P0.5mm',  # project fp, see gen_footprints.py
