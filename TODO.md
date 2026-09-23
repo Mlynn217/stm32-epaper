@@ -453,10 +453,17 @@ Next steps, in order:
   - [ ] **Firmware battery measurement + graceful shutdown** — read `VBAT_SENSE` (PA3, ADC1_IN3,
         cell/2). At ~3.4 V under light load: save state, draw a "please charge" screen, enter
         standby. LiPo's sloped curve also makes this a usable fuel estimate (see Fuel gauge).
-  - [ ] **Choose the cell** — a protected 1-cell LiPo pouch with a JST-PH 2.0 lead, ~1.0–1.5 Ah
-        (see the current estimate in README "Power Architecture"). Then set R_ISET for the
-        charge current (currently ~500 mA) and confirm the pouch dimensions for the enclosure,
-        allowing ~0.5 mm for swelling.
+  - [x] **Choose the cell** — two EEMB protected LiPo pouches ordered 2026-09-23 (README
+        "Candidate cells"): LP603449 1100 mAh (6.3 × 34.5 × 51 mm) and 963450 1800 mAh (~9.9 ×
+        34.5 × 52 mm). Same footprint, so size the battery bay for the thicker one. The ~500 mA
+        charge current suits both.
+  - [ ] **When the cells arrive:** check lead polarity against J2 (pin 1 = +) with a meter and
+        re-pin the JST housing if needed; measure the real dimensions for the enclosure (allow
+        ~0.5 mm for swelling); keep spares at 40–60% charge (EEMB storage guidance).
+  - [ ] **Charge temperature 45 °C vs 50 °C:** both cells allow charging only at 0–45 °C, but the
+        BQ24073's default TS window with a 10k NTC is ~0–50 °C. Either retune the TS network
+        (TI SLUS810N shows adding resistors around the NTC to shift the thresholds), or route
+        CE to an MCU GPIO so firmware can also block charging. Decide before layout.
   - [ ] **Fit the peripheral load switch on v1?** With R13 bypassing U4, SDRAM/microSD/QSPI stay
         powered in STANDBY, a ~2–20 mA idle floor (~70 mAh/day idle). Fitting the TPS22965
         drops idle to ~0.5–2 mAh/day. Recommended; not yet decided.
