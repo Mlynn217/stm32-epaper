@@ -405,24 +405,77 @@
         character without a specific fold are silently dropped rather than transliterated; only
         tested against one real book so far.
 - [ ] UI / input handling — physical input (encoder, cap touch, button) and the navigation state
-      machine are both not started; see the Custom PCB section below for the settled input hardware
-      (CAP1188 cap touch for prev/next, EC11 encoder for menu scroll/select, tactile power button)
+      machine are both not started; see the Custom PCB section below for the current draft input
+      hardware (CAP1188 cap touch for prev/next, PEC11R encoder for menu scroll/select, tactile power
+      button) — testing this now on the Discovery board with a Bourns PEC11R-4215F-S0024 encoder and
+      an Adafruit CAP1188 breakout (ordered 2026-09-22), so this hardware choice gets validated
+      before the PCB locks it in
 - [ ] Power management / battery life — key lever is deep-sleep between page turns (STOP mode,
       SDRAM either in self-refresh or fully powered down and repopulated from SD on wake), not
       rendering speed — the IT8951 holds the displayed image with zero host involvement once a
       refresh completes
 
-### Custom PCB (not started — hardware decisions settled, do not re-litigate)
-See README.md's [Custom PCB (Planned)](README.md#custom-pcb-planned) section for the full
-component/part list, power tree, and rejected alternatives (analog joystick, on-glass ITO bezel).
-Immediate next steps, in order:
-- [ ] **KiCad schematic — power sheet first** (MCP73123, TPS63070, TPS61023, USB-C, Schottky, VBAT,
-      decoupling, JST connector). Self-contained; captures the safety-critical section (LFP charge
-      termination) before touching the MCU sheet.
-- [ ] **KiCad — MCU sheet** (STM32F469, HSE/RTC crystals, SDRAM via FMC, QSPI flash, microSD via
-      SDIO, SPI to IT8951, I²C to CAP1188, GPIO for encoder/button, SWD via TC2050).
-- [ ] **KiCad — peripheral sheet** (IT8951 IC or HAT connector, CAP1188, encoder, button, ESD
-      protection).
+### Custom PCB (in progress — Power sheet drafted; choices still open to change)
+See README.md's [Custom PCB (Planned)](README.md#custom-pcb-planned) section for the part list,
+power tree, board scope and alternatives considered. **BoM review done 2026-09-22.** Decisions:
+- v1 keeps the Waveshare HAT external on an SPI connector; the bare IT8951 moves to a later revision.
+- TPS63070 → TPS63802 (starts from 1.8 V instead of 3.0 V; 11 µA quiescent instead of 50 µA).
+- MAX17222 → TPS63900 (the MAX17222 is boost-only and can't regulate a 3.65 V cell down to 3.3 V).
+- STM32F469IIT6 (LQFP176); W25Q128JV QSPI flash; PEC11R-4215F-S0024 encoder (24 detents).
+- Layered undervoltage protection added (see README "Battery protection").
+- Corrections: the IS42S16400J is 8 MB, not 16 MB. The bare IT8951 needs a 1.8 V core supply
+  with a power-up order, a crystal and a waveform flash.
+
+Next steps, in order:
+- [x] **KiCad schematic — power sheet** — drafted 2026-09-22 in `hardware/kicad/power.kicad_sch`,
+      then revised after the BoM review (README "Power Sheet (drafted in KiCad)" has the design
+      decisions). ERC reports 0 violations, and `hardware/scripts/check_power_netlist.py` confirms all
+      34 nets against the intended connectivity. **Not yet reviewed by a human, simulated or
+      built.** Open items on it:
+  - [ ] **TPS63802 footprint** — TI's DLA (VSON-HR 10, 1.4×2.3 mm HotRod) isn't in KiCad's stock
+        library. Make it from TI's land pattern (or Ultra Librarian) and assign it to U2. (The
+        reserved TPS63900 uses the stock `WSON-10-1EP_2.5x2.5mm` footprint, drawn for TI's DSK
+        package; check it against the TPS63900 datasheet's DSK0010A drawing.)
+  - [ ] **Inductors** — L1 is 0.47 µH DFE201612E (from TI's recommended list, 5.5 A saturation) on
+        the stock 2016 footprint, which needs checking against the part's land pattern. L2 is a
+        placeholder DFE201610P 1 µH; check its saturation current against the TPS61023's 3.7 A
+        limit. L3 (TPS63900, DNP) is still to be chosen.
+  - [ ] **Undervoltage cutoff thresholds** — R6/R15 = 1.8M/1.0M on TPS63802 EN (off below ~2.80 V,
+        on above ~3.08 V). Check against the chosen cell's datasheet, and check that the ~3.08 V
+        turn-on doesn't cause restart cycling as a nearly empty cell recovers after load
+        is removed.
+  - [ ] **Firmware battery measurement + graceful shutdown** — read the cell through the STM32's
+        internal VBAT ADC channel (VBAT_RTC, one Schottky drop below the cell; calibrate the offset).
+        At ~3.0 V: save state, draw a "please charge" screen, enter standby.
+  - [ ] **Choose the cell** — capacity and format; prefer an LFP cell **with a protection board**
+        (the only true disconnect for over-discharge and shorts). Charge current R_PROG follows
+        from it.
+  - [ ] **Soft power / EN control** — TPS63802 EN is currently just the undervoltage divider. The
+        power-button scheme (if the button should cut the rail, not just wake the MCU) has to
+        combine with it.
+  - [ ] **TPS63900 EN (v2)** — its EN is a plain logic input (no precise threshold), so when the
+        always-on rail is fitted it needs its own undervoltage cutoff.
+  - [ ] **Battery connector polarity** — J2 pin 1 = +. LFP pouch cells with JST-PH leads aren't
+        consistent; confirm against the actual cell.
+  - [ ] **USB-C shield** — tied straight to GND for now; decide on an RC/ferrite.
+  - [ ] **Fuel gauge** — LFP's flat voltage curve makes voltage-based charge estimates nearly
+        useless, so a real % gauge needs coulomb counting. MAX17261 (in KiCad's stock library) is
+        a candidate; check its LFP support. Firmware VBAT reading is enough for the cutoff, not
+        for a % display.
+  - [ ] **No cold-charge protection** — the MCP73123 has no thermistor input. Accept that (indoor
+        device), or add firmware gating via `PROG` (a floating PROG disables charging) plus a
+        temperature sensor.
+      Gotcha found while building it: a **hidden `power_in` pin in a KiCad symbol creates an
+      implicit global net named after the pin**. The first draft's stacked duplicate VIN pins
+      silently shorted VSYS to +3V3. Only the netlist check caught it; ERC just printed a
+      "multiple net names" warning. Stacked duplicates must be hidden *passive* pins, as the stock
+      libraries do.
+- [ ] **KiCad — MCU sheet** (STM32F469IIT6 LQFP176, 8 MHz HSE + 32.768 kHz crystals, IS42S16400J
+      SDRAM via FMC, W25Q128JV via QSPI, microSD via SDIO, USB OTG_FS, SWD via TC2050). Power the
+      MCU from `3V3_AON` (see the Power sheet). Check the LQFP176 pin budget in CubeMX first.
+- [ ] **KiCad — peripheral sheet** (Waveshare HAT connector: SPI + HRDY + RST + 5V + GND;
+      CAP1188 + side-wall electrode pads; PEC11R encoder; power button; ESD on anything
+      user-touchable).
 - [ ] **Firmware — input handling**: encoder (CLK/DT interrupt, SW GPIO), CAP1188 (I²C init +
       interrupt handler), power button (WKUP EXTI); wire all three to a simple event queue.
 - [ ] **Firmware — navigation state machine**: page-turn events → next/prev page via the existing

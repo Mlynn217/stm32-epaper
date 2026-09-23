@@ -74,3 +74,11 @@ EWARM/*.dep
 .DS_Store
 *~
 *.swp
+
+# KiCad per-user/local state (project files themselves are tracked, see hardware/kicad/)
+*.kicad_prl
+*-backups/
+fp-info-cache
+_autosave-*
+~*.lck
+__pycache__/
