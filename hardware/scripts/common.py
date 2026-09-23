@@ -23,6 +23,7 @@ POWER = {'GND': 'GND', 'VBUS': 'VBUS', '+BATT': '+BATT', '+3V3': '+3V3', '+5V': 
          'VSYS': 'VCC', '3V3_PERIPH': 'VCC', '3V3_AON': 'VCC'}
 
 R0402 = 'Resistor_SMD:R_0402_1005Metric'
+R0603 = 'Resistor_SMD:R_0603_1608Metric'
 C0402 = 'Capacitor_SMD:C_0402_1005Metric'
 C0603 = 'Capacitor_SMD:C_0603_1608Metric'
 C0805 = 'Capacitor_SMD:C_0805_2012Metric'

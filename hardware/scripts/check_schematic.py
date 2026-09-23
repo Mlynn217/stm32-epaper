@@ -31,14 +31,14 @@ CLI = os.environ.get('KICAD_CLI', 'kicad-cli')
 
 EXPECTED = {
     # rails
-    'VBUS': 'C1.1 D1.2 J1.A4 J1.A9 J1.B4 J1.B9 Q1.1 R4.1 R5.1 U1.1 U1.2 U5.5',
-    'VSYS': 'C11.1 C4.1 C5.1 C6.1 D1.1 L2.1 Q1.2 R17.1 R6.1 U2.10 U3.3 U6.10',
-    '+BATT': 'C2.1 D3.2 J2.1 Q1.3 U1.3 U1.4',
-    '+3V3': 'C8.1 C9.1 R13.1 R18.1 R7.1 R9.1 U2.6 U4.1 U4.2 U4.4',
-    '+5V': 'C12.1 C13.1 R10.1 U3.6',
+    'VBUS': 'TP1.1 C1.1 D1.2 J1.A4 J1.A9 J1.B4 J1.B9 Q1.1 R4.1 R5.1 U1.1 U1.2 U5.5',
+    'VSYS': 'TP2.1 C11.1 C4.1 C5.1 C6.1 D1.1 L2.1 Q1.2 R17.1 R6.1 U2.10 U3.3 U6.10',
+    '+BATT': 'TP3.1 C2.1 D3.2 J2.1 Q1.3 U1.3 U1.4',
+    '+3V3': 'TP4.1 C8.1 C9.1 R13.1 R18.1 R7.1 R9.1 U2.6 U4.1 U4.2 U4.4',
+    '+5V': 'TP5.1 C12.1 C13.1 R10.1 U3.6',
     '3V3_PERIPH': 'R13.2 U4.7 U4.8',
     '3V3_AON': 'C7.1 R18.2 U6.6',
-    'GND': 'C1.2 C11.2 C12.2 C13.2 C14.2 C2.2 C3.2 C4.2 C5.2 C6.2 C7.2 C8.2 C9.2 J1.A1 J1.A12 '
+    'GND': 'TP6.1 C1.2 C11.2 C12.2 C13.2 C14.2 C2.2 C3.2 C4.2 C5.2 C6.2 C7.2 C8.2 C9.2 J1.A1 J1.A12 '
            'J1.B1 J1.B12 J1.SH J2.2 R1.2 R11.2 R12.2 R14.2 R15.2 R16.2 R2.2 R3.2 R5.2 R8.2 U1.11 '
            'U1.8 U1.9 U2.2 U2.3 U2.8 U3.4 U4.5 U4.9 U5.2 U6.11 U6.2 U6.3 U6.4 U6.8',
     # signals leaving the sheet

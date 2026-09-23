@@ -415,7 +415,7 @@
       rendering speed — the IT8951 holds the displayed image with zero host involvement once a
       refresh completes
 
-### Custom PCB (in progress — Power sheet drafted; choices still open to change)
+### Custom PCB (in progress — v1 schematic drafted, layout next; choices still open to change)
 See README.md's [Custom PCB (Planned)](README.md#custom-pcb-planned) section for the part list,
 power tree, board scope and alternatives considered. **BoM review done 2026-09-22.** Decisions:
 - v1 keeps the Waveshare HAT external on an SPI connector; the bare IT8951 moves to a later revision.
@@ -427,15 +427,16 @@ power tree, board scope and alternatives considered. **BoM review done 2026-09-2
   with a power-up order, a crystal and a waveform flash.
 
 Next steps, in order:
-- [x] **KiCad schematic — power sheet** — drafted 2026-09-22 in `hardware/kicad/power.kicad_sch`,
-      then revised after the BoM review (README "Power Sheet (drafted in KiCad)" has the design
-      decisions). ERC reports 0 violations, and `hardware/scripts/check_power_netlist.py` confirms all
-      34 nets against the intended connectivity. **Not yet reviewed by a human, simulated or
-      built.** Open items on it:
-  - [ ] **TPS63802 footprint** — TI's DLA (VSON-HR 10, 1.4×2.3 mm HotRod) isn't in KiCad's stock
-        library. Make it from TI's land pattern (or Ultra Librarian) and assign it to U2. (The
-        reserved TPS63900 uses the stock `WSON-10-1EP_2.5x2.5mm` footprint, drawn for TI's DSK
-        package; check it against the TPS63900 datasheet's DSK0010A drawing.)
+- [x] **KiCad schematic — all four sheets drafted** (2026-09-22; branch `pcb-schematic`):
+      Power, MCU (STM32F469IIT6 LQFP176), Memory (SDRAM/QSPI/microSD) and Peripherals (HAT header,
+      CAP1188, PEC11R, power button). ERC reports 0 violations; `hardware/scripts/check_schematic.py`
+      checks nets, pin mux, memory buses, single-connection nets and footprint pads (187 nets, 83
+      MCU pins, 604 pin/pad connections OK). All 83 pin numbers were also cross-checked by hand
+      against DS11189. README "MCU, Memory and Peripherals Sheets" has the decisions. **Not yet
+      reviewed by a person.** Power-sheet open items:
+  - [x] **TPS63802 footprint** — built from TI's DLA0010A land pattern (`epaper.pretty`).
+  - [ ] **TPS63900 footprint check** — it uses the stock `WSON-10-1EP_2.5x2.5mm` footprint, drawn
+        for TI's DSK package; check it against the TPS63900 datasheet's DSK0010A drawing.
   - [ ] **Inductors** — L1 is 0.47 µH DFE201612E (from TI's recommended list, 5.5 A saturation) on
         the stock 2016 footprint, which needs checking against the part's land pattern. L2 is a
         placeholder DFE201610P 1 µH; check its saturation current against the TPS61023's 3.7 A
@@ -470,12 +471,23 @@ Next steps, in order:
       silently shorted VSYS to +3V3. Only the netlist check caught it; ERC just printed a
       "multiple net names" warning. Stacked duplicates must be hidden *passive* pins, as the stock
       libraries do.
-- [ ] **KiCad — MCU sheet** (STM32F469IIT6 LQFP176, 8 MHz HSE + 32.768 kHz crystals, IS42S16400J
-      SDRAM via FMC, W25Q128JV via QSPI, microSD via SDIO, USB OTG_FS, SWD via TC2050). Power the
-      MCU from `3V3_AON` (see the Power sheet). Check the LQFP176 pin budget in CubeMX first.
-- [ ] **KiCad — peripheral sheet** (Waveshare HAT connector: SPI + HRDY + RST + 5V + GND;
-      CAP1188 + side-wall electrode pads; PEC11R encoder; power button; ESD on anything
-      user-touchable).
+- [ ] **Schematic open items (other sheets)**:
+  - [ ] **Human review pass** of all four sheets in Eeschema (and tidy the generated layout,
+        e.g. the dense VDD pin row on the MCU).
+  - [ ] **Crystals:** choose the actual 8 MHz and 32.768 kHz parts and recompute the load caps
+        (drawn for CL = 10 pF / 6 pF). Check the LSE part against ST AN2867.
+  - [ ] **Electrode pads:** the CAP1188 CS1–4 pads are placeholder 4×4 mm test-point pads. Settle
+        the real geometry and position (side walls) at layout.
+  - [ ] **ESD:** there's none on the HAT header, encoder or electrodes (only USB has a TVS). Decide
+        once the enclosure is known.
+  - [ ] **HRDY floats** while the HAT is unpowered: use the MCU's internal pull-down then, or add
+        a resistor.
+  - [ ] **Firmware changes for the custom board:** FMC 16-bit data width; SD detect on PG10; HAT
+        pins held low or floating while `EPD_5V_EN` is low (back-powering); TIM3 encoder mode;
+        CAP1188 at 0x29; VBUS sensing on PA9.
+- [ ] **PCB layout** — the next milestone: board outline and enclosure, stackup (4 layers is
+      likely, given the FMC bus and LQFP176), placement, then routing. The Freerouting MCP is
+      configured for autorouting once parts are placed.
 - [ ] **Firmware — input handling**: encoder (CLK/DT interrupt, SW GPIO), CAP1188 (I²C init +
       interrupt handler), power button (WKUP EXTI); wire all three to a simple event queue.
 - [ ] **Firmware — navigation state machine**: page-turn events → next/prev page via the existing

@@ -17,8 +17,18 @@ YES, NO = Sym('yes'), Sym('no')
 STUB = 2.54
 
 
+_NS = _uuid.UUID('6f1d3c2a-5b7e-4c1d-9a0f-00000000cafe')
+_seed = ['root', 0]
+
+
+def reseed(name):
+    """Make uid() deterministic per sheet: same generator input -> same UUIDs -> clean diffs."""
+    _seed[0], _seed[1] = name, 0
+
+
 def uid():
-    return str(_uuid.uuid4())
+    _seed[1] += 1
+    return str(_uuid.uuid5(_NS, '%s:%d' % tuple(_seed)))
 
 
 def _pins_of(sym):
@@ -93,6 +103,7 @@ class Sheet:
         self.global_shape = global_nets if callable(global_nets) else global_nets.get
         self.paper = paper
         self.prefix = title[:3].upper()
+        reseed(title)
         self.lib = {}
         self.items = []
         self.pwr_n = 0

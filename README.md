@@ -28,10 +28,10 @@ Not done yet — see [TODO.md](TODO.md) for the full list, but the near-term hig
 - No page-turn/chapter-navigation UI yet (currently auto-picks the first chapter with real text and
   shows up to 4 pages of it); no physical input handling
 - Power management/battery life not started
-- Custom PCB: KiCad project started in `hardware/kicad/`. The **Power sheet is drafted**
-  (ERC-clean and netlist-checked, but not yet reviewed, simulated or built). The MCU and peripheral
-  sheets aren't started and there's no PCB layout yet. v1 scope: the Waveshare HAT stays external
-  on an SPI connector (see [Custom PCB (Planned)](#custom-pcb-planned))
+- Custom PCB: the **v1 schematic is drafted in full** in `hardware/kicad/` (Power, MCU, Memory and
+  Peripherals sheets). It's ERC-clean and machine-checked (pin mux, nets, footprint pads), but not
+  yet reviewed by a person, and there's no PCB layout yet. v1 scope: the Waveshare HAT stays
+  external on an SPI connector (see [Custom PCB (Planned)](#custom-pcb-planned))
 - No license chosen yet
 
 ## Overview
@@ -113,9 +113,9 @@ Notes:
 
 ## Custom PCB (Planned)
 
-In progress. The KiCad project is in `hardware/kicad/`. The **Power sheet is drafted**; the MCU and
-peripheral sheets aren't started yet (see TODO.md). These are the **current draft hardware
-decisions**, recorded here so context isn't lost between sessions. They're still open to change
+In progress. The KiCad project is in `hardware/kicad/`, and the **v1 schematic is drafted in full**:
+Power, MCU, Memory and Peripherals sheets. PCB layout is next (see TODO.md). These are the
+**current draft hardware decisions**, recorded here so context isn't lost between sessions. They're still open to change
 while the schematic takes shape. The Discovery board plus the Waveshare HAT above stays the bring-up
 platform until the PCB is built.
 
@@ -250,9 +250,8 @@ redesign the power tree to chase this for v1.**
 
 ### Power Sheet (drafted in KiCad)
 
-`hardware/kicad/power.kicad_sch` implements the v1 power tree above. It's ERC-clean, and
-`hardware/scripts/check_power_netlist.py` checks every net against the intended connectivity.
-Details decided while drawing it:
+`hardware/kicad/power.kicad_sch` implements the v1 power tree above. Details decided while drawing
+it:
 
 - **Load sharing (Microchip AN1149):** VBUS → Schottky (D1) → VSYS. An AO3401A P-FET (Q1, gate on
   VBUS, 10k pull-down) connects the cell to VSYS only when USB is absent. Without it the system
@@ -282,6 +281,87 @@ Details decided while drawing it:
 - **Off-sheet connections:** signals leaving the sheet are global labels: `USB_DP`, `USB_DM`,
   `CHG_STAT`, `3V3_PG`, `EPD_5V_EN`, `VBAT_RTC`, `PERIPH_EN`. Rails are power symbols: `VBUS`,
   `VSYS`, `+BATT`, `+3V3`, `+5V`, `3V3_AON`, `3V3_PERIPH`, `GND`.
+
+### MCU, Memory and Peripherals Sheets (drafted in KiCad)
+
+**Pin assignment.** It lives in one place: `PINMAP` in `hardware/scripts/sheet_mcu.py`. It follows
+the F469-Disco wherever a peripheral carries over, so the existing CubeMX config and firmware keep
+working:
+
+| Function | Pins | Notes |
+|---|---|---|
+| FMC SDRAM (bank 1) | Disco's pins, D0–D15 only | **16-bit here (Disco: 32-bit)**, so the FMC init needs a 16-bit data width |
+| QUADSPI bank 1 | PF6–PF10, PB6 | Same as the Disco |
+| SDIO 4-bit | PC8–PC12, PD2 | Same as the Disco. **Card detect moved PG2 → PG10** (PG2 would share interrupt line EXTI2 with HRDY on PA2) |
+| HAT: SPI1 + control | PA5/PB4/PB5, CS PA4, RST PB1, HRDY PA2 | Exactly today's wiring. `EPD_5V_EN` (the HAT's 5 V) is PB0 |
+| USART3 (serial log) | PB10 TX / PB11 RX | Same as the Disco's ST-LINK VCP, so the same log UART |
+| I²C1 (CAP1188) | PB8/PB9 | ALERT# on PB7 (EXTI7), RESET on PB12 |
+| Encoder | TIM3 CH1/CH2 on PA6/PA7 (encoder mode) | Switch on PD3 (EXTI3) |
+| Power button | PA0 = WKUP | Wakes from standby on a **rising** edge, so the button pulls up |
+| Power-sheet signals | CHG_STAT PD4, 3V3_PG PD5, PERIPH_EN PD7 | |
+| USB OTG FS | PA11/PA12, VBUS sense PA9 through 1k | |
+| Debug | SWD PA13/PA14, SWO PB3 | Tag-Connect TC2050-IDC-NL pads, pinned 1:1 like the standard ARM 10-pin connector |
+| Status LED | PG6 | |
+
+All 83 assigned pins were checked in two ways: automatically against the KiCad symbol's
+alternate-function list, and by hand against the LQFP176 pin table in ST's DS11189. Every signal
+that can see more than 3.3 V (VBUS sense, CHG_STAT) is on a 5V-tolerant (FT) pin.
+
+**MCU support circuitry** (per DS11189 Fig. 24 and §2.18):
+- **Decoupling:** 100 nF on each of the 13 VDD pins plus 4.7 µF; 100 nF on VDDUSB.
+- **Analog supply:** VDDA and VREF+ are tied together, fed through a ferrite bead, with 1 µF + 100 nF
+  each.
+- **Core regulator:** 2.2 µF (ESR < 2 Ω) on each of VCAP1/VCAP2. PDR_ON is high and BYPASS_REG low.
+- **DSI unused:** VDDDSI to VDD, VCAPDSI tied to VDD12DSI with no capacitor, VSSDSI to GND.
+- **Clocks:** 8 MHz HSE and 32.768 kHz LSE. The load caps assume CL = 10 pF and 6 pF crystals;
+  recheck them for the actual parts.
+- **Boot:** BOOT0 has a 10k pull-down plus a **BOOT button** to 3.3 V. Hold it at reset to enter the
+  ROM USB DFU bootloader. BOOT1 (PB2) is pulled low.
+- **Supply rail:** the MCU runs from `3V3_AON`, so a v2 always-on rail is only a parts-list change.
+
+**Memory** (all on `3V3_PERIPH`):
+- IS42S16400J SDRAM with 100 nF per supply pin plus 10 µF.
+- W25Q128JV QSPI flash, with a 10k pull-up on /CS.
+- Molex 104031-0811 microSD socket: 47k pull-ups on CMD and DAT0–3, and 10 µF + 100 nF for
+  hot-insertion inrush. The detect switch is pulled up to `3V3_AON`, so detection still works with
+  the peripheral rail off.
+
+Net names are the STM32 alternate-function names (`FMC_A3`, `SDIO_D0`, …), which lets the checker
+confirm each memory pin reaches an MCU pin that really provides that function.
+
+**Peripherals:**
+- **HAT connector:** 1×8 2.54 mm header (1 +5V, 2 GND, 3 SCK, 4 MOSI, 5 MISO, 6 CS, 7 RST, 8 HRDY),
+  with 33 Ω series resistors on SCK, MOSI and CS. **Firmware rule:** while `EPD_5V_EN` is low (HAT
+  unpowered), drive SCK/MOSI/CS/RST low or leave them floating. Otherwise the MCU back-powers the
+  IT8951 through its I/O clamp diodes.
+- **CAP1188:** I²C address 0x29 (150k on ADDR_COMM, the same as the Adafruit breakout), CS1–4 to four
+  side-wall electrode pads (placeholder geometry, to be settled at layout), unused inputs and LED
+  pins to GND.
+- **PEC11R encoder:** Bourns' suggested filter on each channel (10k pull-up, 10k series, 10 nF), and
+  mounting lugs to GND.
+- **Power button:** pulls PA0 up, with a 100k pull-down.
+- **Everything user-facing runs from `3V3_AON`.**
+
+**Custom library parts:** symbols in `hardware/kicad/epaper.kicad_sym` and footprints in
+`hardware/kicad/epaper.pretty`, each citing its datasheet:
+- **TPS63802 (DLA0010A):** TI land pattern, including the split paste on the GND bar.
+- **Bourns PEC11R-4xxxF-S:** the Alps EC11E footprint does *not* fit (its tabs are 11.2 mm apart vs
+  13.2 mm).
+
+### Checking the Schematic
+
+```sh
+KICAD_SYMBOL_DIR=<kicad share>/symbols python3 hardware/scripts/check_schematic.py
+```
+
+This runs ERC and a netlist export, then checks:
+1. The Power sheet's nets against an expected table.
+2. Every MCU pin: its net and its required alternate function.
+3. Memory buses end to end.
+4. No net with a single connection (catches label typos).
+5. Every connected pin exists as a pad on its footprint.
+
+ERC alone isn't enough: it missed a real VSYS↔+3V3 short in the first draft (see TODO.md).
 
 ### Full System Block Diagram (v1)
 
@@ -368,13 +448,18 @@ still needs the `arm-none-eabi-gcc` toolchain, OpenOCD, Ninja, and the relevant 
 - `.vscode/` — `tasks.json` (build/flash/serial-monitor), `launch.json` (debug via OpenOCD or J-Link,
   plus a `node-terminal` entry for the minicom serial monitor), `c_cpp_properties.json`,
   `extensions.json`
-- `hardware/kicad/` — KiCad 10 project for the custom PCB (`stm32-epaper.kicad_pro`; root sheet +
-  `power.kicad_sch`; `epaper.kicad_sym` = project-local symbols for parts not in KiCad's stock
-  libraries, pinouts transcribed from the datasheets cited in each symbol)
-- `hardware/scripts/` — `gen_power_sheet.py` (one-shot generator that bootstrapped the Power sheet;
-  refuses to overwrite without `--force` — once the sheet is edited in Eeschema, the `.kicad_sch` is
-  the source of truth) and `check_power_netlist.py` (ERC + netlist export compared net-by-net
-  against the intended connectivity; keep its `EXPECTED` table in sync with deliberate edits)
+- `hardware/kicad/` — KiCad 10 project for the custom PCB:
+  - `stm32-epaper.kicad_pro` and the root sheet, plus `power`, `mcu`, `memory` and `peripherals`
+    `.kicad_sch`.
+  - `epaper.kicad_sym` and `epaper.pretty/`: project-local symbols and footprints for parts not in
+    KiCad's stock libraries, each transcribed from the datasheet it cites.
+- `hardware/scripts/`:
+  - `gen_schematic.py`: a one-shot generator that bootstrapped every sheet, from `common.py` plus
+    one `sheet_*.py` per sheet. It refuses to overwrite without `--force`. Once a sheet is edited
+    in Eeschema, the `.kicad_sch` is the source of truth.
+  - `gen_footprints.py`: the project footprints.
+  - `check_schematic.py`: design-intent checks (see "Checking the Schematic"). Keep its tables in
+    sync with deliberate edits.
 - `docs/` — IT8951 datasheet + programming guide, F469-Disco user manual (UM1932)
 - `TODO.md` — task list/roadmap
 

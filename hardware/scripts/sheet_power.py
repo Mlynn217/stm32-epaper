@@ -1,6 +1,6 @@
 """Power sheet: USB-C input, LFP charger, load sharing, 3V3/5V converters, RTC backup, reserved
 low-power islands. See README "Power Sheet (drafted in KiCad)" for the design decisions."""
-from common import C0402, C0603, C0805, R0402, flag, new_sheet, two_pin
+from common import C0402, C0603, C0805, R0402, R0603, flag, new_sheet, two_pin
 
 # Signals that leave this sheet for the (future) MCU sheet.
 GLOBAL = {'USB_DP': 'bidirectional', 'USB_DM': 'bidirectional', 'CHG_STAT': 'output',
@@ -145,7 +145,7 @@ def build():
             fields={'MPN': '2.2uH per TPS63900 datasheet; pick the part at v2'})
     two_pin(s, 'R16', 'R', '16.2k 1%', 373.38, 104.14, 'AON_CFG3', 'GND', R0402, dnp=True)
     two_pin(s, 'C7', 'C', '22uF', 383.54, 104.14, '3V3_AON', 'GND', C0603, dnp=True)
-    two_pin(s, 'R18', 'R', '0R', 393.7, 104.14, '+3V3', '3V3_AON', R0402)
+    two_pin(s, 'R18', 'R', '0R', 393.7, 104.14, '+3V3', '3V3_AON', R0603)
 
     # ---- Reserved: peripheral load switch (DNP on v1) -----------------------------------
     s.text('RESERVED for low-power v2 (README "Sleep current"): TPS22965 gating 3V3_PERIPH\n'
@@ -155,7 +155,14 @@ def build():
                 fields={'MPN': 'TPS22965DSGR'})
     s.conns(u4, {'1': '+3V3', '4': '+3V3', '3': 'PERIPH_EN', '7': '3V3_PERIPH', '6': 'LS_CT',
                  '5': 'GND', '9': 'GND'})
-    two_pin(s, 'R13', 'R', '0R', 205.74, 269.24, '+3V3', '3V3_PERIPH', R0402)
+    two_pin(s, 'R13', 'R', '0R', 205.74, 269.24, '+3V3', '3V3_PERIPH', R0603)
     two_pin(s, 'R14', 'R', '100k', 147.32, 276.86, 'PERIPH_EN', 'GND', R0402, dnp=True)
     two_pin(s, 'C14', 'C', '1nF', 215.9, 269.24, 'LS_CT', 'GND', C0402, dnp=True)
+
+    # ---- bring-up test points -------------------------------------------------------------
+    s.text('Bring-up test points (one per rail).', 20.32, 228.6)
+    for i, net in enumerate(['VBUS', 'VSYS', '+BATT', '+3V3', '+5V', 'GND']):
+        tp = s.part('TP%d' % (1 + i), 'Connector:TestPoint', net, 30.48 + i * 15.24, 248.92,
+                    footprint='TestPoint:TestPoint_Pad_D1.5mm')
+        s.conns(tp, {'1': net})
     return s
