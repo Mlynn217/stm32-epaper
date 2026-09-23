@@ -515,6 +515,27 @@ Next steps, in order:
       README draft assumes ≤ ~4 mm plastic); encoder (bottom edge) and power button (top edge)
       positions; battery bay sized to the chosen cell; USB-C and microSD openings. The electrode
       geometry and the ESD decisions both wait on this.
+  - [x] **v0 parametric model** (2026-09-23; branch `worktree-enclosure`): `hardware/enclosure/`,
+        build123d. 106.8 × 171.4 × 17.8 mm; front shell, panel backer, back cover and knob in MJF
+        PA12. All fit checks pass. It exports STEP/STL/3MF, the PCB outline DXF and a placement
+        JSON. Design and rationale are in `hardware/enclosure/README.md`. Toolchain decision: build123d
+        (it exports STEP, which OpenSCAD can't; it runs headless; checks are written in code). For
+        viewing: OCP CAD Viewer in VSCode, or FreeCAD on the STEP files. Printing goes through a
+        service (no printer here), so there are no slicer tools.
+        Found while building it: the **PEC11R is vertical-mount**, so the knob goes on the front
+        face (in the chin), not the bottom edge. The **KMR2 power button can't work from the top
+        edge** as drawn.
+  - [ ] **Measure the placeholders** (`PH` in `params.py`, listed on every build): panel
+        active-area offset, FPC width/bend, HAT size/height, PEC11R body height/push travel/shaft
+        reference plane, microSD socket height.
+  - [ ] **Decide:** desolder the HAT's 2×20 Pi header (saves ~1.1 mm of thickness); the power
+        button mechanism (side switch on a daughterboard, a lever, or move it to the bottom edge);
+        how the side-wall electrodes connect (copper tape/flex + spring contact; only the lower
+        zone overlaps the PCB, and only partly); RT1 on a pigtail to reach the pouch.
+  - [ ] **Human review** of the renders / OCP viewer, then a fit-check print (the shell alone or
+        its chin section) against the real panel, encoder and connectors before the full set.
+  - [ ] Import `out/pcb_outline.dxf` into Edge.Cuts when layout starts. The DXF import itself
+        hasn't been tried yet.
 - [ ] **PCB layout** — the next milestone after the enclosure: stackup (4 layers is likely, given
       the FMC bus and LQFP176), placement, then routing. The Freerouting MCP is configured for
       autorouting once parts are placed.

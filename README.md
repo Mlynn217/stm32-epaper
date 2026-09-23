@@ -32,6 +32,9 @@ Not done yet — see [TODO.md](TODO.md) for the full list, but the near-term hig
   Peripherals sheets). It's ERC-clean and machine-checked (pin mux, nets, footprint pads), but not
   yet reviewed by a person, and there's no PCB layout yet. v1 scope: the Waveshare HAT stays
   external on an SPI connector (see [Custom PCB (Planned)](#custom-pcb-planned))
+- Enclosure: a **v0 parametric draft** in `hardware/enclosure/` (build123d). It passes its own fit
+  checks and exports STEP/STL/3MF, but several dimensions are still placeholders and nothing has
+  been printed (see [Enclosure](#enclosure-v0-draft))
 - No license chosen yet
 
 ## Overview
@@ -444,6 +447,24 @@ This runs ERC and a netlist export, then checks:
 
 ERC alone isn't enough: it missed a real VSYS↔+3V3 short in the first draft (see TODO.md).
 
+### Enclosure (v0 draft)
+
+A parametric model in `hardware/enclosure/`, written as build123d Python code so it can be built and
+checked headless like the rest of the repo. [hardware/enclosure/README.md](hardware/enclosure/README.md)
+covers the design, how to build and view it, what to order, and the open items. In short:
+- **106.8 × 171.4 × 17.8 mm**, portrait. The panel's FPC is at the top, folding back to the HAT.
+  Below the HAT: the battery on the left, then the main PCB as a full-width 60 mm strip along the
+  bottom.
+- **The encoder knob comes out of the front face, in a 24 mm chin below the display.** The
+  PEC11R is a vertical part, so it can't come out of the bottom edge while the PCB lies behind the
+  panel. USB-C and microSD are in the bottom wall.
+- It's printed by a service (Craftcloud or similar), in **MJF/SLS nylon PA12**. Four parts: front
+  shell, panel backer, back cover and knob, closed with M2 heat-set inserts.
+- `build.py` runs fit checks (pairwise interference, wall rules, plug/card openings, knob
+  engagement). It also exports the **PCB outline (DXF, for Edge.Cuts)** and a placement JSON
+  (encoder axis, connector positions, height limits). **The enclosure defines the board outline**,
+  not the other way round.
+
 ### Full System Block Diagram (v1)
 
 ```
@@ -542,6 +563,9 @@ still needs the `arm-none-eabi-gcc` toolchain, OpenOCD, Ninja, and the relevant 
   - `gen_footprints.py`: the project footprints.
   - `check_schematic.py`: design-intent checks (see "Checking the Schematic"). Keep its tables in
     sync with deliberate edits.
+- `hardware/enclosure/`: the parametric enclosure (build123d): `params.py` (every dimension, with
+  its source), `model.py`, `checks.py`, `build.py` (checks + STEP/STL/3MF/DXF export + renders to
+  the git-ignored `out/`), `show.py` (OCP CAD Viewer). See its README.
 - `docs/` — IT8951 datasheet + programming guide, F469-Disco user manual (UM1932)
 - `TODO.md` — task list/roadmap
 
