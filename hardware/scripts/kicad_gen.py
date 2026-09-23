@@ -83,13 +83,16 @@ def _prop(key, val, x, y, hide=False, justify=None, angle=0):
 
 
 class Sheet:
-    def __init__(self, project, path, page_uuid, title, power_nets, global_nets):
+    def __init__(self, project, path, page_uuid, title, power_nets, global_nets, paper='A3'):
         self.project = project
         self.path = path  # instance path, e.g. "/<root uuid>/<sheet uuid>"
         self.uuid = page_uuid
         self.title = title
         self.power_nets = power_nets  # net name -> power lib symbol name
-        self.global_nets = global_nets  # net name -> label shape
+        # global_nets: {net: label shape}, or a callable net -> shape (None = local label)
+        self.global_shape = global_nets if callable(global_nets) else global_nets.get
+        self.paper = paper
+        self.prefix = title[:3].upper()
         self.lib = {}
         self.items = []
         self.pwr_n = 0
@@ -163,14 +166,15 @@ class Sheet:
             self.pwr_points.setdefault(net, []).append((x, y))
             self.pwr_n += 1
             lib_name = self.power_nets[net]
-            self.part('#PWR%s%02d' % (self.title[:3].upper(), self.pwr_n),
+            self.part('#PWR%s%03d' % (self.prefix, self.pwr_n),
                       'power:' + lib_name, net, x, y)
             return
         angle = {(1, 0): 0, (0, -1): 90, (-1, 0): 180, (0, 1): 270}[(out_dx, out_dy)]
         just = 'left bottom' if angle in (0, 90) else 'right bottom'
-        if net in self.global_nets:
+        shape = self.global_shape(net)
+        if shape:
             gj = 'left' if angle in (0, 90) else 'right'
-            self.items.append(['global_label', net, ['shape', Sym(self.global_nets[net])],
+            self.items.append(['global_label', net, ['shape', Sym(shape)],
                                ['at', x, y, angle], ['fields_autoplaced', YES], _eff(gj),
                                ['uuid', uid()],
                                _prop('Intersheetrefs', '${INTERSHEET_REFS}', x, y, hide=True,
@@ -204,7 +208,7 @@ class Sheet:
     # ---- output --------------------------------------------------------------------------
     def render(self, extra=None):
         doc = ['kicad_sch', ['version', 20250610], ['generator', 'eeschema'],
-               ['generator_version', '10.0'], ['uuid', self.uuid], ['paper', 'A3'],
+               ['generator_version', '10.0'], ['uuid', self.uuid], ['paper', self.paper],
                ['title_block', ['title', self.title]],
                ['lib_symbols', *self.lib.values()], *self.items, *(extra or [])]
         doc.append(['embedded_fonts', NO])

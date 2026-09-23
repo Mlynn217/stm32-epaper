@@ -71,9 +71,48 @@ def tps63802_dla():
     return name, fp
 
 
+def _tht(num, x, y, drill, size, shape='circle'):
+    return ['pad', num, Sym('thru_hole'), Sym(shape), ['at', x, y], ['size', size, size],
+            ['drill', drill], ['layers', '*.Cu', '*.Mask']]
+
+
+def _slot(num, x, y, dx, dy, px, py):
+    return ['pad', num, Sym('thru_hole'), Sym('oval'), ['at', x, y], ['size', px, py],
+            ['drill', Sym('oval'), dx, dy], ['layers', '*.Cu', '*.Mask']]
+
+
+def bourns_pec11r_4xxxf_s():
+    """Bourns PEC11R-4xxxF-Sxxxx (vertical, with push switch) - PEC11R datasheet p.2 PCB layout.
+
+    Origin = mounting-tab centreline / shaft axis. A-C-B: 3x dia 1.0 +0.1 holes at 2.5 mm pitch,
+    7.5 mm below the tab line. Switch 1/2: 2x dia 1.0 holes 5.0 mm apart, 7.0 mm above it.
+    Mounting tabs: 2x 1.8 x 2.6 (+0.2) slots, 13.2 mm apart. The layout is symmetric, so a
+    mirrored reading would only swap A/B (rotation sense, fixable in firmware).
+    NOT the Alps EC11E footprint: its tabs are 11.2 mm apart.
+    """
+    name = 'RotaryEncoder_Bourns_Vertical_PEC11R-4xxxF-Sxxxx'
+    fp = ['footprint', name, ['version', 20260206], ['generator', 'pcbnew'], ['layer', 'F.Cu'],
+          ['descr', 'Bourns PEC11R-4xxxF-Sxxxx 12mm incremental encoder with switch, vertical '
+                    '(https://www.bourns.com/docs/product-datasheets/pec11r.pdf)'],
+          ['tags', 'rotary encoder PEC11R'],
+          _text('Reference', 'REF**', 0, -10.0, 'F.SilkS'),
+          _text('Value', name, 0, 10.5, 'F.Fab'),
+          ['attr', Sym('through_hole')], ['duplicate_pad_numbers_are_jumpers', N]]
+    fp += _rect(-6.25, -6.7, 6.25, 6.7, 'F.Fab', 0.1)   # 12.5 x 13.4 body
+    fp += _rect(-6.37, -6.82, 6.37, 6.82, 'F.SilkS', 0.12)
+    fp += _rect(-8.0, -8.5, 8.0, 9.0, 'F.CrtYd', 0.05)
+    for num, x in (('A', -2.5), ('C', 0.0), ('B', 2.5)):
+        fp.append(_tht(num, x, 7.5, 1.05, 1.8))
+    fp.append(_tht('S1', -2.5, -7.0, 1.05, 1.8))
+    fp.append(_tht('S2', 2.5, -7.0, 1.05, 1.8))
+    for x in (-6.6, 6.6):
+        fp.append(_slot('MP', x, 0.0, 1.9, 2.7, 2.7, 3.5))
+    return name, fp
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
-    for build in (tps63802_dla,):
+    for build in (tps63802_dla, bourns_pec11r_4xxxf_s):
         name, fp = build()
         path = os.path.join(OUT, name + '.kicad_mod')
         with open(path, 'w') as f:

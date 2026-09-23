@@ -8,7 +8,7 @@
 		(title "STM32 e-reader")
 	)
 	(lib_symbols)
-	(text "Sheets: Power (drafted). MCU and Peripherals: not started — see TODO.md."
+	(text "STM32F469 e-reader, v1 board (Waveshare IT8951 HAT external on an SPI connector).\nInter-sheet signals are global labels; rails are power symbols. See README.md \"Custom PCB (Planned)\"."
 		(exclude_from_sim no)
 		(at 25.4 25.4 0)
 		(effects
@@ -17,7 +17,7 @@
 			)
 			(justify left top)
 		)
-		(uuid "898a552e-366f-4c5f-a2be-b4b3e589f189")
+		(uuid "c00a2d89-9642-4128-9949-71c77611d1e6")
 	)
 	(sheet
 		(at 25.4 50.8)
@@ -56,6 +56,129 @@
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001"
 					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 101.6 50.8)
+		(size 50.8 25.4)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "6f1d3c2a-5b7e-4c1d-9a0f-000000000004")
+		(property "Sheetname" "MCU"
+			(at 101.6 50.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "mcu.kicad_sch"
+			(at 101.6 76.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 25.4 101.6)
+		(size 50.8 25.4)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "6f1d3c2a-5b7e-4c1d-9a0f-000000000006")
+		(property "Sheetname" "Memory"
+			(at 25.4 100.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "memory.kicad_sch"
+			(at 25.4 127.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 101.6 101.6)
+		(size 50.8 25.4)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "6f1d3c2a-5b7e-4c1d-9a0f-000000000008")
+		(property "Sheetname" "Peripherals"
+			(at 101.6 100.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "peripherals.kicad_sch"
+			(at 101.6 127.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001"
+					(page "5")
 				)
 			)
 		)

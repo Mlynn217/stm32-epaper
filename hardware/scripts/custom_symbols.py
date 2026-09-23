@@ -5,6 +5,7 @@ Pin numbers/names are transcribed from the manufacturer datasheets:
   TPS63802  TI SLVSEU9D, "Pin Functions" (VSON-HR 10-pin "DLA", no exposed pad)
   TPS63900  TI SLVSET3D, Table 5-1 (WSON-10 2.5x2.5 "DSK", thermal pad = pin 11)
   TPS61023  TI SLVSF14B, "Pin Functions" (SOT-563 "DRL")
+  CAP1188   Microchip/SMSC CAP1188 datasheet rev 1.32, Table 1.1 (QFN-24 4x4, EP = GND = pin 25)
   TPS22965  TI SLVSBJ0F, "Pin Functions" (WSON-8 2x2 "DSG", thermal pad = pin 9)
 
 Each spec is (number, name, electrical type, side, slot, hidden). Pins sharing a side+slot are
@@ -80,6 +81,25 @@ SYMBOLS = {
             ('5', 'SW', 'passive', 'T', 0, False),
             ('4', 'GND', 'power_in', 'B', 0, False),
         ]),
+    'CAP1188': dict(
+        ref='U', width=27.94, slots=17,
+        footprint='Package_DFN_QFN:QFN-24-1EP_4x4mm_P0.5mm_EP2.5x2.5mm',
+        datasheet='https://ww1.microchip.com/downloads/en/DeviceDoc/CAP1188%20.pdf',
+        description='8-channel capacitive touch controller, SMBus/I2C or SPI, 8 LED drivers, QFN-24',
+        pins=[
+            ('23', 'VDD', 'power_in', 'L', 0, False),
+            ('3', 'SMDATA/SPI_MISO', 'bidirectional', 'L', 2, False),
+            ('4', 'SMCLK/SPI_CLK', 'input', 'L', 3, False),
+            ('13', 'ALERT#', 'open_collector', 'L', 4, False),
+            ('24', 'RESET', 'input', 'L', 5, False),
+            ('2', 'WAKE/SPI_MOSI', 'bidirectional', 'L', 7, False),
+            ('1', 'SPI_CS#', 'input', 'L', 8, False),
+            ('14', 'ADDR_COMM', 'passive', 'L', 10, False),
+        ] + [(str(23 - i), 'CS%d' % i, 'passive', 'R', i - 1, False) for i in range(1, 9)]
+          # LEDx are open-drain drivers, typed passive: unused ones are tied to GND per Table 1.1
+          # and ERC treats open-collector-to-GND as a conflict with GND's power flag.
+          + [(str(4 + i), 'LED%d' % i, 'passive', 'R', i + 8, False) for i in range(1, 9)]
+          + [('25', 'GND', 'power_in', 'B', 0, False)]),
     'TPS22965': dict(
         ref='U', width=15.24, slots=4,
         footprint='Package_SON:Texas_DSG0008A_WSON-8-1EP_2x2mm_P0.5mm_EP0.9x1.6mm',
