@@ -200,29 +200,42 @@ The safety gap is handled the way phones and e-readers handle it:
 
 ~300–500 cycles is still years of use for a reader charged every few weeks.
 
-**Candidate cells (ordered 2026-09-23):** both are EEMB protected LiPo pouches with JST-PH 2.0
-leads. They share a 34.5 × ~52 mm footprint and differ only in thickness, so the battery bay can be
-designed for the thicker one and the thinner one fitted with a spacer.
+**Candidate cells (ordered 2026-09-23):** two EEMB protected LiPo packs with JST-PH 2.0 leads.
+They share a 34.5 mm × ~52 mm outline and differ only in thickness. Figures come from EEMB's
+specs: the [LP963450-PCM-LD pack spec](https://m.media-amazon.com/images/I/81dlwMxaX9L.pdf) (doc
+ZJQM-RD-SPC-H1817) and the [LP603449 cell spec](https://www.eemb.com/product-147) (ZJQM-RD-SPC-H0482;
+no pack-level sheet found).
 
-| | EEMB LP603449 | EEMB 963450 |
+| | EEMB LP603449 (pack) | EEMB LP963450-PCM-LD |
 |---|---|---|
-| Capacity | 1100 mAh (1000 min) | 1800 mAh |
-| Size (max) | 6.3 × 34.5 × 51 mm, 22 g | ~9.9 × 34.5 × 52 mm |
-| Charge | 4.20 V CC/CV, max 1C (1100 mA) | 4.2 V CC/CV |
-| Discharge | max 2C (2200 mA), cutoff 2.75 V | cutoff ~2.75 V |
-| Charge temp | 0–45 °C | 0–45 °C |
-| Cycle life | ≥ 500 at 0.5C, ≥ 800 at 0.2C | — |
-| Source | [EEMB datasheet](https://www.eemb.com/product-147) | [listing](https://www.amazon.com/EEMB-Battery-1800mAh-Rechargeable-Connector/dp/B08ZCQXFX4) |
+| Capacity | 1100 mAh (1000 min) | 1800 mAh (1700 min) |
+| Pack envelope (max) | 6.3 × 34.5 × ~52 mm (cell body 50 mm; +PCM assumed as on the 963450) | **9.9 × 34.5 × 52 mm** |
+| Weight | ~22 g | ~36 g |
+| Charge | 4.20 V CC/CV, max 1C (1100 mA) | 4.2 V CC/CV, max 1C (1800 mA) |
+| **Cold charging** | assumed as 963450 | **0–20 °C: ≤ 0.3C** |
+| Charge temperature | 0–45 °C | 0–45 °C |
+| Discharge | max 2C, cell cutoff 2.75 V | max 2C (3.6 A); pack limit 1 A continuous, 2 A for 3 s |
+| Protection board (963450 spec) | assumed same family | overcharge 4.28 ± 0.05 V; **over-discharge 3.0 ± 0.1 V** (releases at 3.5 V) |
+| Leads | JST-PH 2.0 | red (+) / black (−) UL1007 AWG26, **50 ± 3 mm**, JST PHR-02, from the PCM edge |
+| Cycle life | ≥ 500 at 0.5C, ≥ 800 at 0.2C | ≥ 800 (min) |
 
-Both work with the board as designed: ~500 mA charge (0.45C / 0.28C), and a hardware cutoff at
-~3.20 V, well above the cells' 2.75 V. **The cells' 45 °C charge limit is below the BQ24073's
-default ~50 °C thermistor window** (see TODO). EEMB's listing says to confirm connector polarity, so
-check which contact the red lead is on before plugging a cell in (J2 pin 1 = +). The cell swings from
-~3.0 V to 4.2 V, which is both above and below 3.3 V, so the buck-boost is still needed.
+**How the design fits them:**
+- **Charge current:** ~296 mA (265–324 mA worst case), ≤ 0.3C of the smaller cell, so both cells are
+  within spec at any charge temperature.
+- **Charge timer:** 7.2–12 h, long enough for the 1800 mAh cell.
+- **Cutoff order:** hardware cutoff at ~3.20 V, above the protection board's 3.0 V (firmware shuts
+  down at ~3.4 V first).
+- **Current:** peak draw ~0.7 A, under the pack's 1 A continuous limit.
+- **Hot end:** the cells' 45 °C charging limit is handled in firmware (see the Power sheet section).
 
-Running the whole system at 1.8 V was evaluated and rejected: the SDRAM and the HAT need 3.3 V/5 V
-anyway, so a 1.8 V MCU rail would still need a 3.3 V converter for peripherals, plus level shifters,
-for no real gain.
+**Battery bay (enclosure input).** Size the bay for the 963450: **52 × 34.5 × 9.9 mm max, plus
+~0.5 mm on each face for swelling**. Use a ~3.6 mm spacer when fitting the LP603449. Other points:
+- The PCM strip and the lead exit are on one 34.5 mm edge. The 50 mm lead needs a route to J2 (keep
+  J2 within ~40 mm of that edge, or allow slack).
+- Keep the pouch clear of sharp edges and screw bosses.
+- Put RT1 (the charger's NTC) under or against the pouch.
+- **Polarity isn't shown by pin in EEMB's drawings** (only red = +). Check J2 pin 1 = + with a meter
+  before plugging a cell in.
 
 **Power tree, v1 (external Waveshare HAT):**
 ```
@@ -292,16 +305,27 @@ it:
   - **Power path:** `OUT` (= VSYS) is regulated to 4.4 V while USB is present, which keeps the
     5.5 V-max TPS63802 and TPS61023 safe. The battery supplements OUT when the load exceeds the
     input limit. This replaced the earlier discrete load-sharing FET and Schottky diode.
-  - **Charge current:** R_ISET = 1.78k → 890/1.78k ≈ **500 mA**, 0.4–0.5C for a 1–1.2 Ah cell.
-    Retune for the chosen cell.
+  - **Charge current:** R_ISET = 3.01k → 890/3.01k ≈ **296 mA** (265–324 mA worst case). That's
+    ≤ 0.3C for the 1100 mAh cell, EEMB's limit for charging at 0–20 °C, so either candidate cell is
+    in spec at any temperature. If the 1800 mAh cell is chosen for good, 500 mA (1.78k) would
+    still be within its 0.3C cold limit.
+  - **Safety timer:** R_TMR = 72k → 7.2–12 h fast-charge timer (the default 4–6 h would expire
+    while charging the 1800 mAh cell at ~300 mA). Pre-charge timer 43–72 min.
   - **Input current:** EN2 = 0, EN1 = 1 (pulled up to VBUS) → **USB500**, the USB-C default,
     because the board doesn't read the source's CC advertisement. R_ILIM = 1.54k (1.0 A) must be
     fitted anyway: an open ILIM disables charging.
   - **Temperature:** TS goes to an **on-board 10k NTC** (NCP15XH103, placed touching the cell),
-    because off-the-shelf LiPos have no thermistor lead. Charging is blocked outside ~0–50 °C.
-    If the chosen cell has a 3-wire thermistor lead, use that instead.
-  - **Other pins:** CE and TD are low (charging and termination enabled). TMR is open (default
-    safety timers). PGOOD is unused; VBUS sensing is on PA9 instead.
+    because off-the-shelf LiPos have no thermistor lead. The charger blocks charging outside
+    ~0–50 °C.
+  - **The cells only allow 0–45 °C.** TI's resistor network (SLUS810N eq. 8–9) can only *widen*
+    the window: a 3–43 °C window needs an NTC whose resistance ratio between those temperatures
+    is ≥ 7, and 10k NTCs with B ≈ 3380–3435 only reach ~4.7–4.8. So the hot end is enforced in
+    firmware:
+    - `TS_SENSE` (TS through 10k/100 nF) goes to PC1 (ADC1_IN11). While charging,
+      V_TS = 75 µA × R_NTC.
+    - `CHG_DIS` drives CE from PD6, with a 100k pull-down so charging stays enabled while the MCU
+      is off or booting. Firmware suspends charging between ~43 °C and the IC's own ~50 °C cutoff.
+  - **Other pins:** TD low (termination on). PGOOD unused; VBUS sensing is on PA9 instead.
 - **Charge status:** a red LED from VBUS to CHG (works with the MCU off), plus `CHG_STAT` to the MCU.
   That must go to a 5V-tolerant (FT) pin, because the LED path lets the line float up toward
   VBUS.
@@ -323,7 +347,7 @@ it:
     a BoM change.
   - TPS22965 load switch for `3V3_PERIPH`, with a fitted 0Ω bypass (R13).
 - **Off-sheet connections:** signals leaving the sheet are global labels: `USB_DP`, `USB_DM`,
-  `CHG_STAT`, `3V3_PG`, `EPD_5V_EN`, `VBAT_RTC`, `VBAT_SENSE`, `PERIPH_EN`. Rails are power symbols: `VBUS`,
+  `CHG_STAT`, `CHG_DIS`, `TS_SENSE`, `3V3_PG`, `EPD_5V_EN`, `VBAT_RTC`, `VBAT_SENSE`, `PERIPH_EN`. Rails are power symbols: `VBUS`,
   `VSYS`, `+BATT`, `+3V3`, `+5V`, `3V3_AON`, `3V3_PERIPH`, `GND`.
 
 ### MCU, Memory and Peripherals Sheets (drafted in KiCad)
@@ -344,11 +368,12 @@ working:
 | Power button | PA0 = WKUP | Wakes from standby on a **rising** edge, so the button pulls up |
 | Power-sheet signals | CHG_STAT PD4, 3V3_PG PD5, PERIPH_EN PD7 | |
 | Battery sense | PA3 = ADC1_IN3 (`VBAT_SENSE`) | 1M/1M divider from the cell |
+| Charger thermistor / charge disable | PC1 = ADC1_IN11 (`TS_SENSE`), PD6 (`CHG_DIS`) | Firmware enforces the cells' 45 °C charging limit |
 | USB OTG FS | PA11/PA12, VBUS sense PA9 through 1k | |
 | Debug | SWD PA13/PA14, SWO PB3 | Tag-Connect TC2050-IDC-NL pads, pinned 1:1 like the standard ARM 10-pin connector |
 | Status LED | PG6 | |
 
-All 84 assigned pins were checked in two ways: automatically against the KiCad symbol's
+All 86 assigned pins were checked in two ways: automatically against the KiCad symbol's
 alternate-function list, and by hand against the LQFP176 pin table in ST's DS11189. Every signal
 that can see more than 3.3 V (VBUS sense, CHG_STAT) is on a 5V-tolerant (FT) pin.
 

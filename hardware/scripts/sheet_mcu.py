@@ -77,6 +77,8 @@ PINMAP = [
     ('PD5', '3V3_PG', None),
     ('PD7', 'PERIPH_EN', None),
     ('PA3', 'VBAT_SENSE', 'ADC1_IN3'),  # cell voltage via 1M/1M divider on the Power sheet
+    ('PC1', 'TS_SENSE', 'ADC1_IN11'),  # charger NTC voltage (75uA x R_NTC while charging)
+    ('PD6', 'CHG_DIS', None),  # BQ24073 CE: high suspends charging (cell 45C limit)
     # Misc
     ('PG6', 'LED_STATUS', None),
     ('PB2', 'BOOT1', None),  # BOOT1: pulled low so BOOT0=1 selects the system (DFU) bootloader
