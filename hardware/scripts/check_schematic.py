@@ -31,28 +31,33 @@ CLI = os.environ.get('KICAD_CLI', 'kicad-cli')
 
 EXPECTED = {
     # rails
-    'VBUS': 'TP1.1 C1.1 D1.2 J1.A4 J1.A9 J1.B4 J1.B9 Q1.1 R4.1 R5.1 U1.1 U1.2 U5.5',
-    'VSYS': 'TP2.1 C11.1 C4.1 C5.1 C6.1 D1.1 L2.1 Q1.2 R17.1 R6.1 U2.10 U3.3 U6.10',
-    '+BATT': 'TP3.1 C2.1 D3.2 J2.1 Q1.3 U1.3 U1.4',
+    'VBUS': 'TP1.1 C1.1 J1.A4 J1.A9 J1.B4 J1.B9 R20.1 R4.1 U1.13 U5.5',
+    'VSYS': 'TP2.1 C11.1 C15.1 C4.1 C5.1 C6.1 L2.1 R17.1 R6.1 U1.10 U1.11 U2.10 U3.3 U6.10',
+    '+BATT': 'TP3.1 C16.1 C2.1 J2.1 R21.1 U1.2 U1.3 U7.3',
     '+3V3': 'TP4.1 C8.1 C9.1 R13.1 R18.1 R7.1 R9.1 U2.6 U4.1 U4.2 U4.4',
     '+5V': 'TP5.1 C12.1 C13.1 R10.1 U3.6',
     '3V3_PERIPH': 'R13.2 U4.7 U4.8',
     '3V3_AON': 'C7.1 R18.2 U6.6',
-    'GND': 'TP6.1 C1.2 C11.2 C12.2 C13.2 C14.2 C2.2 C3.2 C4.2 C5.2 C6.2 C7.2 C8.2 C9.2 J1.A1 J1.A12 '
-           'J1.B1 J1.B12 J1.SH J2.2 R1.2 R11.2 R12.2 R14.2 R15.2 R16.2 R2.2 R3.2 R5.2 R8.2 U1.11 '
-           'U1.8 U1.9 U2.2 U2.3 U2.8 U3.4 U4.5 U4.9 U5.2 U6.11 U6.2 U6.3 U6.4 U6.8',
+    'GND': ('TP6.1 C1.2 C11.2 C12.2 C13.2 C14.2 C15.2 C16.2 C17.2 C2.2 C3.2 C4.2 C5.2 C6.2 '
+            'C7.2 C8.2 C9.2 J1.A1 J1.A12 J1.B1 J1.B12 J1.SH J2.2 R1.2 R11.2 R12.2 R14.2 R15.2 '
+            'R16.2 R19.2 R2.2 R22.2 R3.2 R8.2 RT1.2 U1.15 U1.17 U1.4 U1.5 U1.8 U2.2 U2.3 U2.8 '
+            'U3.4 U4.5 U4.9 U5.2 U6.11 U6.2 U6.3 U6.4 U6.8 U7.1'),
     # signals leaving the sheet
     'USB_DP': 'J1.A6 J1.B6 U5.1 U5.6',
     'USB_DM': 'J1.A7 J1.B7 U5.3 U5.4',
-    'CHG_STAT': 'D2.1 U1.7',
+    'CHG_STAT': 'D2.1 U1.9',
     '3V3_PG': 'R9.2 U2.5',
     'EPD_5V_EN': 'R12.1 U3.2',
-    'VBAT_RTC': 'C3.1 D3.1',
+    'VBAT_RTC': 'C3.1 U7.2',
     'PERIPH_EN': 'R14.1 U4.3',
     # local nets
     '/Power/CC1': 'J1.A5 R1.1',
     '/Power/CC2': 'J1.B5 R2.1',
-    '/Power/PROG': 'R3.1 U1.10',
+    '/Power/ISET': 'R3.1 U1.16',
+    '/Power/ILIM': 'R19.1 U1.12',
+    '/Power/TS': 'RT1.1 U1.1',
+    '/Power/CHG_EN1': 'R20.2 U1.6',
+    'VBAT_SENSE': 'C17.1 R21.2 R22.1',
     '/Power/CHG_LED': 'D2.2 R4.2',
     '/Power/BB_EN': 'R15.1 R6.2 U2.1',  # UVLO divider tap on TPS63802 EN
     '/Power/BB_L1': 'L1.1 U2.9',
@@ -68,8 +73,8 @@ EXPECTED = {
     # deliberately unconnected
     'unconnected-(J1-SBU1-PadA8)': 'J1.A8',
     'unconnected-(J1-SBU2-PadB8)': 'J1.B8',
-    'unconnected-(U1-NC-Pad5)': 'U1.5',
-    'unconnected-(U1-NC-Pad6)': 'U1.6',
+    'unconnected-(U1-~{PGOOD}-Pad7)': 'U1.7',
+    'unconnected-(U1-TMR-Pad14)': 'U1.14',
 }
 ENV_ONLY = ('[lib_symbol_issues]', '[footprint_link_issues]')
 
