@@ -19,6 +19,9 @@ COLORS = {
     "battery_zone": ("#e38b3c", 1.0), "hat": ("#3f6fb5", 1.0), "pcb": ("#2f8f4e", 1.0),
     "encoder_body": ("#707070", 1.0), "encoder_shaft": ("#b0b0b0", 1.0), "usb_c": ("#d0d0d0", 1.0),
     "usb_plug": ("#d64545", 0.35), "sd_socket": ("#b8b8b8", 1.0), "sd_card_path": ("#d64545", 0.35),
+    "power_switch": ("#505050", 1.0), "electrode_board_L": ("#c08a2e", 1.0),
+    "electrode_board_R": ("#c08a2e", 1.0), "electrode_conn_L": ("#f2f2f2", 1.0),
+    "electrode_conn_R": ("#f2f2f2", 1.0),
 }
 LIGHT = np.array([-0.4, -0.7, 0.6])
 LIGHT = LIGHT / np.linalg.norm(LIGHT)
@@ -105,12 +108,19 @@ def render_all(printed, components, out_dir):
 
     p = out_dir / "render_exploded.png"
     order = ["knob", "front_shell", "panel", "panel_backer", "hat", "battery_zone", "pcb",
-             "encoder_body", "encoder_shaft", "usb_c", "sd_socket", "back_cover"]
+             "encoder_body", "encoder_shaft", "usb_c", "sd_socket", "power_switch", "electrode_board_L",
+             "electrode_board_R", "electrode_conn_L", "electrode_conn_R", "back_cover"]
     lift = {"knob": 60, "front_shell": 30, "panel": 12, "panel_backer": 0, "hat": -15, "battery_zone": -15,
             "pcb": -15, "encoder_body": -15, "encoder_shaft": -15, "usb_c": -15, "sd_socket": -15,
-            "back_cover": -45}
+            "power_switch": -15, "electrode_board_L": -15, "electrode_board_R": -15,
+            "electrode_conn_L": -15, "electrode_conn_R": -15, "back_cover": -45}
     _figure("Exploded", {k: everything[k] for k in order}, 20, -55, p,
             offsets={k: (0, -v, 0) for k, v in lift.items()})
+    paths.append(p)
+
+    p = out_dir / "render_bottom.png"
+    _figure("Bottom edge - power button tab, microSD, USB-C", {k: everything[k] for k in
+            ("front_shell", "back_cover", "knob", "panel")}, -75, -90, p)
     paths.append(p)
 
     # Section through the encoder axis (X = 0), viewed from the right side.

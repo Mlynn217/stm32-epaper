@@ -33,7 +33,9 @@ def build():
            'the Adafruit breakout used for bring-up. SPI_CS# to GND (I2C mode), WAKE 100k\n'
            'pull-down, RESET (active high) 100k pull-down, ALERT# open-drain 10k pull-up, unused\n'
            'LED1-8 and CS5-8 to GND (datasheet Table 1.1). CS1-4 = side-wall electrodes\n'
-           '(2 per side); pad geometry is a layout item (placeholder pads).', 20.32, 132.08)
+           '(2 per side) on two small electrode boards pressed against the inside of the side\n'
+           'walls, each on a short JST-SH cable (touch / GND / touch: GND between the two sense\n'
+           'lines). Board geometry comes from hardware/enclosure.', 20.32, 132.08)
     u = s.part('U301', 'epaper:CAP1188', 'CAP1188-1-CP-TR', 76.2, 190.5,
                fields={'MPN': 'CAP1188-1-CP-TR'})
     cmap = {'VDD': '3V3_AON', 'SMDATA/SPI_MISO': 'I2C1_SDA', 'SMCLK/SPI_CLK': 'I2C1_SCL',
@@ -43,10 +45,12 @@ def build():
     cmap.update({'CS%d' % i: 'GND' for i in range(5, 9)})
     cmap.update({'LED%d' % i: 'GND' for i in range(1, 9)})
     conn_by_name(s, u, cmap)
-    for i, net in enumerate(['TOUCH_L1', 'TOUCH_L2', 'TOUCH_R1', 'TOUCH_R2']):
-        tp = s.part('E%d' % (301 + i), 'Connector:TestPoint', net.replace('TOUCH_', 'Touch '),
-                    142.24 + i * 12.7, 170.18, footprint='TestPoint:TestPoint_Pad_4.0x4.0mm')
-        s.conns(tp, {'1': net})
+    for i, side in enumerate(['L', 'R']):
+        jt = s.part('J%d' % (302 + i), 'Connector_Generic:Conn_01x03', 'Electrodes ' + side,
+                    147.32 + i * 25.4, 170.18,
+                    footprint='Connector_JST:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal',
+                    fields={'MPN': 'SM03B-SRSS-TB'})
+        s.conns(jt, {'1': 'TOUCH_%s1' % side, '2': 'GND', '3': 'TOUCH_%s2' % side})
     two_pin(s, 'R304', 'R', '4.7k', 30.48, 238.76, '3V3_AON', 'I2C1_SCL', R0402)
     two_pin(s, 'R305', 'R', '4.7k', 40.64, 238.76, '3V3_AON', 'I2C1_SDA', R0402)
     two_pin(s, 'R306', 'R', '10k', 50.8, 238.76, '3V3_AON', 'CAP_ALERT', R0402)
@@ -77,9 +81,11 @@ def build():
 
     # ---- Power button ----------------------------------------------------------------------
     s.text('Power / wake button to PA0 = WKUP (wakes STANDBY on a RISING edge), so the button\n'
-           'pulls PWR_BTN up to 3V3_AON, with a 100k pull-down.', 218.44, 152.4)
+           'pulls PWR_BTN up to 3V3_AON, with a 100k pull-down. Side-actuated, on the PCB\'s\n'
+           'bottom edge (the enclosure\'s bottom wall has a flexure tab over it).', 218.44, 152.4)
     b = s.part('SW302', 'Switch:SW_Push', 'POWER', 256.54, 180.34,
-               footprint='Button_Switch_SMD:SW_Push_1P1T_NO_CK_KMR2')
+               footprint='Button_Switch_SMD:SW_Push_1P1T-MP_NO_Horizontal_Alps_SKRTLAE010',
+               fields={'MPN': 'SKRTLAE010'})
     s.conns(b, {'1': '3V3_AON', '2': 'PWR_BTN'})
     two_pin(s, 'R315', 'R', '100k', 287.02, 187.96, 'PWR_BTN', 'GND', R0402)
     return s

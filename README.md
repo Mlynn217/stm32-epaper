@@ -134,19 +134,23 @@ platform until the PCB is built.
 | Control | Component | Interface | Notes |
 |---|---|---|---|
 | Prev / Next page | CAP1188-1-SL (Microchip) | I²C + ALERT interrupt | 8-channel; side-wall electrodes |
-| Side-wall electrodes | PCB copper pads ×4 | — | 2 per side; plastic wall as dielectric; up to ~4mm wall thickness |
+| Side-wall electrodes | 2 small electrode boards (0.8 mm FR4), 2 pads each | JST-SH cable per side (J302/J303) | Pads pressed against the inside of each side wall; plastic wall as dielectric (up to ~4mm) |
 | Library / menu scroll | Bourns PEC11R-4215F-S0024 | 2× GPIO (A, B quadrature) | 24 detents / 24 pulses per revolution, 15mm flatted shaft |
 | Confirm / select | Encoder push | 1× GPIO (SW) | Built into the PEC11R (the "S" in S0024) |
-| Power / wake | Tactile switch (part TBD) | 1× GPIO (WKUP pin) | Top edge of device; physical, not capacitive |
+| Power / wake | Alps SKRTLAE010 side-actuated tact switch | 1× GPIO (WKUP pin) | Bottom edge, on the main PCB, pressed through a flexure tab in the wall; physical, not capacitive |
 
-Layout: cap-touch zones on left/right side walls (thumb rest), encoder on the bottom edge, power
-button on the top edge.
+Layout: cap-touch zones on left/right side walls (thumb rest). The encoder knob is on the front
+face below the display (the PEC11R is vertical-mount), and the power button is on the bottom edge
+next to microSD and USB-C (decided 2026-09-23, see [Enclosure](#enclosure-v0-draft)).
 
 **Considered and set aside (open to revisiting if requirements change):**
 - PSP-style analog joystick (COM-09426): analog noise, no click function, and its resistive divider
   draws current continuously, which is wrong for a device that mostly sleeps.
-- On-glass bezel capacitive (ITO film): manufacturing complexity; side-wall PCB copper pads achieve
+- On-glass bezel capacitive (ITO film): manufacturing complexity; side-wall electrode boards achieve
   the same result more simply.
+- Copper tape or a flex strip for the side-wall electrodes: either works, but small rigid boards
+  give repeatable pad geometry, can carry ESD parts, and cost pennies in the same PCB order (flex
+  is ~10× the price for no benefit here).
 
 ### MCU, Memory & Storage
 
@@ -236,7 +240,8 @@ no pack-level sheet found).
 - The PCM strip and the lead exit are on one 34.5 mm edge. The 50 mm lead needs a route to J2 (keep
   J2 within ~40 mm of that edge, or allow slack).
 - Keep the pouch clear of sharp edges and screw bosses.
-- Put RT1 (the charger's NTC) under or against the pouch.
+- RT1 (the charger's NTC) is a leaded Murata NXFT15XH103 soldered to pads on the PCB, with its head
+  taped to the pouch (the cell sits beside the PCB, not over it).
 - **Polarity isn't shown by pin in EEMB's drawings** (only red = +). Check J2 pin 1 = + with a meter
   before plugging a cell in.
 
@@ -418,12 +423,13 @@ confirm each memory pin reaches an MCU pin that really provides that function.
   with 33 Ω series resistors on SCK, MOSI and CS. **Firmware rule:** while `EPD_5V_EN` is low (HAT
   unpowered), drive SCK/MOSI/CS/RST low or leave them floating. Otherwise the MCU back-powers the
   IT8951 through its I/O clamp diodes.
-- **CAP1188:** I²C address 0x29 (150k on ADDR_COMM, the same as the Adafruit breakout), CS1–4 to four
-  side-wall electrode pads (placeholder geometry, to be settled at layout), unused inputs and LED
-  pins to GND.
+- **CAP1188:** I²C address 0x29 (150k on ADDR_COMM, the same as the Adafruit breakout), CS1–4 to two
+  JST-SH 3-pin connectors (J302 left, J303 right: touch / GND / touch) that cable to the side-wall
+  electrode boards; unused inputs and LED pins to GND.
 - **PEC11R encoder:** Bourns' suggested filter on each channel (10k pull-up, 10k series, 10 nF), and
   mounting lugs to GND.
-- **Power button:** pulls PA0 up, with a 100k pull-down.
+- **Power button:** Alps SKRTLAE010 (side-actuated) on the bottom edge; pulls PA0 up, with a 100k
+  pull-down.
 - **Everything user-facing runs from `3V3_AON`.**
 
 **Custom library parts:** symbols in `hardware/kicad/epaper.kicad_sym` and footprints in
@@ -457,7 +463,10 @@ covers the design, how to build and view it, what to order, and the open items. 
   bottom.
 - **The encoder knob comes out of the front face, in a 24 mm chin below the display.** The
   PEC11R is a vertical part, so it can't come out of the bottom edge while the PCB lies behind the
-  panel. USB-C and microSD are in the bottom wall.
+  panel. USB-C, microSD and the power button (a side-actuated switch under a flexure tab) are in
+  the bottom wall.
+- **The side-wall touch electrodes are two small boards** pressed against the inside of the side
+  walls in printed channels, cabled to the main PCB.
 - It's printed by a service (Craftcloud or similar), in **MJF/SLS nylon PA12**. Four parts: front
   shell, panel backer, back cover and knob, closed with M2 heat-set inserts.
 - `build.py` runs fit checks (pairwise interference, wall rules, plug/card openings, knob
