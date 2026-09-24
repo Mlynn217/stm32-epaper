@@ -51,10 +51,12 @@ def PLANES(full, rect):
         ('3V3_AON plane', pcbnew.In2_Cu, '3V3_AON', 0, [full]),
         # One L-shaped 3V3_PERIPH zone: the memory block, a strip along the bottom (under the
         # encoder) and the microSD socket - separate islands would need a long trace between them.
+        # Both islands stop 2 mm short of the side edges, leaving 3V3_AON a channel up each side:
+        # the bottom strip would otherwise cut the 3V3_AON plane in two.
         ('3V3_PERIPH plane', pcbnew.In2_Cu, '3V3_PERIPH', 1,
-         [((14.0, 0.3), (33.0, 0.3), (33.0, 15.5), (97.1, 15.5), (97.1, 52.0), (62.0, 52.0),
+         [((14.0, 0.3), (33.0, 0.3), (33.0, 15.5), (95.1, 15.5), (95.1, 52.0), (62.0, 52.0),
            (62.0, 18.5), (14.0, 18.5))]),
-        ('+3V3 plane', pcbnew.In2_Cu, '+3V3', 1, [rect(0.3, 19.0, 31.0, 52.5)]),
+        ('+3V3 plane', pcbnew.In2_Cu, '+3V3', 1, [rect(2.3, 19.0, 31.0, 52.5)]),
     ]
 
 

@@ -16,6 +16,7 @@ import datetime
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -46,6 +47,8 @@ def main():
     ap.add_argument('--variant', choices=('none', 'planes', 'fanout', 'iterate'), required=True)
     ap.add_argument('--radius', type=float, default=3.0, help='iterate: rip-up radius, mm')
     ap.add_argument('--passes', type=int, default=20)
+    ap.add_argument('--tries', type=int, default=1,
+                    help='parallel freerouting runs on the same DSN; the best result is kept')
     ap.add_argument('--fresh', action='store_true')
     ap.add_argument('--note', default='')
     a = ap.parse_args()
@@ -64,19 +67,42 @@ def main():
     elif a.variant != 'none':
         print(kpy('preroute_main_pcb.py', *(['--fanout'] if a.variant == 'fanout' else [])).strip())
     print(kpy('route_main_pcb.py', 'export', dsn).strip())
-    fr_log = os.path.join(tmp, 'freerouting.log')
-    print('freerouting log (live):', fr_log)
-    with open(fr_log, 'w') as f:
-        r = subprocess.run(['java', '-jar', JAR, '-de', dsn, '-do', ses, '-mp', str(a.passes),
-                            '-mt', '8', '--gui.enabled=false', '--api_server.enabled=false'],
-                           cwd=tmp, stdout=f, stderr=subprocess.STDOUT)
-    if r.returncode != 0 or not os.path.exists(ses):
-        sys.exit('freerouting failed, see %s' % fr_log)
-    print(kpy('route_main_pcb.py', 'import', ses).strip())
-
-    rpt = os.path.join(tmp, 'drc.json')
-    run(['kicad-cli', 'pcb', 'drc', '--schematic-parity', '--refill-zones', '--format', 'json',
-         '--severity-all', '-o', rpt, BOARD])
+    # freerouting's results vary run to run (multi-threaded search), so optionally run several
+    # in parallel on the same DSN and keep the best: fewest unconnected, then fewest DRC errors.
+    threads = max(2, 16 // a.tries)
+    procs = []
+    for i in range(a.tries):
+        fr_log = os.path.join(tmp, 'freerouting-%d.log' % i)
+        out = os.path.join(tmp, 'main-%d.ses' % i)
+        print('freerouting run %d log (live): %s' % (i, fr_log))
+        procs.append((out, subprocess.Popen(
+            ['java', '-jar', JAR, '-de', dsn, '-do', out, '-mp', str(a.passes), '-mt', str(threads),
+             '--gui.enabled=false', '--api_server.enabled=false'],
+            cwd=tmp, stdout=open(fr_log, 'w'), stderr=subprocess.STDOUT)))
+    results = []
+    for i, (out, pr) in enumerate(procs):
+        pr.wait()
+        if pr.returncode != 0 or not os.path.exists(out):
+            print('run %d failed' % i)
+            continue
+        copy = os.path.join(tmp, 'try-%d.kicad_pcb' % i)
+        shutil.copy(BOARD, copy)
+        for ext in ('.kicad_pro', '.kicad_dru'):
+            shutil.copy(BOARD[:-len('.kicad_pcb')] + ext, copy[:-len('.kicad_pcb')] + ext)
+        kpy('route_main_pcb.py', 'import', out, copy)
+        rpt_i = os.path.join(tmp, 'drc-%d.json' % i)
+        run(['kicad-cli', 'pcb', 'drc', '--schematic-parity', '--refill-zones', '--format', 'json',
+             '--severity-all', '-o', rpt_i, copy])
+        d_i = json.load(open(rpt_i))
+        score = (len(d_i.get('unconnected_items', [])),
+                 sum(1 for v in d_i.get('violations', []) if v.get('severity') == 'error'))
+        print('run %d: %d unconnected, %d DRC errors' % ((i,) + score))
+        results.append((score, i, copy, rpt_i))
+    if not results:
+        sys.exit('all freerouting runs failed')
+    score, best, copy, rpt = min(results)
+    shutil.copy(copy, BOARD)
+    print('kept run %d of %d' % (best, a.tries))
     d = json.load(open(rpt))
     json.dump(d, open(LAST_DRC, 'w'))
     viol = [v for v in d.get('violations', []) if v.get('severity') == 'error']
@@ -88,10 +114,11 @@ def main():
     unrouted_nets = sorted({m.group(1) for n in nets for m in [re.search(r'\[([^\]]+)\]', n)] if m})
     vias = sum(1 for _ in re.finditer(r'^\s*\(via\b', open(BOARD).read(), re.M))
 
+    note = a.note + (' (best of %d)' % a.tries if a.tries > 1 else '')
     line = '| %s | %s | %d | %d | %d | %d | %s | %s |' % (
         datetime.datetime.now().strftime('%Y-%m-%d %H:%M'), a.variant, a.passes, len(unconnected),
         len(viol), vias, ', '.join('%s %d' % kv for kv in sorted(kinds.items())
-                                   if kv[0] not in ('unconnected_items',)), a.note)
+                                   if kv[0] not in ('unconnected_items',)), note)
     if not os.path.exists(LOG):
         open(LOG, 'w').write('# Main board routing attempts\n\nOne line per `route_loop.py` run '
                              '(newest last). "Unconnected" and "errors" are from KiCad DRC.\n\n'

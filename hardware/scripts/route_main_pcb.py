@@ -4,7 +4,7 @@
     kicad python3.11 hardware/scripts/route_main_pcb.py export /tmp/main.dsn
     java -jar ~/.local/share/freerouting/freerouting-2.4.1.jar -de /tmp/main.dsn -do /tmp/main.ses \\
          -mp 40 -mt 8 --gui.enabled=false --api_server.enabled=false
-    kicad python3.11 hardware/scripts/route_main_pcb.py import /tmp/main.ses
+    kicad python3.11 hardware/scripts/route_main_pcb.py import /tmp/main.ses [board.kicad_pcb]
 
 The import step replaces the board's tracks and vias with the routed session and refills zones.
 (The freerouting MCP server in .mcp.json exposes the same engine to Claude Code sessions.)
@@ -22,9 +22,10 @@ SMD_SMD_UM = 120                     # pad-to-pad clearance, um (DSN units)
 
 
 def main():
-    if len(sys.argv) != 3 or sys.argv[1] not in ('export', 'import'):
+    if len(sys.argv) not in (3, 4) or sys.argv[1] not in ('export', 'import'):
         sys.exit(__doc__)
-    board = pcbnew.LoadBoard(BOARD)
+    path = sys.argv[3] if len(sys.argv) == 4 else BOARD
+    board = pcbnew.LoadBoard(path)
     if sys.argv[1] == 'export':
         ok = pcbnew.ExportSpecctraDSN(board, sys.argv[2])
         # KiCad exports every copper layer as (type signal); mark the plane layers as power so
@@ -47,7 +48,7 @@ def main():
         if not ok:
             sys.exit('import failed')
         pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-        pcbnew.SaveBoard(BOARD, board)
+        pcbnew.SaveBoard(path, board)
         print('imported %s: %d tracks/vias' % (sys.argv[2], len(board.GetTracks())))
     return 0
 
