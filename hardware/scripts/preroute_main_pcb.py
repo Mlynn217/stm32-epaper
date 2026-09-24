@@ -51,12 +51,11 @@ def main():
 
     # Per-net clearance from the net classes (Touch 0.4, Power 0.2, ...): a pre-routed via or
     # stub must satisfy the larger of its own class and the obstacle's class.
-    net_clear = {}
-    for code, net in netcodes.items():
-        try:
-            net_clear[code] = max(CLEAR, tomm(net.GetNetClass().GetClearance()))
-        except Exception:
-            net_clear[code] = CLEAR
+    # (NETINFO_ITEM.GetNetClass() returns an untyped SWIG pointer in KiCad 10; the net settings'
+    # effective-class lookup by name works.)
+    ns = board.GetDesignSettings().m_NetSettings
+    net_clear = {code: max(CLEAR, tomm(ns.GetEffectiveNetClass(net.GetNetname()).GetClearance()))
+                 for code, net in netcodes.items()}
     vias_at = []          # (x, y) of every via added: holes need spacing whatever their net
     vias_net = []         # (x, y, netcode) of the same, for the shared-via fallback
 

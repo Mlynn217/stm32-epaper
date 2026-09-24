@@ -34,7 +34,7 @@ FLOORPLAN = {
     'U1': (21.0, 46.0, 0),       # BQ24073 charger, near the battery connector J2
     'U2': (9.0, 41.0, 0),        # TPS63802 -> +3V3
     'U3': (9.0, 26.0, 0),        # TPS61023 -> +5V (HAT)
-    'U4': (27.0, 34.0, 0),       # TPS22965 peripheral load switch
+    'U4': (29.0, 20.5, 0),       # TPS22965: +3V3 in / 3V3_PERIPH out, on the boundary of the two plane zones
     'U7': (27.0, 24.0, 0),       # MCP1700 RTC LDO
     'U6': (17.0, 33.0, 0),       # TPS63900 (DNP on v1)
     'U5': (73.7, 12.0, 0),       # USBLC6, beside J1
