@@ -27,9 +27,8 @@ FIXED = {'H301', 'H302', 'H303', 'H304', 'SW301', 'J1', 'J201', 'SW302', 'J302',
          'RT1', 'J301'}
 # ref: (x, y, angle) in the PCB frame. MCU: its crystal pins (PC14/15, PH0/1) are on the left side.
 FLOORPLAN = {
-    'U101': (48.7, 36.5, 0),     # STM32F469IIT6, LQFP-176
-    'U201': (70.5, 36.5, 0),     # SDRAM, TSOP-II-54 (vertical at 0 deg), beside the MCU
-    'U202': (87.0, 45.0, 0),     # QSPI flash
+    # U101 (MCU), U201 (SDRAM) and U202 (QSPI) are not listed: optimise_core() picks the MCU
+    # rotation and the memories' positions for the shortest bus ratsnest.
     'U301': (44.0, 55.0, 0),     # CAP1188: top-middle, between the electrode connectors J302/J303
     'U302': (39.5, 55.0, 0),     # electrode ESD, beside it (clear of RT1's pads)
     'U1': (21.0, 46.0, 0),       # BQ24073 charger, near the battery connector J2
@@ -39,8 +38,6 @@ FLOORPLAN = {
     'U7': (27.0, 24.0, 0),       # MCP1700 RTC LDO
     'U6': (17.0, 33.0, 0),       # TPS63900 (DNP on v1)
     'U5': (73.7, 12.0, 0),       # USBLC6, beside J1
-    'Y101': (31.5, 40.0, 90),    # HSE crystal at the MCU's left side
-    'Y102': (31.5, 45.5, 90),    # LSE crystal
     'J101': (63.0, 15.0, 0),     # Tag-Connect SWD, bottom gap right of the encoder
     'SW101': (35.0, 16.0, 0),    # BOOT button, bottom gap left of the encoder
     'J102': (35.0, 7.0, 90),     # 1.27 mm header
@@ -56,6 +53,79 @@ def PLANES(full, rect):
          [rect(62.0, 16.0, 97.1, 52.0), rect(14.0, 0.3, 33.0, 14.5)]),
         ('+3V3 plane', pcbnew.In2_Cu, '+3V3', 1, [rect(0.3, 14.5, 31.0, 52.5)]),
     ]
+
+
+BUS_PATTERNS = ['FMC_*', 'SDRAM_CLK', 'QUADSPI_*', 'QSPI_FLASH_CLK', 'SDIO_*', 'SDCARD_CLK',
+                'USB_D?']
+MCU_AT = (48.7, 36.5)
+
+
+def optimise_core(fps, put, box, free, occupied, W):
+    """Choose the MCU rotation and the SDRAM / QSPI positions with the smallest bus ratsnest
+    (sum of MCU-pad to peer-pad distances over the bus nets). Places them, marks them occupied,
+    and returns {ref: (x, y, angle)}."""
+    import fnmatch
+
+    def xy(pad):
+        p = pad.GetPosition()
+        return pcbnew.ToMM(p.x), pcbnew.ToMM(p.y)
+
+    def is_bus(n):
+        return any(fnmatch.fnmatchcase(n, p) for p in BUS_PATTERNS)
+
+    def cost(refs):
+        mcu = {p.GetNetname(): xy(p) for p in fps['U101'].Pads() if is_bus(p.GetNetname())}
+        c = 0.0
+        for ref in refs:
+            for p in fps[ref].Pads():
+                n = p.GetNetname()
+                if n in mcu:
+                    (ax, ay), (bx, by) = mcu[n], xy(p)
+                    c += abs(ax - bx) + abs(ay - by)
+        return c
+
+    def best_spot(ref, angles, xs, ys, others):
+        best = None
+        for a in angles:
+            for x in xs:
+                for y in ys:
+                    put(ref, x, y, a)
+                    b = box(fps[ref])
+                    if not free(b) or any(not (b[2] + 0.5 <= o[0] or o[2] + 0.5 <= b[0] or
+                                               b[3] + 0.5 <= o[1] or o[3] + 0.5 <= b[1])
+                                          for o in others):
+                        continue
+                    c = cost([ref])
+                    if best is None or c < best[0]:
+                        best = (c, x, y, a, b)
+        return best
+
+    fixed_peers = ['J201', 'J1']      # microSD socket and USB-C: placed by the enclosure
+    xs = [60.0 + i for i in range(34)]
+    ys = [18.0 + i for i in range(35)]
+    results = []
+    for mcu_a in (0, 90, 180, 270):
+        put('U101', MCU_AT[0], MCU_AT[1], mcu_a)
+        mb = box(fps['U101'])
+        s1 = best_spot('U201', (0, 90), xs, ys, [mb])
+        if not s1:
+            continue
+        put('U201', *s1[1:4])
+        s2 = best_spot('U202', (0, 90, 180, 270), xs, ys, [mb, s1[4]])
+        if not s2:
+            continue
+        put('U202', *s2[1:4])
+        total = cost(['U201', 'U202'] + fixed_peers)
+        results.append((total, mcu_a, s1, s2))
+        print('  MCU %3d deg: bus ratsnest %.0f mm (SDRAM at %.0f,%.0f/%d, QSPI at %.0f,%.0f/%d)'
+              % (mcu_a, total, s1[1], s1[2], s1[3], s2[1], s2[2], s2[3]))
+    total, mcu_a, s1, s2 = min(results, key=lambda r: r[0])
+    put('U101', MCU_AT[0], MCU_AT[1], mcu_a)
+    put('U201', *s1[1:4])
+    put('U202', *s2[1:4])
+    for ref in ('U101', 'U201', 'U202'):
+        occupied.append(box(fps[ref]))
+    return {'U101': (MCU_AT[0], MCU_AT[1], mcu_a), 'U201': s1[1:4], 'U202': s2[1:4]}
 
 
 MARGIN = 0.25                    # courtyard-to-courtyard gap
@@ -109,16 +179,17 @@ def main():
 
     for ref in FIXED:
         occupied.append(box(fps[ref]))
+    core = optimise_core(fps, put, box, free, occupied, W)
     for ref, (x, y, a) in FLOORPLAN.items():
         put(ref, x, y, a)
         b = box(fps[ref])
         assert free(b), 'floorplan collision: %s at %s' % (ref, b)
         occupied.append(b)
-    placed = set(FIXED) | set(FLOORPLAN)
+    placed = set(FIXED) | set(FLOORPLAN) | set(core)
 
     # Power pins of the ICs, for decoupling assignment: {net: [(x, y, ic_ref)]}, consumed as used.
     power_pins = {}
-    for ref in FLOORPLAN:
+    for ref in list(FLOORPLAN) + list(core):
         if ref.startswith('U'):
             for pad in fps[ref].Pads():
                 n = pad.GetNetname()

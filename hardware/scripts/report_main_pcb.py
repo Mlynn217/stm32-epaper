@@ -2,10 +2,11 @@
 """Routed-length report for the main board: per bus group, the longest net, the skew and the
 limits from stm32-epaper.kicad_dru (KiCad's DRC enforces those; this shows the margins).
 
-    kicad python3.11 hardware/scripts/report_main_pcb.py
+    kicad python3.11 hardware/scripts/report_main_pcb.py [board.kicad_pcb]
 """
 import fnmatch
 import os
+import sys
 
 import pcbnew
 
@@ -25,7 +26,7 @@ GROUPS = [
 
 
 def main():
-    board = pcbnew.LoadBoard(BOARD)
+    board = pcbnew.LoadBoard(sys.argv[1] if len(sys.argv) > 1 else BOARD)
     length = {}
     for t in board.GetTracks():
         n = t.GetNetname()
