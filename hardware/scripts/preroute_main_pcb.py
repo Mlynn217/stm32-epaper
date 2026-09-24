@@ -190,12 +190,17 @@ def main():
         own = (tomm(bb.GetLeft()), tomm(bb.GetTop()), tomm(bb.GetRight()), tomm(bb.GetBottom()), pad.GetNetCode())
         half = max(tomm(bb.GetWidth()), tomm(bb.GetHeight())) / 2
         away = math.atan2(py - cy, px - cx) if (px, py) != (cx, cy) else 0.0
-        # Directions to try: for the MCU, straight IN first (vias under the LQFP body - the ring
-        # outside is full of pins and decoupling caps); otherwise out, then fanning round to in.
-        dirs = [away + math.pi * s_ for s_ in (1.0,)] if fp.GetReference() == MCU else []
+        # Directions to try: for the MCU, straight IN first - perpendicular to the package side,
+        # to a via under the LQFP body (the ring outside is full of pins and decoupling caps).
+        # (The centre-to-pad angle is diagonal for pins away from mid-side: no good.)
+        dirs = []
+        if fp.GetReference() == MCU:
+            dx, dy = px - cx, py - cy
+            dirs.append(math.atan2(0.0, -math.copysign(1, dx)) if abs(dx) > abs(dy)
+                        else math.atan2(-math.copysign(1, dy), 0.0))
         dirs += [away + sgn * k * math.pi / 4 for k in range(5) for sgn in ((1,) if k in (0, 4) else (1, -1))]
         done = False
-        for d in (half + VIA_D / 2 + 0.25, half + VIA_D / 2 + 0.6, half + VIA_D / 2 + 1.0):
+        for d in (half + VIA_D / 2 + 0.25, half + VIA_D / 2 + 0.9, half + VIA_D / 2 + 1.6):
             for a in dirs:
                 vx, vy = px + d * math.cos(a), py + d * math.sin(a)
                 if via_ok(vx, vy, pad.GetNetCode()) and plane_at(net, vx, vy) and \
@@ -250,7 +255,7 @@ def main():
             bb = pad.GetBoundingBox()
             own = (tomm(bb.GetLeft()), tomm(bb.GetTop()), tomm(bb.GetRight()), tomm(bb.GetBottom()))
             reach = max(tomm(bb.GetWidth()), tomm(bb.GetHeight())) / 2
-            for d in (0.6, 1.0, 1.5):
+            for d in (0.6, 1.0, 1.4, 1.8, 2.2, 2.6, 3.0):
                 vx, vy = px + ux * (reach + d), py + uy * (reach + d)
                 if via_ok(vx, vy, pad.GetNetCode()) and stub_ok(px, py, vx, vy, pad.GetNetCode(), 0.15, own):
                     add(pad, vx, vy, 0.15)

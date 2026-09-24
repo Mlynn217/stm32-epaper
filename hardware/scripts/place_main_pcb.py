@@ -191,6 +191,11 @@ def main():
         b = box(fps[ref])
         assert free(b), 'floorplan collision: %s at %s' % (ref, b)
         occupied.append(b)
+    # Keep-out corridor above the CAP1188: its four touch pins are all on its top side, facing
+    # the board's top edge ~3 mm away. Without this the placer fills that strip with the CAP1188's
+    # own decoupling/pull parts and the touch lines can't escape. (x0, y0, x1, y1), PCB frame.
+    cap_x, cap_y, _ = FLOORPLAN['U301']
+    occupied.append((cap_x - 3.0, cap_y + 1.6, cap_x + 3.0, H - EDGE_KEEP))
     core = optimise_core(fps, put, box, free, occupied, W)
     placed = set(FIXED) | set(FLOORPLAN) | set(core)
 
