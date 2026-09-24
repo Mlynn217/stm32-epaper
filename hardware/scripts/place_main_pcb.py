@@ -179,12 +179,13 @@ def main():
 
     for ref in FIXED:
         occupied.append(box(fps[ref]))
-    core = optimise_core(fps, put, box, free, occupied, W)
+    # Fixed floorplan parts first, so the core optimiser works around them.
     for ref, (x, y, a) in FLOORPLAN.items():
         put(ref, x, y, a)
         b = box(fps[ref])
         assert free(b), 'floorplan collision: %s at %s' % (ref, b)
         occupied.append(b)
+    core = optimise_core(fps, put, box, free, occupied, W)
     placed = set(FIXED) | set(FLOORPLAN) | set(core)
 
     # Power pins of the ICs, for decoupling assignment: {net: [(x, y, ic_ref)]}, consumed as used.

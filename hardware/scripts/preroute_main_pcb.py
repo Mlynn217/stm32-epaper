@@ -42,6 +42,16 @@ def main():
         board.Remove(t)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
 
+    # Per-net clearance from the net classes (Touch 0.4, Power 0.2, ...): a pre-routed via or
+    # stub must satisfy the larger of its own class and the obstacle's class.
+    net_clear = {}
+    for code, net in board.GetNetsByNetcode().items():
+        try:
+            net_clear[code] = max(CLEAR, tomm(net.GetNetClass().GetClearance()))
+        except Exception:
+            net_clear[code] = CLEAR
+    vias_at = []          # (x, y) of every via added: holes need spacing whatever their net
+
     # Obstacles: (x0, y0, x1, y1, netcode) in mm, board coordinates (y down).
     obst = []
     for pad in board.GetPads():
@@ -58,7 +68,8 @@ def main():
         for a0, b0, a1, b1, n in obst:
             if n == net and n != 0:
                 continue
-            if x1 + CLEAR > a0 and a1 + CLEAR > x0 and y1 + CLEAR > b0 and b1 + CLEAR > y0:
+            c = max(net_clear.get(net, CLEAR), net_clear.get(n, CLEAR))
+            if x1 + c > a0 and a1 + c > x0 and y1 + c > b0 and b1 + c > y0:
                 return False
         return True
 
@@ -67,6 +78,10 @@ def main():
         if not (ex0 + r < x < ex1 - r and ey0 + r < y < ey1 - r):
             return False
         if any(math.hypot(x - hx, y - hy) < 2.2 for hx, hy in holes):
+            return False
+        # Drill-to-drill spacing between any two vias, same net or not (0.25 mm + drills), and
+        # room for the autorouter's own vias between ours.
+        if any(math.hypot(x - vx, y - vy) < VIA_D + 0.3 for vx, vy in vias_at):
             return False
         return clear_box(x - r, y - r, x + r, y + r, net)
 
@@ -79,7 +94,8 @@ def main():
             for a0, b0, a1, b1, n in obst:
                 if (n == net and n != 0) or (a0, b0, a1, b1) == own_pad_box:
                     continue
-                if b[2] + CLEAR > a0 and a1 + CLEAR > b[0] and b[3] + CLEAR > b0 and b1 + CLEAR > b[1]:
+                c = max(net_clear.get(net, CLEAR), net_clear.get(n, CLEAR))
+                if b[2] + c > a0 and a1 + c > b[0] and b[3] + c > b0 and b1 + c > b[1]:
                     return False
         return True
 
@@ -104,6 +120,7 @@ def main():
         v.SetLocked(True)
         board.Add(v)
         r = VIA_D / 2
+        vias_at.append((vx, vy))
         obst.append((vx - r, vy - r, vx + r, vy + r, pad.GetNetCode()))
         lo_x, hi_x = sorted((tomm(p.x), vx))
         lo_y, hi_y = sorted((tomm(p.y), vy))
