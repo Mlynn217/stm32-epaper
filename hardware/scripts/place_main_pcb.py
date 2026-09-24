@@ -5,7 +5,7 @@ Leaves the enclosure-fixed parts from gen_main_pcb.py where they are, puts the b
 floorplan (FLOORPLAN below), then places every remaining part with a small greedy placer: as close
 as possible to the pads it connects to, without courtyard overlaps, mounting holes or the edge.
 Decoupling capacitors (parts on power nets only) go to the nearest unused power pin of their IC.
-Finally adds the inner planes (In1 = GND, In2 = +3V3).
+Finally adds the inner planes (In1 = GND; In2 = 3V3_AON with 3V3_PERIPH and +3V3 islands).
 
 Run with KiCad's bundled Python:  kicad python3.11 hardware/scripts/place_main_pcb.py
 It rewrites the positions of every part it places, so re-running discards hand moves of those parts:
@@ -45,6 +45,19 @@ FLOORPLAN = {
     'SW101': (35.0, 16.0, 0),    # BOOT button, bottom gap left of the encoder
     'J102': (35.0, 7.0, 90),     # 1.27 mm header
 }
+
+
+def PLANES(full, rect):
+    """(zone name, layer, net, priority, [outline polygons in the PCB frame])"""
+    return [
+        ('GND plane', pcbnew.In1_Cu, 'GND', 0, [full]),
+        ('3V3_AON plane', pcbnew.In2_Cu, '3V3_AON', 0, [full]),
+        ('3V3_PERIPH plane', pcbnew.In2_Cu, '3V3_PERIPH', 1,
+         [rect(62.0, 16.0, 97.1, 52.0), rect(14.0, 0.3, 33.0, 14.5)]),
+        ('+3V3 plane', pcbnew.In2_Cu, '+3V3', 1, [rect(0.3, 14.5, 31.0, 52.5)]),
+    ]
+
+
 MARGIN = 0.25                    # courtyard-to-courtyard gap
 EDGE_KEEP = 0.6
 
@@ -214,22 +227,30 @@ def main():
 
     # Inner planes (added once; a re-run keeps the existing ones - removing zones and adding new
     # ones in the same session trips a SWIG typing bug in KiCad 10's Python).
+    # In1 = GND. In2 = the 3.3 V rails, split by where their pins are: 3V3_AON (MCU, CAP1188,
+    # buttons, pull-ups - everywhere) as the base, with higher-priority islands for 3V3_PERIPH
+    # (SDRAM/QSPI block, microSD socket) and +3V3 (the power stage).
     have = {z.GetZoneName() for z in board.Zones()}
-    nets = {n: board.FindNet(n) for n in ('GND', '+3V3')}
-    for layer, net in ((pcbnew.In1_Cu, 'GND'), (pcbnew.In2_Cu, '+3V3')):
-        if '%s plane' % net in have:
+    full = ((0.3, 0.3), (W - 0.3, 0.3), (W - 0.3, H - 0.3), (0.3, H - 0.3))
+
+    def rect(x0, y0, x1, y1):
+        return ((x0, y0), (x1, y0), (x1, y1), (x0, y1))
+    for name, layer, net, prio, outlines in PLANES(full, rect):
+        if name in have:
             continue
         z = pcbnew.ZONE(board)
         z.SetLayer(layer)
-        z.SetNet(nets[net])
+        z.SetNet(board.FindNet(net))
         ol = z.Outline()
-        ol.NewOutline()
-        for x, y in ((0.3, 0.3), (W - 0.3, 0.3), (W - 0.3, H - 0.3), (0.3, H - 0.3)):
-            ol.Append(P(x, y).x, P(x, y).y)
+        for poly in outlines:
+            ol.NewOutline()
+            for x, y in poly:
+                ol.Append(P(x, y).x, P(x, y).y)
+        z.SetAssignedPriority(prio)
         z.SetMinThickness(mm(0.2))
         z.SetLocalClearance(mm(0.2))
         z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL)
-        z.SetZoneName('%s plane' % net)
+        z.SetZoneName(name)
         board.Add(z)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
 

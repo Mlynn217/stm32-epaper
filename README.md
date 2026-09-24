@@ -30,12 +30,12 @@ Not done yet — see [TODO.md](TODO.md) for the full list, but the near-term hig
 - Power management/battery life not started
 - Custom PCB: the **v1 schematic is drafted in full** in `hardware/kicad/` (Power, MCU, Memory and
   Peripherals sheets). It's ERC-clean and machine-checked (pin mux, nets, footprint pads), but not
-  yet reviewed by a person, and there's no PCB layout yet. v1 scope: the Waveshare HAT stays
-  external on an SPI connector (see [Custom PCB (Planned)](#custom-pcb-planned))
-- Custom PCB layout **started**: `hardware/kicad/stm32-epaper.kicad_pcb` has the enclosure-derived
-  outline, every footprint with its nets, and the enclosure-fixed parts placed; core placement and
-  routing are next. The side-wall electrode board (`hardware/electrode/`) is fully laid out and
-  DRC-clean
+  yet reviewed by a person. v1 scope: the Waveshare HAT stays external on an SPI connector (see
+  [Custom PCB (Planned)](#custom-pcb-planned))
+- Custom PCB layout **in progress**: `hardware/kicad/stm32-epaper.kicad_pcb` is placed (4 layers,
+  enclosure-derived outline, planes on the inner layers) and being autorouted with freerouting;
+  length/skew rules are in its `.kicad_dru` (see [Layout rules](#layout-rules-main-board)). The
+  side-wall electrode board (`hardware/electrode/`) is fully laid out and DRC-clean
 - Enclosure: a **v0 parametric draft** in `hardware/enclosure/` (build123d). It passes its own fit
   checks and exports STEP/STL/3MF, but several dimensions are still placeholders and nothing has
   been printed (see [Enclosure](#enclosure-v0-draft))
@@ -481,6 +481,44 @@ covers the design, how to build and view it, what to order, and the open items. 
   engagement). It also exports the **PCB outline (DXF, for Edge.Cuts)** and a placement JSON
   (encoder axis, connector positions, height limits). **The enclosure defines the board outline**,
   not the other way round.
+
+### Layout rules (main board)
+
+Nothing on this board is fast enough, relative to its trace lengths, to need controlled
+impedance. Signals travel ~6.5 ps/mm, and even ~1 ns edges only act like transmission lines
+above ~75 mm, while the buses here are 20–40 mm. So the rules are about keeping things **short
+and grouped**, with continuous ground under them. They're enforced in two places:
+
+- **Net classes** (set by `gen_main_pcb.py`, stored in the project). These are exported in the
+  Specctra DSN, so **freerouting obeys them**:
+
+  | Class | Track | Clearance | Nets |
+  |---|---|---|---|
+  | Power | 0.5 mm | 0.2 mm | VBUS, VSYS, +BATT, +5V, converter switch nodes |
+  | Rail3V3 | 0.3 mm | 0.15 mm | +3V3, 3V3_AON, 3V3_PERIPH, VBAT_RTC |
+  | Touch | 0.15 mm | **0.4 mm** | TOUCH_* (thin for low capacitance; wide spacing so nothing runs close alongside) |
+  | Clock | 0.15 mm | 0.2 mm | SDRAM, microSD and QSPI clocks |
+  | Default | 0.15 mm | 0.127 mm | everything else (vias 0.45/0.2 mm) |
+
+- **`hardware/kicad/stm32-epaper.kicad_dru`**: length and skew limits, which a DSN can't
+  carry, so the **router doesn't see them. KiCad's DRC checks them after routing**:
+  - SDRAM ≤ 45 mm, ±10 mm skew.
+  - SDIO ≤ 50 mm, ±5 mm.
+  - QSPI ≤ 45 mm, ±5 mm.
+  - USB D+/D− within 2 mm.
+  - Crystal nets ≤ 12 mm.
+  - Touch lines ≤ 60 mm.
+  - Power tracks ≥ 0.4 mm.
+  - A flat 0.12 mm pad-to-pad clearance, since the class clearances can't apply inside
+    0.5 mm-pitch land patterns.
+
+  Anything that fails gets fixed by hand (shortened, or length-tuned in pcbnew).
+- **Placement** (`place_main_pcb.py`) does most of the work for lengths: the SDRAM sits beside
+  the MCU, the clock series resistors (R208–R210, 22–33 Ω source termination) sit at their MCU
+  pins, and the CAP1188 sits between the two electrode connectors.
+- **Touch lines are not impedance-matched on purpose.** The CAP1188 measures capacitance at
+  kHz rates, so what matters is low stray capacitance and distance from noise sources (switch
+  nodes, SDCLK, the HAT's SPI). Equal lengths don't matter either: each channel self-calibrates.
 
 ### Full System Block Diagram (v1)
 
