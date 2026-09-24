@@ -27,6 +27,9 @@ def build():
     two_pin(s, 'R303', 'R', '33R', 55.88, 81.28, 'EPD_CS', 'HAT_CS', R0402)
     s.text('J301: 1 +5V, 2 GND, 3 SCK, 4 MOSI, 5 MISO, 6 CS, 7 RST, 8 HRDY (busy, active low)',
            20.32, 114.3)
+    s.text('R316: HRDY would float while the HAT is unpowered; 100k holds it low (reads "busy").\n'
+           'No ESD on J301: it is an internal cable, never user-accessible.', 20.32, 119.38)
+    two_pin(s, 'R316', 'R', '100k', 137.16, 88.9, 'EPD_HRDY', 'GND', R0402)
 
     # ---- CAP1188 -------------------------------------------------------------------------
     s.text('CAP1188 cap-touch on I2C1. ADDR_COMM 150k -> SMBus address 0x29 (0101_001), same as\n'
@@ -51,6 +54,14 @@ def build():
                     footprint='Connector_JST:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal',
                     fields={'MPN': 'SM03B-SRSS-TB'})
         s.conns(jt, {'1': 'TOUCH_%s1' % side, '2': 'GND', '3': 'TOUCH_%s2' % side})
+    s.text('U302: ESD on the electrode cables (the boards sit behind 2.2 mm of PA12, but the\n'
+           'back-cover seam is ~0.2 mm from their edge). 0.5 pF/line: negligible next to the pads.\n'
+           'NC pins are the flow-through partners of the IO pins (TPD4E05U06 datasheet) - route through.',
+           147.32, 195.58)
+    esd = s.part('U302', 'Power_Protection:TPD4E05U06DQA', 'TPD4E05U06DQAR', 160.02, 215.9,
+                 fields={'MPN': 'TPD4E05U06DQAR'})
+    conn_by_name(s, esd, {'D1+': 'TOUCH_L1', 'D1-': 'TOUCH_L2', 'D2+': 'TOUCH_R1',
+                          'D2-': 'TOUCH_R2', 'GND': 'GND', 'NC': None})
     two_pin(s, 'R304', 'R', '4.7k', 30.48, 238.76, '3V3_AON', 'I2C1_SCL', R0402)
     two_pin(s, 'R305', 'R', '4.7k', 40.64, 238.76, '3V3_AON', 'I2C1_SDA', R0402)
     two_pin(s, 'R306', 'R', '10k', 50.8, 238.76, '3V3_AON', 'CAP_ALERT', R0402)
@@ -61,13 +72,13 @@ def build():
     two_pin(s, 'C302', 'C', '1uF', 101.6, 238.76, '3V3_AON', 'GND', C0402)
 
     # ---- Encoder -------------------------------------------------------------------------
-    s.text('Bourns PEC11R-4215F-S0024 (24 detents, push switch). Bourns suggested filter per\n'
+    s.text('Bourns PEC11R-4220F-S0024 (24 detents, push switch, 20 mm shaft). Bourns suggested filter per\n'
            'channel: 10k pull-up, 10k series, 10nF to GND -> TIM3 encoder mode (PA6/PA7).\n'
            'Switch: 10k pull-up + 10nF, active low. Mounting lugs to GND (metal shaft ESD path).',
            218.44, 30.48)
-    e = s.part('SW301', 'Device:RotaryEncoder_Switch_MP', 'PEC11R-4215F-S0024', 256.54, 83.82,
+    e = s.part('SW301', 'Device:RotaryEncoder_Switch_MP', 'PEC11R-4220F-S0024', 256.54, 83.82,
                footprint='epaper:RotaryEncoder_Bourns_Vertical_PEC11R-4xxxF-Sxxxx',
-               fields={'MPN': 'PEC11R-4215F-S0024'})
+               fields={'MPN': 'PEC11R-4220F-S0024'})
     s.conns(e, {'A': 'ENC_A_RAW', 'B': 'ENC_B_RAW', 'C': 'GND', 'S1': 'GND', 'S2': 'ENC_SW',
                 'MP': 'GND'})
     two_pin(s, 'R310', 'R', '10k', 297.18, 81.28, '3V3_AON', 'ENC_A_RAW', R0402)
@@ -88,4 +99,11 @@ def build():
                fields={'MPN': 'SKRTLAE010'})
     s.conns(b, {'1': '3V3_AON', '2': 'PWR_BTN'})
     two_pin(s, 'R315', 'R', '100k', 287.02, 187.96, 'PWR_BTN', 'GND', R0402)
+
+    # ---- Mounting ----------------------------------------------------------------------------
+    s.text('Mounting holes: M2 thread-forming screws into standoffs on the back cover. Positions\n'
+           'come from hardware/enclosure (out/pcb_placement.json).', 218.44, 215.9)
+    for i in range(4):
+        s.part('H%d' % (301 + i), 'Mechanical:MountingHole', 'M2', 228.6 + i * 12.7, 231.14,
+               footprint='MountingHole:MountingHole_2.2mm_M2', in_bom=False)
     return s

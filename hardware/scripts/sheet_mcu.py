@@ -159,22 +159,23 @@ def build():
             fields={'Note': 'ESR < 2 ohm'})
 
     # ---- clocks ----------------------------------------------------------------------------
-    s.text('HSE 8MHz (PLL -> 180MHz). Load caps C = 2*(CL - Cstray): for a CL = 10pF crystal\n'
-           'and ~4pF stray, 12pF. LSE 32.768kHz: pick a low-CL (6-7pF) crystal the LSE\n'
-           'oscillator drives reliably (ST AN2867); 6.8pF shown for CL = 6pF. Verify both\n'
-           'against the chosen crystals.', 20.32, 30.48)
-    y1 = s.part('Y101', 'Device:Crystal_GND24', '8MHz CL10pF', 40.64, 68.58,
+    s.text('HSE 8MHz (PLL -> 180MHz), NDK NX3225GD CL = 8pF: C = 2*(CL - Cstray) = 2*(8 - 3) =\n'
+           '10pF (C0G). LSE: NDK NX3215SA CL = 6pF, ESR <= 70k: C = 2*(6 - 3) = 6.2pF (C0G).\n'
+           'AN2867 gm_crit = 4*ESR*(2*pi*f)^2*(C0+CL)^2 ~ 0.58 uA/V for the LSE: check it against\n'
+           'the F469 LSE Gm_crit_max; if short, set LSEMOD (high-drive LSE) in firmware.',
+           20.32, 30.48)
+    y1 = s.part('Y101', 'Device:Crystal_GND24', '8MHz CL8pF', 40.64, 68.58,
                 footprint='Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm',
-                fields={'MPN': 'Abracon ABM8 series, 8MHz, CL=10pF (verify)'})
+                fields={'MPN': 'NX3225GD-8MHZ-STD-CRA-3'})
     s.conns(y1, {'1': 'HSE_IN', '3': 'HSE_OUT', '2': 'GND', '4': 'GND'})
-    two_pin(s, 'C122', 'C', '12pF', 30.48, 88.9, 'HSE_IN', 'GND', C0402)
-    two_pin(s, 'C123', 'C', '12pF', 50.8, 88.9, 'HSE_OUT', 'GND', C0402)
+    two_pin(s, 'C122', 'C', '10pF', 30.48, 88.9, 'HSE_IN', 'GND', C0402)
+    two_pin(s, 'C123', 'C', '10pF', 50.8, 88.9, 'HSE_OUT', 'GND', C0402)
     y2 = s.part('Y102', 'Device:Crystal', '32.768kHz CL6pF', 96.52, 68.58,
-                footprint='Crystal:Crystal_SMD_2012-2Pin_2.0x1.2mm',
-                fields={'MPN': '32.768kHz 2012, CL=6pF, low ESR (verify vs AN2867)'})
+                footprint='Crystal:Crystal_SMD_3215-2Pin_3.2x1.5mm',
+                fields={'MPN': 'NX3215SA-32.768KHZ-EXS00A-MU00525'})
     s.conns(y2, {'1': 'LSE_IN', '2': 'LSE_OUT'})
-    two_pin(s, 'C124', 'C', '6.8pF', 86.36, 88.9, 'LSE_IN', 'GND', C0402)
-    two_pin(s, 'C125', 'C', '6.8pF', 106.68, 88.9, 'LSE_OUT', 'GND', C0402)
+    two_pin(s, 'C124', 'C', '6.2pF', 86.36, 88.9, 'LSE_IN', 'GND', C0402)
+    two_pin(s, 'C125', 'C', '6.2pF', 106.68, 88.9, 'LSE_OUT', 'GND', C0402)
 
     # ---- reset / boot ----------------------------------------------------------------------
     s.text('Reset: 100nF on NRST (internal pull-up). BOOT0 10k pull-down + BOOT button to 3V3:\n'

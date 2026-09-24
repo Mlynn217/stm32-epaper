@@ -31,7 +31,8 @@ EDGE_FILLET = dim("EDGE_FILLET", 1.5, "DC", "front/back perimeter edge rounding"
 # --- Display: Waveshare 6" HD panel (README "Display: Waveshare 6inch HD e-Paper HAT") ---------
 PANEL_W = dim("PANEL_W", 101.8, "DOC", "README outline 138.4 x 101.8 x 0.67 (portrait: W is the short side)")
 PANEL_H = dim("PANEL_H", 138.4, "DOC", "README outline")
-PANEL_T = dim("PANEL_T", 0.67, "DOC", "README outline")
+PANEL_T = dim("PANEL_T", 0.67, "DOC", "README/Waveshare wiki outline. NB: ED060KD1 listings give "
+               "1.6 mm (front-light variant?) - measure the real panel; PANEL_GAP absorbs 0.3")
 ACTIVE_W = dim("ACTIVE_W", 90.584, "DOC", "README active area 122.356 x 90.584")
 ACTIVE_H = dim("ACTIVE_H", 122.356, "DOC", "README active area")
 ACTIVE_DX = dim("ACTIVE_DX", 0.0, "PH", "active-area offset from panel centre; assumed centred, "
@@ -62,16 +63,19 @@ PCB_H = dim("PCB_H", 60.0, "DC", "main PCB height (Y); full inner width, along t
 PCB_TOP_PARTS = dim("PCB_TOP_PARTS", 3.5, "PH", "tallest top-side part except encoder/USB/SD "
                     "(inductors, LQFP); confirm at layout")
 
-# --- Encoder: Bourns PEC11R-4215F-S0024, vertical (epaper.pretty footprint) -------------------
-ENC_BODY_W = dim("ENC_BODY_W", 12.5, "DOC", "gen_footprints.py F.Fab body 12.5 x 13.4")
+# --- Encoder: Bourns PEC11R-4220F-S0024, vertical (epaper.pretty footprint) -------------------
+# Bourns PEC11R datasheet (REV. 04/26), drawing PEC11R-4xxxF-Sxxxx + shaft table. The 20 mm shaft,
+# not 15: the M7 bushing leaves only 3.5 mm of a 15 mm shaft free, too little for a knob to grip.
+ENC_BODY_W = dim("ENC_BODY_W", 12.5, "DOC", "PEC11R drawing 12.5 x 13.4")
 ENC_BODY_D = dim("ENC_BODY_D", 13.4, "DOC", "as ENC_BODY_W")
-ENC_BODY_T = dim("ENC_BODY_T", 6.5, "PH", "body height above PCB; check the PEC11R drawing")
-ENC_SHAFT_L = dim("ENC_SHAFT_L", 15.0, "DOC", "'15' in the part number; measured from the PCB "
-                  "seating plane (PH: confirm the reference plane on the drawing)")
-ENC_SHAFT_D = dim("ENC_SHAFT_D", 6.0, "DOC", "PEC11R 6 mm flatted shaft")
+ENC_BODY_T = dim("ENC_BODY_T", 6.5, "DOC", "PEC11R drawing: mounting surface to bushing")
+ENC_BUSH_L = dim("ENC_BUSH_L", 7.0, "DOC", "PEC11R shaft table LB for L = 20 (M7x0.75 bushing)")
+ENC_BUSH_D = dim("ENC_BUSH_D", 7.0, "DOC", "M7 thread")
+ENC_SHAFT_L = dim("ENC_SHAFT_L", 20.0, "DOC", "PEC11R shaft table L = 20, from the mounting surface")
+ENC_SHAFT_D = dim("ENC_SHAFT_D", 6.0, "DOC", "PEC11R 6.0 mm flatted shaft, 4.5 across the flat")
 KNOB_D = dim("KNOB_D", 18.0, "DC", "knob diameter")
-KNOB_GAP = dim("KNOB_GAP", 0.6, "DC", "knob skirt to front face (must clear the push travel)")
-ENC_PUSH_TRAVEL = dim("ENC_PUSH_TRAVEL", 0.5, "PH", "PEC11R push-switch travel; check datasheet")
+KNOB_GAP = dim("KNOB_GAP", 1.0, "DC", "knob skirt to front face (must clear the push travel)")
+ENC_PUSH_TRAVEL = dim("ENC_PUSH_TRAVEL", 0.8, "DOC", "PEC11R switch travel 0.5 +/- 0.3 mm (max)")
 # The PEC11R is a VERTICAL part (shaft normal to the PCB). With the PCB lying behind the panel,
 # the knob comes out of the FRONT face in the chin below the display, not the bottom edge.
 
@@ -85,7 +89,8 @@ USB_X = dim("USB_X", 25.0, "DC", "bottom edge, right of the encoder (which is on
 # --- microSD: Molex 104031-0811 (Connector_Card footprint) ------------------------------------
 SD_CARD_W = dim("SD_CARD_W", 11.0, "DOC", "microSD card width (SD spec)")
 SD_CARD_T = dim("SD_CARD_T", 1.0, "DOC", "microSD card thickness (SD spec)")
-SD_SOCKET_T = dim("SD_SOCKET_T", 1.9, "PH", "socket height above PCB; card slot centre; check Molex drawing")
+SD_SOCKET_T = dim("SD_SOCKET_T", 1.42, "DOC", "Molex 104031 (push-pull) height 1.42 mm; card slot "
+                  "assumed centred in it")
 SD_X = dim("SD_X", -25.0, "DC", "bottom edge, left of the encoder")
 SD_FINGER_NOTCH = dim("SD_FINGER_NOTCH", 8.0, "DC", "radius of the finger scoop so a flush card can be pushed/pulled")
 
@@ -95,8 +100,9 @@ BTN_BODY_W = dim("BTN_BODY_W", 4.5, "DOC", "KiCad SKRTLAE010 footprint F.Fab bod
 BTN_BODY_D = dim("BTN_BODY_D", 2.56, "DOC", "as BTN_BODY_W")
 BTN_ACT_W = dim("BTN_ACT_W", 2.0, "DOC", "plunger width (footprint F.Fab)")
 BTN_ACT_L = dim("BTN_ACT_L", 0.83, "DOC", "plunger protrusion beyond the body (footprint F.Fab)")
-BTN_BODY_T = dim("BTN_BODY_T", 2.5, "PH", "body height above PCB; check the Alps SKRT drawing")
-BTN_TRAVEL = dim("BTN_TRAVEL", 0.25, "PH", "SKRT travel; check the Alps SKRT drawing")
+BTN_BODY_T = dim("BTN_BODY_T", 3.3, "DOC", "Alps SKRTLAE010 4.5 x 3.4 x 3.3 mm (plunger assumed "
+                 "centred in the height)")
+BTN_TRAVEL = dim("BTN_TRAVEL", 0.2, "DOC", "Alps SKRTLAE010 travel 0.2 mm, 1.6 N")
 BTN_X = dim("BTN_X", -40.0, "DC", "bottom edge, left of the microSD slot")
 BTN_TAB_W = dim("BTN_TAB_W", 8.0, "DC", "flexure tab width (X)")
 BTN_TAB_L = dim("BTN_TAB_L", 8.0, "DC", "flexure tab length (Z), hinged on the front side")
@@ -113,8 +119,8 @@ EB_T = dim("EB_T", 0.8, "DC", "electrode board thickness (JLC 0.8 mm FR4)")
 EB_W = dim("EB_W", 10.0, "DC", "electrode board width (Z)")
 EB_MARGIN = dim("EB_MARGIN", 2.0, "DC", "board length beyond the zones at each end")
 EB_CONN_Y = dim("EB_CONN_Y", -15.0, "DC", "connector position (Y): between the PCB top and battery")
-EB_CONN = dim("EB_CONN", (6.0, 4.3, 3.0), "PH", "JST SM03B-SRSS-TB envelope Y x Z x X (height off "
-              "the board); check the JST drawing")
+EB_CONN = dim("EB_CONN", (4.3, 6.0, 2.9), "DOC", "JST SM03B-SRSS-TB: 4.25 deep along the cable "
+              "(device Y) x 5.8 wide incl. tabs (Z) x 2.9 tall (X)")
 PCB_SIDE_GAP = dim("PCB_SIDE_GAP", 2.5, "DC", "main PCB / battery edge to side wall: room for an "
                    "electrode board and its retaining channel")
 
@@ -156,3 +162,8 @@ CHIN_CY = -INNER_H / 2 + CHIN / 2           # centre of the chin (encoder axis)
 
 Z_PCB = Z_BACK_IN + PCB_STANDOFF            # back face of the main PCB
 Z_PCB_TOP = Z_PCB + PCB_T
+
+# Electrode board (device Y range; also read by hardware/scripts/gen_electrode*.py).
+EB_Y0 = min(ELECTRODE_Y) - ELECTRODE_H / 2 - EB_MARGIN
+EB_Y1 = max(ELECTRODE_Y) + ELECTRODE_H / 2 + EB_MARGIN
+EB_L = EB_Y1 - EB_Y0

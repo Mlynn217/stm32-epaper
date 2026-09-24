@@ -15687,7 +15687,7 @@
 			)
 		)
 	)
-	(text "HSE 8MHz (PLL -> 180MHz). Load caps C = 2*(CL - Cstray): for a CL = 10pF crystal\nand ~4pF stray, 12pF. LSE 32.768kHz: pick a low-CL (6-7pF) crystal the LSE\noscillator drives reliably (ST AN2867); 6.8pF shown for CL = 6pF. Verify both\nagainst the chosen crystals."
+	(text "HSE 8MHz (PLL -> 180MHz), NDK NX3225GD CL = 8pF: C = 2*(CL - Cstray) = 2*(8 - 3) =\n10pF (C0G). LSE: NDK NX3215SA CL = 6pF, ESR <= 70k: C = 2*(6 - 3) = 6.2pF (C0G).\nAN2867 gm_crit = 4*ESR*(2*pi*f)^2*(C0+CL)^2 ~ 0.58 uA/V for the LSE: check it against\nthe F469 LSE Gm_crit_max; if short, set LSEMOD (high-drive LSE) in firmware."
 		(exclude_from_sim no)
 		(at 20.32 30.48 0)
 		(effects
@@ -15716,7 +15716,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "8MHz CL10pF"
+		(property "Value" "8MHz CL8pF"
 			(at 43.815 65.405 0)
 			(effects
 				(font
@@ -15752,7 +15752,7 @@
 				)
 			)
 		)
-		(property "MPN" "Abracon ABM8 series, 8MHz, CL=10pF (verify)"
+		(property "MPN" "NX3225GD-8MHZ-STD-CRA-3"
 			(at 40.64 68.58 0)
 			(hide yes)
 			(effects
@@ -15994,7 +15994,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "12pF"
+		(property "Value" "10pF"
 			(at 31.115 91.44 0)
 			(effects
 				(font
@@ -16160,7 +16160,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "12pF"
+		(property "Value" "10pF"
 			(at 51.435 91.44 0)
 			(effects
 				(font
@@ -16333,7 +16333,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Crystal:Crystal_SMD_2012-2Pin_2.0x1.2mm"
+		(property "Footprint" "Crystal:Crystal_SMD_3215-2Pin_3.2x1.5mm"
 			(at 96.52 68.58 0)
 			(hide yes)
 			(effects
@@ -16360,7 +16360,7 @@
 				)
 			)
 		)
-		(property "MPN" "32.768kHz 2012, CL=6pF, low ESR (verify vs AN2867)"
+		(property "MPN" "NX3215SA-32.768KHZ-EXS00A-MU00525"
 			(at 96.52 68.58 0)
 			(hide yes)
 			(effects
@@ -16444,7 +16444,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "6.8pF"
+		(property "Value" "6.2pF"
 			(at 86.995 91.44 0)
 			(effects
 				(font
@@ -16610,7 +16610,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "6.8pF"
+		(property "Value" "6.2pF"
 			(at 107.315 91.44 0)
 			(effects
 				(font

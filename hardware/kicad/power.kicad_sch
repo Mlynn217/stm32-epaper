@@ -4927,7 +4927,7 @@
 		)
 		(uuid "fcb33e9f-0e92-5f60-89b7-cde8b1b2a616")
 	)
-	(text "USB-C receptacle, UFP/sink only: 5.1k Rd on each CC.\nD+/D- to MCU USB OTG_FS (PA11/PA12) for DFU/CDC.\nSHIELD tied straight to GND for now (revisit: RC/ferrite)."
+	(text "USB-C receptacle, UFP/sink only: 5.1k Rd on each CC.\nD+/D- to MCU USB OTG_FS (PA11/PA12) for DFU/CDC.\nSHIELD straight to GND: plastic case, no earth, so no ground loop for an\nRC to break, and it is the shortest ESD return (U5 returns to GND there too)."
 		(exclude_from_sim no)
 		(at 20.32 30.48 0)
 		(effects
@@ -12406,7 +12406,7 @@
 				)
 			)
 		)
-		(property "MPN" "DFE201612E-R47M (TI Table 10-2: 5.5A Isat; verify land pattern)"
+		(property "MPN" "DFE201612E-R47M=P2 (Isat 5.5A, 26mR; Murata land = this footprint)"
 			(at 180.34 210.82 0)
 			(hide yes)
 			(effects
@@ -14095,7 +14095,7 @@
 				)
 			)
 		)
-		(property "MPN" "DFE201610P-1R0M (verify Isat vs 3.7A valley limit)"
+		(property "MPN" "DFE201612E-1R0M=P2 (Isat 4.0A >= TPS61023 3.7A valley limit, 48mR)"
 			(at 284.48 210.82 0)
 			(hide yes)
 			(effects
@@ -16223,7 +16223,7 @@
 				)
 			)
 		)
-		(property "MPN" "2.2uH per TPS63900 datasheet; pick the part at v2"
+		(property "MPN" "DFE201612E-2R2M=P2 (TPS63900 datasheet Table 8-2; Isat 2.4A)"
 			(at 363.22 104.14 0)
 			(hide yes)
 			(effects

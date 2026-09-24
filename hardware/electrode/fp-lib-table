@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "electrode")(type "KiCad")(uri "${KIPRJMOD}/electrode.pretty")(options "")(descr "Electrode board footprints, see hardware/scripts/gen_electrode.py"))
+)

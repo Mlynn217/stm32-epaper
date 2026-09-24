@@ -1,0 +1,55 @@
+(footprint "Electrode_Pad_25x8mm"
+	(version 20241229)
+	(generator "gen_electrode.py")
+	(layer "F.Cu")
+	(descr "Capacitive touch electrode 25 x 8 mm, solder-mask covered (sensed through the enclosure wall). Generated from hardware/enclosure/params.py.")
+	(tags "capacitive touch electrode")
+	(property "Reference" "REF**"
+		(at 0 -5.5 0)
+		(layer "F.SilkS")
+		(hide yes)
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "Electrode_Pad_25x8mm"
+		(at 0 5.5 0)
+		(layer "F.Fab")
+		(hide yes)
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd exclude_from_pos_files exclude_from_bom)
+	(fp_rect
+		(start -12.5 -4)
+		(end 12.5 4)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.Fab")
+	)
+	(fp_rect
+		(start -12.75 -4.25)
+		(end 12.75 4.25)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+	)
+	(pad "1" smd rect
+		(at 0 0)
+		(size 25 8)
+		(layers "F.Cu")
+	)
+)
