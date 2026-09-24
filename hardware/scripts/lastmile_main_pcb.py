@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Last-mile router: finish the connections the autorouter left open.
 
-    kicad python3.11 hardware/scripts/lastmile_main_pcb.py <drc.json>
+    kicad python3.11 hardware/scripts/lastmile_main_pcb.py <drc.json> [--direct]
 
 For each "missing connection" in a KiCad DRC JSON report, runs an A* search on a 0.1 mm grid over
 F.Cu and B.Cu in a window around the gap. Other nets' pads/tracks/vias are obstacles, inflated by
@@ -27,6 +27,7 @@ RES = 0.1            # grid, mm
 MARGIN = 4.0         # window margin around a gap, mm
 VIA_D, VIA_DRILL = 0.45, 0.2
 VIA_COST = 25        # in grid steps
+DIRECT = '--direct' in sys.argv   # route plane-net gaps point to point, not to the plane
 EDGE = 0.5
 LAYERS = (pcbnew.F_Cu, pcbnew.B_Cu)
 
@@ -47,7 +48,7 @@ def seg_dist(px, py, ax, ay, bx, by):
 
 
 def main():
-    drc = json.load(open(sys.argv[1]))
+    drc = json.load(open([a for a in sys.argv[1:] if not a.startswith('--')][0]))
     board = pcbnew.LoadBoard(BOARD)
     # Capture collections up front (KiCad 10 SWIG: iterate before modifying).
     pads = list(board.GetPads())
@@ -84,6 +85,14 @@ def main():
             items.append(('seg', [t.GetLayer()], (tomm(t.GetStart().x), tomm(t.GetStart().y),
                                                   tomm(t.GetEnd().x), tomm(t.GetEnd().y),
                                                   tomm(t.GetWidth()) / 2), t.GetNetname()))
+    # Footprint keep-out areas (rule areas, e.g. the Tag-Connect's): no tracks/vias inside.
+    keepouts = []
+    for f in footprints:
+        for z in f.Zones():
+            if z.GetIsRuleArea() and (z.GetDoNotAllowVias() or z.GetDoNotAllowTracks()):
+                bb = z.GetBoundingBox()
+                keepouts.append((tomm(bb.GetLeft()), tomm(bb.GetTop()), tomm(bb.GetRight()),
+                                 tomm(bb.GetBottom())))
     added = []   # new copper this run: also obstacles for later connections
 
     def plane_filled(net, x, y):
@@ -147,12 +156,14 @@ def main():
             mark(kind, geom, ls, c + hw, c + VIA_D / 2)
         for hx, hy in holes:
             mark('circle', (hx, hy, 1.1), list(LAYERS), 0.3 + hw, 0.3 + VIA_D / 2)
+        for ko in keepouts:
+            mark('rect', ko, list(LAYERS), hw, VIA_D / 2)
 
         def cell(x, y):
             return (min(nx - 1, max(0, int(round((x - x0) / RES)))),
                     min(ny - 1, max(0, int(round((y - y0) / RES)))))
         si, sj = cell(*a)
-        plane_goal = net in PLANE
+        plane_goal = net in PLANE and not DIRECT
         ti, tj = cell(*b)
         goal_layers = set(LAYERS.index(l) for l in b_layers)
         # Start/target cells sit on their own copper: always allowed.
@@ -275,9 +286,7 @@ def main():
                 continue
             seen_islands.add(key)
         r = route(net, a, b, layers_of(ia['description']), layers_of(ib['description']))
-        if r is None and net in PLANE:   # try from the other end of the gap
-            r = route(net, b, a, layers_of(ib['description']), layers_of(ia['description']))
-            a, b = b, a
+
         if r is None:
             failed += 1
             print('  no path: %s %s -> %s' % (net, ia['description'][:40], ib['description'][:40]))

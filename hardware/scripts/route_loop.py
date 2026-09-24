@@ -46,6 +46,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--variant', choices=('none', 'planes', 'fanout', 'iterate', 'lastmile'), required=True)
     ap.add_argument('--radius', type=float, default=3.0, help='iterate: rip-up radius, mm')
+    ap.add_argument('--direct', action='store_true', help='lastmile: plane nets point to point')
     ap.add_argument('--passes', type=int, default=20)
     ap.add_argument('--tries', type=int, default=1,
                     help='parallel freerouting runs on the same DSN; the best result is kept')
@@ -68,7 +69,7 @@ def main():
         # Our own A* router on the gaps the previous attempt's DRC report lists; no freerouting.
         if not os.path.exists(LAST_DRC):
             sys.exit('lastmile needs %s from a previous attempt' % LAST_DRC)
-        print(kpy('lastmile_main_pcb.py', LAST_DRC).strip())
+        print(kpy('lastmile_main_pcb.py', LAST_DRC, *(['--direct'] if a.direct else [])).strip())
     elif a.variant != 'none':
         print(kpy('preroute_main_pcb.py', *(['--fanout'] if a.variant == 'fanout' else [])).strip())
     if a.variant == 'lastmile':

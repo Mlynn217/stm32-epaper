@@ -225,7 +225,9 @@ def main():
     # the board's top edge ~3 mm away. Without this the placer fills that strip with the CAP1188's
     # own decoupling/pull parts and the touch lines can't escape. (x0, y0, x1, y1), PCB frame.
     cap_x, cap_y, _ = FLOORPLAN['U301']
-    occupied.append((cap_x - 3.0, cap_y + 1.6, cap_x + 3.0, H - EDGE_KEEP))
+    # Only the right half: the touch lines leave from CS3/CS4 (right end of the top row) and
+    # CS5/CS6 (right side); the left half stays free for the VDD pin's decoupling cap.
+    occupied.append((cap_x - 0.2, cap_y + 1.6, cap_x + 3.0, H - EDGE_KEEP))
     core = optimise_core(fps, put, box, free, occupied, W)
     # The 3V3_PERIPH island's left edge follows the memories actually placed.
     mem_x0 = min(box(fps['U201'])[0], box(fps['U202'])[0]) - 0.5
