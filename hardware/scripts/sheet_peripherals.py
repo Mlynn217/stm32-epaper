@@ -35,17 +35,18 @@ def build():
     s.text('CAP1188 cap-touch on I2C1. ADDR_COMM 150k -> SMBus address 0x29 (0101_001), same as\n'
            'the Adafruit breakout used for bring-up. SPI_CS# to GND (I2C mode), WAKE 100k\n'
            'pull-down, RESET (active high) 100k pull-down, ALERT# open-drain 10k pull-up, unused\n'
-           'LED1-8 and CS5-8 to GND (datasheet Table 1.1). CS1-4 = side-wall electrodes\n'
-           '(2 per side) on two small electrode boards pressed against the inside of the side\n'
-           'walls, each on a short JST-SH cable (touch / GND / touch: GND between the two sense\n'
-           'lines). Board geometry comes from hardware/enclosure.', 20.32, 132.08)
+           'LED1-8 and unused CS inputs to GND (datasheet Table 1.1). Electrodes: left pair on\n'
+           'CS3/CS4 (top side, away from VDD), right pair on CS5/CS6 (right side, towards J303) -\n'
+           'chosen for layout: CS1-4 all on the top side fenced in the VDD pin. Two small electrode\n'
+           'boards on short JST-SH cables (touch / GND / touch). Geometry: hardware/enclosure.',
+           20.32, 132.08)
     u = s.part('U301', 'epaper:CAP1188', 'CAP1188-1-CP-TR', 76.2, 190.5,
                fields={'MPN': 'CAP1188-1-CP-TR'})
     cmap = {'VDD': '3V3_AON', 'SMDATA/SPI_MISO': 'I2C1_SDA', 'SMCLK/SPI_CLK': 'I2C1_SCL',
             'ALERT#': 'CAP_ALERT', 'RESET': 'CAP_RESET', 'WAKE/SPI_MOSI': 'CAP_WAKE',
             'SPI_CS#': 'GND', 'ADDR_COMM': 'CAP_ADDR', 'GND': 'GND',
-            'CS1': 'TOUCH_L1', 'CS2': 'TOUCH_L2', 'CS3': 'TOUCH_R1', 'CS4': 'TOUCH_R2'}
-    cmap.update({'CS%d' % i: 'GND' for i in range(5, 9)})
+            'CS3': 'TOUCH_L1', 'CS4': 'TOUCH_L2', 'CS5': 'TOUCH_R1', 'CS6': 'TOUCH_R2'}
+    cmap.update({'CS%d' % i: 'GND' for i in (1, 2, 7, 8)})
     cmap.update({'LED%d' % i: 'GND' for i in range(1, 9)})
     conn_by_name(s, u, cmap)
     for i, side in enumerate(['L', 'R']):
@@ -54,14 +55,14 @@ def build():
                     footprint='Connector_JST:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal',
                     fields={'MPN': 'SM03B-SRSS-TB'})
         s.conns(jt, {'1': 'TOUCH_%s1' % side, '2': 'GND', '3': 'TOUCH_%s2' % side})
-    s.text('U302: ESD on the electrode cables (the boards sit behind 2.2 mm of PA12, but the\n'
-           'back-cover seam is ~0.2 mm from their edge). 0.5 pF/line: negligible next to the pads.\n'
-           'NC pins are the flow-through partners of the IO pins (TPD4E05U06 datasheet) - route through.',
+    s.text('U302/U303: ESD on the electrode cables, one 2-channel part right at each connector\n'
+           '(the boards sit behind 2.2 mm of PA12, but the back-cover seam is ~0.2 mm from their\n'
+           'edge). ~1.5 pF/line: negligible next to the pads. SC-70: 1 = IO1, 2 = IO2, 3 = GND.',
            147.32, 195.58)
-    esd = s.part('U302', 'Power_Protection:TPD4E05U06DQA', 'TPD4E05U06DQAR', 160.02, 215.9,
-                 fields={'MPN': 'TPD4E05U06DQAR'})
-    conn_by_name(s, esd, {'D1+': 'TOUCH_L1', 'D1-': 'TOUCH_L2', 'D2+': 'TOUCH_R1',
-                          'D2-': 'TOUCH_R2', 'GND': 'GND', 'NC': None})
+    for i, side in enumerate(['L', 'R']):
+        esd = s.part('U%d' % (302 + i), 'Power_Protection:TPD2E2U06DCK', 'TPD2E2U06DCKR',
+                     160.02 + i * 25.4, 215.9, fields={'MPN': 'TPD2E2U06DCKR'})
+        s.conns(esd, {'1': 'TOUCH_%s1' % side, '2': 'TOUCH_%s2' % side, '3': 'GND'})
     two_pin(s, 'R304', 'R', '4.7k', 30.48, 238.76, '3V3_AON', 'I2C1_SCL', R0402)
     two_pin(s, 'R305', 'R', '4.7k', 40.64, 238.76, '3V3_AON', 'I2C1_SDA', R0402)
     two_pin(s, 'R306', 'R', '10k', 50.8, 238.76, '3V3_AON', 'CAP_ALERT', R0402)

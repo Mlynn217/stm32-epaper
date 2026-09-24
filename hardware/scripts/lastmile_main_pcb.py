@@ -264,6 +264,11 @@ def main():
         net = re.search(r'\[([^\]]+)\]', ia['description']).group(1)
         a = (ia['pos']['x'], ia['pos']['y'])
         b = (ib['pos']['x'], ib['pos']['y'])
+        if net in PLANE and ia['description'].startswith('Via') and \
+                not ib['description'].startswith('Via'):
+            # Start from the item that isn't already a via on the plane: starting at the via just
+            # drops a second, useless via beside it and never touches the stranded pad/track.
+            ia, ib, a, b = ib, ia, b, a
         if net in PLANE:
             key = (net, round(a[0], 1), round(a[1], 1))
             if key in seen_islands:

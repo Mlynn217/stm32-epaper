@@ -30,7 +30,8 @@ FLOORPLAN = {
     # U101 (MCU), U201 (SDRAM) and U202 (QSPI) are not listed: optimise_core() picks the MCU
     # rotation and the memories' positions for the shortest bus ratsnest.
     'U301': (44.0, 55.0, 0),     # CAP1188: top-middle, between the electrode connectors J302/J303
-    'U302': (39.5, 55.0, 0),     # electrode ESD, beside it (clear of RT1's pads)
+    'U302': (14.0, 51.5, 0),     # electrode ESD (left pair), right below J302
+    'U303': (83.4, 51.5, 0),     # electrode ESD (right pair), right below J303
     'U1': (21.0, 46.0, 0),       # BQ24073 charger, near the battery connector J2
     'U2': (9.0, 41.0, 0),        # TPS63802 -> +3V3
     'U3': (9.0, 26.0, 0),        # TPS61023 -> +5V (HAT)
