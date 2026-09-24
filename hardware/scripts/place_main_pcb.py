@@ -55,6 +55,9 @@ def PLANES(full, rect):
     ]
 
 
+# Placed before everything else, so the decoupling caps can't take the space at their pins:
+# crystals and their load caps (short, sensitive nets), then the clock series resistors.
+PRIORITY = ['Y101', 'Y102', 'C122', 'C123', 'C124', 'C125', 'R208', 'R209', 'R210']
 BUS_PATTERNS = ['FMC_*', 'SDRAM_CLK', 'QUADSPI_*', 'QSPI_FLASH_CLK', 'SDIO_*', 'SDCARD_CLK',
                 'USB_D?']
 MCU_AT = (48.7, 36.5)
@@ -271,8 +274,13 @@ def main():
         def links(ref):
             nets = {p.GetNetname() for p in fps[ref].Pads()} - POWER_NETS
             return sum(1 for r in placed for p in fps[r].Pads() if p.GetNetname() in nets)
-        remaining.sort(key=lambda r: (-links(r), r))
-        ref = remaining.pop(0)
+        first = [r for r in PRIORITY if r in remaining]
+        if first:
+            ref = first[0]
+            remaining.remove(ref)
+        else:
+            remaining.sort(key=lambda r: (-links(r), r))
+            ref = remaining.pop(0)
         fp = fps[ref]
         # Bring-up test points: kept together in the bottom-right corner, easy to probe.
         if ref.startswith('TP'):

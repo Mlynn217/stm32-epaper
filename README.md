@@ -494,21 +494,23 @@ and grouped**, with continuous ground under them. They're enforced in two places
 
   | Class | Track | Clearance | Nets |
   |---|---|---|---|
-  | Power | 0.5 mm | 0.2 mm | VBUS, VSYS, +BATT, +5V, converter switch nodes |
+  | Power | 0.3 mm | 0.15 mm | VBUS, VSYS, +BATT, +5V, converter switch nodes (0.3 mm carries ~1 A and still enters 0.5 mm-pitch IC pads) |
   | Rail3V3 | 0.3 mm | 0.15 mm | +3V3, 3V3_AON, 3V3_PERIPH, VBAT_RTC |
-  | Touch | 0.15 mm | **0.4 mm** | TOUCH_* (thin for low capacitance; wide spacing so nothing runs close alongside) |
+  | Touch | 0.15 mm | **0.25 mm** | TOUCH_* (thin for low capacitance; double spacing so nothing runs close alongside; 0.4 mm couldn't escape the 0.5 mm-pitch CAP1188) |
   | Clock | 0.15 mm | 0.2 mm | SDRAM, microSD and QSPI clocks |
   | Default | 0.15 mm | 0.127 mm | everything else (vias 0.45/0.2 mm) |
 
 - **`hardware/kicad/stm32-epaper.kicad_dru`**: length and skew limits, which a DSN can't
   carry, so the **router doesn't see them. KiCad's DRC checks them after routing**:
-  - SDRAM ≤ 45 mm, ±10 mm skew.
-  - SDIO ≤ 50 mm, ±5 mm.
-  - QSPI ≤ 45 mm, ±5 mm.
+  - SDRAM ≤ 60 mm, ≤ 30 mm skew.
+  - SDIO ≤ 50 mm, ≤ 15 mm skew.
+  - QSPI ≤ 45 mm, ≤ 15 mm skew.
+
+    Those skew limits keep ~3× margin on a 5%-of-clock-period budget, which is ~85 mm at 90 MHz.
   - USB D+/D− within 2 mm.
   - Crystal nets ≤ 12 mm.
   - Touch lines ≤ 60 mm.
-  - Power tracks ≥ 0.4 mm.
+  - Power tracks ≥ 0.25 mm.
   - A flat 0.12 mm pad-to-pad clearance, since the class clearances can't apply inside
     0.5 mm-pitch land patterns.
 

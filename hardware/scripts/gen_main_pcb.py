@@ -30,12 +30,15 @@ PLACEMENT = os.path.join(HERE, '..', 'enclosure', 'out', 'pcb_placement.json')
 X0, Y0 = 100.0, 100.0          # board lower-left corner on the sheet is (X0, Y0 + H)
 # (name, track, clearance, via, drill, net-name patterns)
 NETCLASSES = [
-    # ~1 A paths and converter switch nodes: wide.
-    ('Power', 0.5, 0.2, 0.6, 0.3, ['VBUS', 'VSYS', '+BATT', '+5V', '*/BB_L1', '*/BB_L2',
+    # ~1 A paths and converter switch nodes. 0.3 mm carries ~1 A on outer 1 oz copper and still
+    # enters the 0.25 mm pads of the 0.5 mm-pitch converter ICs (0.5 mm couldn't: freerouting
+    # doesn't neck tracks down, so those nets never routed).
+    ('Power', 0.3, 0.15, 0.6, 0.3, ['VBUS', 'VSYS', '+BATT', '+5V', '*/BB_L1', '*/BB_L2',
                                     '*/BST_SW', '*/AON_LX*']),
     ('Rail3V3', 0.3, 0.15, 0.45, 0.2, ['+3V3', '3V3_AON', '3V3_PERIPH', 'VBAT_RTC']),
-    # Capacitive touch: thin (low capacitance) with wide clearance (nothing runs close by).
-    ('Touch', 0.15, 0.4, 0.45, 0.2, ['*TOUCH_*']),
+    # Capacitive touch: thin (low capacitance), double clearance (nothing runs close by). 0.4 mm
+    # couldn't escape the CAP1188 / ESD chip's 0.5 mm-pitch pins.
+    ('Touch', 0.15, 0.25, 0.45, 0.2, ['*TOUCH_*']),
     # Memory clocks: extra spacing against crosstalk.
     ('Clock', 0.15, 0.2, 0.45, 0.2, ['FMC_SDCLK', 'SDRAM_CLK', 'SDIO_CK', 'SDCARD_CLK',
                                      'QUADSPI_CLK', 'QSPI_FLASH_CLK']),

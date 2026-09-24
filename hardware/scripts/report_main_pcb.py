@@ -16,9 +16,9 @@ BOARD = os.path.join(HERE, '..', 'kicad', 'stm32-epaper.kicad_pcb')
 # name, net patterns, max length (mm), max skew (mm) - keep in step with the .kicad_dru
 GROUPS = [
     ('SDRAM', ['FMC_A*', 'FMC_D*', 'FMC_BA*', 'FMC_NBL*', 'FMC_SDN*', 'FMC_SDCKE0', 'SDRAM_CLK'],
-     45, 10),
-    ('SDIO', ['SDIO_CMD', 'SDIO_D?', 'SDCARD_CLK'], 50, 5),
-    ('QSPI', ['QUADSPI_BK1_IO?', 'QSPI_FLASH_CLK'], 45, 5),
+     60, 30),
+    ('SDIO', ['SDIO_CMD', 'SDIO_D?', 'SDCARD_CLK'], 50, 15),
+    ('QSPI', ['QUADSPI_BK1_IO?', 'QSPI_FLASH_CLK'], 45, 15),
     ('USB', ['USB_D?'], None, 2),
     ('Crystals', ['*/HSE_IN', '*/HSE_OUT', '*/LSE_IN', '*/LSE_OUT'], 12, None),
     ('Touch', ['*TOUCH_*'], 60, None),

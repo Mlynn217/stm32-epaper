@@ -7,6 +7,10 @@
 #
 # Scale: signals travel ~6.5 ps/mm; the fastest edges (~1 ns) only become transmission-line
 # problems above ~75 mm, so these are "keep it short and grouped" rules, not impedance control.
+# Skew budgets: a common rule of thumb is <= 5 % of the clock period - 550 ps (~85 mm) at the
+# SDRAM's 90 MHz. The limits below keep ~3x margin on that. (The first draft used 10 mm / 5 mm,
+# ~8x stricter than needed, which the F469's pinout - SDRAM pins on three package sides - can't
+# meet without serpentines everywhere.)
 
 # ---- Pad-to-pad: the parts' own land patterns set these gaps --------------------------------
 # The Touch/Power class clearances (0.4 / 0.2 mm) are meant for tracks and vias; between two pads
@@ -18,11 +22,11 @@
 # ---- SDRAM (FMC, SDCLK up to 90 MHz: 11 ns period) ------------------------------------------
 (rule "SDRAM bus short"
   (condition "A.NetName == 'FMC_*' || A.NetName == 'SDRAM_CLK'")
-  (constraint length (max 45mm)))
+  (constraint length (max 60mm)))
 
 (rule "SDRAM bus skew"
   (condition "A.NetName == 'FMC_A*' || A.NetName == 'FMC_D*' || A.NetName == 'FMC_BA*' || A.NetName == 'FMC_NBL*' || A.NetName == 'FMC_SDN*' || A.NetName == 'FMC_SDCKE0' || A.NetName == 'SDRAM_CLK'")
-  (constraint skew (max 10mm)))
+  (constraint skew (max 30mm)))
 
 # ---- microSD (SDIO, up to 48 MHz) -----------------------------------------------------------
 (rule "SDIO bus short"
@@ -31,7 +35,7 @@
 
 (rule "SDIO bus skew"
   (condition "A.NetName == 'SDIO_CMD' || A.NetName == 'SDIO_D?' || A.NetName == 'SDCARD_CLK'")
-  (constraint skew (max 5mm)))
+  (constraint skew (max 15mm)))
 
 # ---- QSPI NOR (up to 90 MHz) ------------------------------------------------------------------
 (rule "QSPI bus short"
@@ -40,7 +44,7 @@
 
 (rule "QSPI bus skew"
   (condition "A.NetName == 'QUADSPI_BK1_IO?' || A.NetName == 'QSPI_FLASH_CLK'")
-  (constraint skew (max 5mm)))
+  (constraint skew (max 15mm)))
 
 # ---- USB full speed: route as a pair --------------------------------------------------------
 (rule "USB pair skew"
@@ -60,4 +64,4 @@
 # ---- Power: never narrower than the class width by accident ---------------------------------
 (rule "Power track width"
   (condition "A.NetClass == 'Power'")
-  (constraint track_width (min 0.4mm)))
+  (constraint track_width (min 0.25mm)))
