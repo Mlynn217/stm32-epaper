@@ -91,8 +91,9 @@ def main():
         for z in f.Zones():
             if z.GetIsRuleArea() and (z.GetDoNotAllowVias() or z.GetDoNotAllowTracks()):
                 bb = z.GetBoundingBox()
-                keepouts.append((tomm(bb.GetLeft()), tomm(bb.GetTop()), tomm(bb.GetRight()),
-                                 tomm(bb.GetBottom())))
+                keepouts.append(((tomm(bb.GetLeft()), tomm(bb.GetTop()), tomm(bb.GetRight()),
+                                  tomm(bb.GetBottom())),
+                                 z.GetDoNotAllowTracks(), z.GetDoNotAllowVias()))
     added = []   # new copper this run: also obstacles for later connections
 
     def plane_filled(net, x, y):
@@ -101,14 +102,14 @@ def main():
         return any(z.GetNetname() == net and z.GetLayer() == layer and
                    z.HitTestFilledArea(layer, pt, 0) for z in zones)
 
-    def route(net, a, b, a_layers, b_layers):
+    def route(net, a, b, a_layers, b_layers, margin=MARGIN):
         clr, width = cls(net)
         width = max(width, 0.15)
         hw = width / 2
-        x0 = max(ex0, min(a[0], b[0]) - MARGIN)
-        y0 = max(ey0, min(a[1], b[1]) - MARGIN)
-        x1 = min(ex1, max(a[0], b[0]) + MARGIN)
-        y1 = min(ey1, max(a[1], b[1]) + MARGIN)
+        x0 = max(ex0, min(a[0], b[0]) - margin)
+        y0 = max(ey0, min(a[1], b[1]) - margin)
+        x1 = min(ex1, max(a[0], b[0]) + margin)
+        y1 = min(ey1, max(a[1], b[1]) + margin)
         nx, ny = int((x1 - x0) / RES) + 1, int((y1 - y0) / RES) + 1
         blocked = [bytearray(nx * ny) for _ in LAYERS]       # track centre can't go here
         via_blocked = bytearray(nx * ny)                     # via centre can't go here
@@ -156,8 +157,9 @@ def main():
             mark(kind, geom, ls, c + hw, c + VIA_D / 2)
         for hx, hy in holes:
             mark('circle', (hx, hy, 1.1), list(LAYERS), 0.3 + hw, 0.3 + VIA_D / 2)
-        for ko in keepouts:
-            mark('rect', ko, list(LAYERS), hw, VIA_D / 2)
+        for ko, no_tracks, no_vias in keepouts:
+            # Each rule on its own: e.g. a Tag-Connect keep-out forbids vias, not tracks.
+            mark('rect', ko, list(LAYERS) if no_tracks else [], hw, VIA_D / 2 if no_vias else -1)
 
         def cell(x, y):
             return (min(nx - 1, max(0, int(round((x - x0) / RES)))),
@@ -286,6 +288,8 @@ def main():
                 continue
             seen_islands.add(key)
         r = route(net, a, b, layers_of(ia['description']), layers_of(ib['description']))
+        if r is None:   # a detour may leave the small window: retry wider
+            r = route(net, a, b, layers_of(ia['description']), layers_of(ib['description']), 10.0)
 
         if r is None:
             failed += 1

@@ -37,7 +37,8 @@ FLOORPLAN = {
     'U3': (9.0, 26.0, 0),        # TPS61023 -> +5V (HAT)
     'U4': (29.0, 20.5, 0),       # TPS22965: +3V3 in / 3V3_PERIPH out, on the boundary of the two plane zones
     'U7': (27.0, 24.0, 0),       # MCP1700 RTC LDO
-    'U6': (17.0, 33.0, 0),       # TPS63900 (DNP on v1)
+    'U6': (11.5, 16.5, 0),       # TPS63900 (DNP on v1): its output is 3V3_AON, so over that plane
+                                 # (bottom-left, clear of the +3V3 island and the microSD one)
     'U5': (73.7, 12.0, 0),       # USBLC6, beside J1
     'J101': (63.0, 15.0, 0),     # Tag-Connect SWD, bottom gap right of the encoder
     'SW101': (35.0, 16.0, 0),    # BOOT button, bottom gap left of the encoder
