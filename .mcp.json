@@ -2,10 +2,16 @@
   "mcpServers": {
     "freerouting": {
       "type": "stdio",
-      "command": "npx",
+      "command": "java",
       "args": [
-        "-y",
-        "@freerouting/freerouting-mcp-server"
+        "-jar",
+        "${HOME}/.local/share/freerouting/freerouting-2.4.1.jar",
+        "--api_server.enabled=true",
+        "--api_server.authentication.enabled=false",
+        "--mcp_server.enabled=true",
+        "--mcp_server.authentication.enabled=false",
+        "--mcp_server.stdio=true",
+        "--gui.enabled=false"
       ],
       "env": {}
     }

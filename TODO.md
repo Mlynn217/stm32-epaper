@@ -513,9 +513,11 @@ Next steps, in order:
         e.g. the dense VDD pin row on the MCU).
   - [x] **Crystals** (2026-09-23): HSE NDK NX3225GD-8MHZ-STD-CRA-3 (CL 8 pF, 2 × 10 pF); LSE NDK
         NX3215SA-32.768KHZ-EXS00A-MU00525 (CL 6 pF, ESR ≤ 70 kΩ, 2 × 6.2 pF; footprint now 3215).
-  - [ ] **LSE margin:** AN2867 gm_crit ≈ 0.58 µA/V for that crystal. Compare with the F469
-        datasheet's LSE Gm_crit_max (ST's site wouldn't download here); if it's short, enable the
-        high-drive LSE (RCC_BDCR LSEMOD) in firmware, or pick a lower-ESR crystal.
+  - [x] **LSE margin** (2026-09-23): gm_crit ≈ 0.58 µA/V vs the F469's LSE Gm_crit_max of
+        0.56 µA/V (low-power) / 1.5 µA/V (high-drive), `docs/DS_stm32f469ae.pdf` Table 38. HSE:
+        ~0.16–0.25 mA/V vs 1 mA/V, fine.
+  - [ ] **Firmware: LSE high-drive mode** — select it before enabling the LSE (the datasheet
+        forbids changing the mode on the fly). Costs ≤ 3 µA instead of ≤ 1 µA.
   - [x] **Electrode pads** (2026-09-23): two small electrode boards (one design, fitted on both
         sides) on JST-SH cables to J302/J303 (touch / GND / touch). Geometry is in
         `hardware/enclosure/out/electrode_board.json`.
@@ -564,8 +566,11 @@ Next steps, in order:
   - [ ] **Measure what no datasheet gives** (`PH` in `params.py`, listed on every build): panel
         active-area offset, FPC width/bend, **panel thickness** (Waveshare says 0.67 mm, ED060KD1
         listings say 1.6 mm), HAT outline and height.
-  - [ ] **Human review** of the renders / OCP viewer, then a fit-check print (the shell alone or
-        its chin section) against the real panel, encoder and connectors before the full set.
+  - [ ] **Human review** of the renders / OCP viewer.
+  - [ ] **Order the fit-check print** (files ready 2026-09-23): `out/fitcheck_chin.step` +
+        `out/fitcheck_knob.step` in MJF PA12 via Craftcloud; checklist in
+        `hardware/enclosure/README.md` "Fit-check print". Needs the encoder with the 20 mm shaft
+        (PEC11R-4220F-S0024) for the knob check.
   - [x] Board outline into KiCad (2026-09-23): done by `gen_main_pcb.py` from
         `out/pcb_placement.json` directly (no DXF import step).
 - [ ] **PCB layout** — the next milestone after the enclosure: stackup (4 layers is likely, given

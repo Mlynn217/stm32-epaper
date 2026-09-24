@@ -11,19 +11,25 @@ LOCAL = set()
 
 # IS42S16400J pin name -> FMC net (SDRAM bank 1: SDCKE0/SDNE0)
 SDRAM = {'~{WE}': 'FMC_SDNWE', '~{CAS}': 'FMC_SDNCAS', '~{RAS}': 'FMC_SDNRAS',
-         '~{CS}': 'FMC_SDNE0', 'CKE': 'FMC_SDCKE0', 'CLK': 'FMC_SDCLK',
+         '~{CS}': 'FMC_SDNE0', 'CKE': 'FMC_SDCKE0', 'CLK': 'SDRAM_CLK',
          'BA0': 'FMC_BA0', 'BA1': 'FMC_BA1', 'LDQM': 'FMC_NBL0', 'UDQM': 'FMC_NBL1',
          'VDD': '3V3_PERIPH', 'VDDQ': '3V3_PERIPH', 'GND': 'GND', 'GNDQ': 'GND', 'NC': None}
 SDRAM.update({'A%d' % i: 'FMC_A%d' % i for i in range(12)})
 SDRAM.update({'DQ%d' % i: 'FMC_D%d' % i for i in range(16)})
 
-QSPI = {'~{CS}': 'QUADSPI_BK1_NCS', 'CLK': 'QUADSPI_CLK', 'DI/IO_{0}': 'QUADSPI_BK1_IO0',
+QSPI = {'~{CS}': 'QUADSPI_BK1_NCS', 'CLK': 'QSPI_FLASH_CLK', 'DI/IO_{0}': 'QUADSPI_BK1_IO0',
         'DO/IO_{1}': 'QUADSPI_BK1_IO1', '~{WP}/IO_{2}': 'QUADSPI_BK1_IO2',
         '~{HOLD}/~{RESET}/IO_{3}': 'QUADSPI_BK1_IO3', 'VCC': '3V3_PERIPH', 'GND': 'GND'}
 
 SD = {'DAT0': 'SDIO_D0', 'DAT1': 'SDIO_D1', 'DAT2': 'SDIO_D2', 'DAT3/CD': 'SDIO_D3',
-      'CMD': 'SDIO_CMD', 'CLK': 'SDIO_CK', 'VDD': '3V3_PERIPH', 'VSS': 'GND', 'SHIELD': 'GND',
+      'CMD': 'SDIO_CMD', 'CLK': 'SDCARD_CLK', 'VDD': '3V3_PERIPH', 'VSS': 'GND', 'SHIELD': 'GND',
       'DET_B': 'SD_DETECT', 'DET_A': 'GND'}
+
+# Source series resistors on the three memory clocks (placed at the MCU pin in layout): damp
+# ringing/EMI on the point-to-point clock lines. device-side net -> (resistor, value, MCU net).
+SERIES = {'SDRAM_CLK': ('R208', '22R', 'FMC_SDCLK'),
+          'SDCARD_CLK': ('R209', '33R', 'SDIO_CK'),
+          'QSPI_FLASH_CLK': ('R210', '22R', 'QUADSPI_CLK')}
 
 
 def build():
@@ -68,4 +74,10 @@ def build():
     two_pin(s, 'R207', 'R', '100k', 347.98, 170.18, '3V3_AON', 'SD_DETECT', R0402)
     two_pin(s, 'C210', 'C', '10uF', 297.18, 215.9, '3V3_PERIPH', 'GND', C0603)
     two_pin(s, 'C211', 'C', '100nF', 307.34, 215.9, '3V3_PERIPH', 'GND', C0402)
+
+    # ---- clock series resistors ---------------------------------------------------------------
+    s.text('Clock series resistors (22-33R), placed right at the MCU pin: source termination\n'
+           'for the SDRAM, microSD and QSPI clocks (point-to-point, up to 90 MHz).', 20.32, 238.76)
+    for i, (dev_net, (ref, value, mcu_net)) in enumerate(SERIES.items()):
+        two_pin(s, ref, 'R', value, 30.48 + i * 10.16, 256.54, mcu_net, dev_net, R0402)
     return s

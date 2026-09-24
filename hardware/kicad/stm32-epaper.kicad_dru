@@ -1,0 +1,63 @@
+(version 1)
+
+# Custom DRC rules for the main board (hand-maintained; see README "Layout rules").
+# Widths/clearances per net class live in the project (and reach freerouting via the DSN).
+# The length/skew limits below can't be expressed in a DSN, so the autorouter doesn't see them:
+# KiCad's DRC checks the routed result, and violations get fixed by hand (shorten, or tune).
+#
+# Scale: signals travel ~6.5 ps/mm; the fastest edges (~1 ns) only become transmission-line
+# problems above ~75 mm, so these are "keep it short and grouped" rules, not impedance control.
+
+# ---- Pad-to-pad: the parts' own land patterns set these gaps --------------------------------
+# The Touch/Power class clearances (0.4 / 0.2 mm) are meant for tracks and vias; between two pads
+# (e.g. a 0.5 mm-pitch SOT-563 or USON) they can't be met and aren't a routing choice.
+(rule "Pad to pad"
+  (condition "A.Type == 'Pad' && B.Type == 'Pad'")
+  (constraint clearance (min 0.12mm)))
+
+# ---- SDRAM (FMC, SDCLK up to 90 MHz: 11 ns period) ------------------------------------------
+(rule "SDRAM bus short"
+  (condition "A.NetName == 'FMC_*' || A.NetName == 'SDRAM_CLK'")
+  (constraint length (max 45mm)))
+
+(rule "SDRAM bus skew"
+  (condition "A.NetName == 'FMC_A*' || A.NetName == 'FMC_D*' || A.NetName == 'FMC_BA*' || A.NetName == 'FMC_NBL*' || A.NetName == 'FMC_SDN*' || A.NetName == 'FMC_SDCKE0' || A.NetName == 'SDRAM_CLK'")
+  (constraint skew (max 10mm)))
+
+# ---- microSD (SDIO, up to 48 MHz) -----------------------------------------------------------
+(rule "SDIO bus short"
+  (condition "A.NetName == 'SDIO_*' || A.NetName == 'SDCARD_CLK'")
+  (constraint length (max 50mm)))
+
+(rule "SDIO bus skew"
+  (condition "A.NetName == 'SDIO_CMD' || A.NetName == 'SDIO_D?' || A.NetName == 'SDCARD_CLK'")
+  (constraint skew (max 5mm)))
+
+# ---- QSPI NOR (up to 90 MHz) ------------------------------------------------------------------
+(rule "QSPI bus short"
+  (condition "A.NetName == 'QUADSPI_*' || A.NetName == 'QSPI_FLASH_CLK'")
+  (constraint length (max 45mm)))
+
+(rule "QSPI bus skew"
+  (condition "A.NetName == 'QUADSPI_BK1_IO?' || A.NetName == 'QSPI_FLASH_CLK'")
+  (constraint skew (max 5mm)))
+
+# ---- USB full speed: route as a pair --------------------------------------------------------
+(rule "USB pair skew"
+  (condition "A.NetName == 'USB_D?'")
+  (constraint skew (max 2mm)))
+
+# ---- Crystals: short, sensitive (the LSE especially) ------------------------------------------
+(rule "Crystal nets short"
+  (condition "A.NetName == '*/HSE_IN' || A.NetName == '*/HSE_OUT' || A.NetName == '*/LSE_IN' || A.NetName == '*/LSE_OUT'")
+  (constraint length (max 12mm)))
+
+# ---- Capacitive touch: every mm adds baseline capacitance --------------------------------------
+(rule "Touch lines short"
+  (condition "A.NetClass == 'Touch'")
+  (constraint length (max 60mm)))
+
+# ---- Power: never narrower than the class width by accident ---------------------------------
+(rule "Power track width"
+  (condition "A.NetClass == 'Power'")
+  (constraint track_width (min 0.4mm)))

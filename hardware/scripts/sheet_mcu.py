@@ -161,8 +161,9 @@ def build():
     # ---- clocks ----------------------------------------------------------------------------
     s.text('HSE 8MHz (PLL -> 180MHz), NDK NX3225GD CL = 8pF: C = 2*(CL - Cstray) = 2*(8 - 3) =\n'
            '10pF (C0G). LSE: NDK NX3215SA CL = 6pF, ESR <= 70k: C = 2*(6 - 3) = 6.2pF (C0G).\n'
-           'AN2867 gm_crit = 4*ESR*(2*pi*f)^2*(C0+CL)^2 ~ 0.58 uA/V for the LSE: check it against\n'
-           'the F469 LSE Gm_crit_max; if short, set LSEMOD (high-drive LSE) in firmware.',
+           'AN2867 gm_crit = 4*ESR*(2*pi*f)^2*(C0+CL)^2: HSE ~0.16-0.25 mA/V vs 1 mA/V max (ok).\n'
+           'LSE ~0.58 uA/V: OVER the 0.56 uA/V low-power max (DS Table 38), under the 1.5 uA/V\n'
+           'high-drive max -> FIRMWARE MUST select LSE high-drive mode before enabling the LSE.',
            20.32, 30.48)
     y1 = s.part('Y101', 'Device:Crystal_GND24', '8MHz CL8pF', 40.64, 68.58,
                 footprint='Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm',

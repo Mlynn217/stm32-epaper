@@ -306,7 +306,7 @@ with `3V3_AON` fed from +3V3 through a fitted 0Ω link.
 | Component | Value / Part | Notes |
 |---|---|---|
 | HSE crystal | 8MHz NDK NX3225GD-8MHZ-STD-CRA-3 (CL 8pF), 2 × 10pF C0G | PLL source → 180MHz system clock |
-| RTC crystal | 32.768kHz NDK NX3215SA-32.768KHZ-EXS00A-MU00525 (CL 6pF, ESR ≤ 70kΩ), 2 × 6.2pF C0G | AN2867 gm_crit ≈ 0.58 µA/V: confirm against the F469 datasheet's LSE Gm_crit_max; the LSE high-drive mode (LSEMOD) is the fallback |
+| RTC crystal | 32.768kHz NDK NX3215SA-32.768KHZ-EXS00A-MU00525 (CL 6pF, ESR ≤ 70kΩ), 2 × 6.2pF C0G | AN2867 gm_crit ≈ 0.58 µA/V: just over the F469's 0.56 µA/V low-power limit, well under the 1.5 µA/V high-drive limit (`docs/DS_stm32f469ae.pdf` Table 38). **Firmware must select LSE high-drive mode** (before enabling the LSE; ≤ 3 µA instead of ≤ 1 µA) |
 | Decoupling caps | 100nF + 10µF per supply pin | Standard STM32 layout |
 | I²C pull-ups | 4.7kΩ to 3.3V | For I²C bus (CAP1188, fuel gauge) |
 | Ferrite bead | Optional | Between analog and digital GND if needed |
@@ -584,6 +584,14 @@ still needs the `arm-none-eabi-gcc` toolchain, OpenOCD, Ninja, and the relevant 
     footprints with nets, enclosure-fixed parts placed). Runs under KiCad's bundled Python:
     `kicad python3.11 hardware/scripts/gen_main_pcb.py <netlist.xml>` (see its docstring). It
     refuses to overwrite the board without `--force`.
+  - `place_main_pcb.py`: first-pass placement (hand floorplan for the ICs, then a greedy placer
+    that puts each part next to what it connects to; decoupling caps at their IC's power pins)
+    and the inner planes (In1 GND, In2 +3V3). Re-running discards hand moves.
+  - `route_main_pcb.py`: Specctra DSN export / SES import around a headless freerouting run
+    (commands in its docstring).
+- `.mcp.json`: the **freerouting MCP server, offline**. It runs the local jar
+  (`~/.local/share/freerouting/freerouting-2.4.1.jar`) over stdio, with no API key. Its API server
+  binds a fixed port, so only one instance can run at a time across sessions.
 - `hardware/electrode/`: KiCad project for the side-wall electrode board (one design, two
   fitted), generated from the enclosure's `params.py`:
   `KICAD_SYMBOL_DIR=<kicad share>/symbols python3 hardware/scripts/gen_electrode.py --force`, then
@@ -592,7 +600,7 @@ still needs the `arm-none-eabi-gcc` toolchain, OpenOCD, Ninja, and the relevant 
 - `hardware/enclosure/`: the parametric enclosure (build123d): `params.py` (every dimension, with
   its source), `model.py`, `checks.py`, `build.py` (checks + STEP/STL/3MF/DXF export + renders to
   the git-ignored `out/`), `show.py` (OCP CAD Viewer). See its README.
-- `docs/` — IT8951 datasheet + programming guide, F469-Disco user manual (UM1932)
+- `docs/` — IT8951 datasheet + programming guide, F469-Disco user manual (UM1932), STM32F469 datasheet
 - `TODO.md` — task list/roadmap
 
 ## Building / Flashing / Debugging

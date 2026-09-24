@@ -11,7 +11,7 @@ import json
 import sys
 from pathlib import Path
 
-from build123d import Axis, Color, Compound, ExportDXF, Mesher, Pos, export_step, export_stl
+from build123d import Align, Axis, Box, Color, Compound, ExportDXF, Mesher, Pos, export_step, export_stl
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -23,14 +23,35 @@ import params  # noqa: E402
 OUT = HERE / "out"
 
 
+FITCHECK_ABOVE_PANEL = 12.0   # mm of the display window included above the panel's bottom edge
+
+
+def fitcheck(printed):
+    """Cheap first print: the bottom of the front shell (chin + the panel's bottom edge) and the
+    knob. Tests the knob/bushing, USB-C, microSD and button openings, the chin bosses/inserts and
+    the panel's bottom locating rib against the real parts before the full set is ordered."""
+    y_cut = m.PANEL_BOT + FITCHECK_ABOVE_PANEL
+    keep = Pos(0, y_cut, -1) * Box(500, 500, 100, align=(Align.CENTER, Align.MAX, Align.MIN))
+    return {"fitcheck_chin": printed["front_shell"] & keep, "fitcheck_knob": printed["knob"]}
+
+
+def write_part(name, part):
+    export_step(part, OUT / f"{name}.step")
+    export_stl(part, OUT / f"{name}.stl", tolerance=0.02, angular_tolerance=0.1)
+    mesher = Mesher()
+    mesher.add_shape(part, linear_deflection=0.02, angular_deflection=0.1)
+    mesher.write(str(OUT / f"{name}.3mf"))
+
+
 def export(printed, components):
     OUT.mkdir(exist_ok=True)
-    for name, part in printed.items():
-        export_step(part, OUT / f"{name}.step")
-        export_stl(part, OUT / f"{name}.stl", tolerance=0.02, angular_tolerance=0.1)
-        mesher = Mesher()
-        mesher.add_shape(part, linear_deflection=0.02, angular_deflection=0.1)
-        mesher.write(str(OUT / f"{name}.3mf"))
+    fc = fitcheck(printed)
+    for name, part in {**printed, **fc}.items():
+        write_part(name, part)
+    for name, part in fc.items():
+        bb = part.bounding_box()
+        print(f"  fit-check {name}: {bb.size.X:.1f} x {bb.size.Y:.1f} x {bb.size.Z:.1f} mm, "
+              f"{part.volume / 1000:.1f} cm^3, ~{part.volume * m.PA12_DENSITY:.1f} g PA12")
 
     children = []
     from render import COLORS

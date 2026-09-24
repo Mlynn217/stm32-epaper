@@ -28,6 +28,18 @@ KICAD = os.path.join(HERE, '..', 'kicad')
 BOARD = os.path.join(KICAD, 'stm32-epaper.kicad_pcb')
 PLACEMENT = os.path.join(HERE, '..', 'enclosure', 'out', 'pcb_placement.json')
 X0, Y0 = 100.0, 100.0          # board lower-left corner on the sheet is (X0, Y0 + H)
+# (name, track, clearance, via, drill, net-name patterns)
+NETCLASSES = [
+    # ~1 A paths and converter switch nodes: wide.
+    ('Power', 0.5, 0.2, 0.6, 0.3, ['VBUS', 'VSYS', '+BATT', '+5V', '*/BB_L1', '*/BB_L2',
+                                    '*/BST_SW', '*/AON_LX*']),
+    ('Rail3V3', 0.3, 0.15, 0.45, 0.2, ['+3V3', '3V3_AON', '3V3_PERIPH', 'VBAT_RTC']),
+    # Capacitive touch: thin (low capacitance) with wide clearance (nothing runs close by).
+    ('Touch', 0.15, 0.4, 0.45, 0.2, ['*TOUCH_*']),
+    # Memory clocks: extra spacing against crosstalk.
+    ('Clock', 0.15, 0.2, 0.45, 0.2, ['FMC_SDCLK', 'SDRAM_CLK', 'SDIO_CK', 'SDCARD_CLK',
+                                     'QUADSPI_CLK', 'QSPI_FLASH_CLK']),
+]
 
 
 def mm(v):
@@ -164,6 +176,19 @@ def main():
     nc.SetTrackWidth(mm(0.15))
     nc.SetViaDiameter(mm(0.45))
     nc.SetViaDrill(mm(0.2))
+    # Net classes: exported in the Specctra DSN, so freerouting obeys their widths/clearances.
+    # (Length/skew limits can't be expressed there: they live in stm32-epaper.kicad_dru and are
+    # checked by KiCad's DRC after routing.)
+    ns = ds.m_NetSettings
+    for name, width, clearance, via, drill, patterns in NETCLASSES:
+        c = pcbnew.NETCLASS(name)
+        c.SetTrackWidth(mm(width))
+        c.SetClearance(mm(clearance))
+        c.SetViaDiameter(mm(via))
+        c.SetViaDrill(mm(drill))
+        ns.SetNetclass(name, c)
+        for pat in patterns:
+            ns.SetNetclassPatternAssignment(pat, name)
     P = outline(board, W, H, place_info['boss_notches_pcb_xy'], place_info['boss_notch_d_mm'])
 
     netinfo = {}

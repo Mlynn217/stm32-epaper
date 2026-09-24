@@ -287,6 +287,82 @@
         "via_diameter": 0.45,
         "via_drill": 0.2,
         "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.2,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "Clock",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": -1,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.15,
+        "tuning_profile": "",
+        "via_diameter": 0.45,
+        "via_drill": 0.2,
+        "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.2,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "Power",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": -1,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.5,
+        "tuning_profile": "",
+        "via_diameter": 0.6,
+        "via_drill": 0.3,
+        "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.15,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "Rail3V3",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": -1,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.3,
+        "tuning_profile": "",
+        "via_diameter": 0.45,
+        "via_drill": 0.2,
+        "wire_width": 6
+      },
+      {
+        "bus_width": 12,
+        "clearance": 0.4,
+        "diff_pair_gap": 0.25,
+        "diff_pair_via_gap": 0.25,
+        "diff_pair_width": 0.2,
+        "line_style": 0,
+        "microvia_diameter": 0.3,
+        "microvia_drill": 0.1,
+        "name": "Touch",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": -1,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.15,
+        "tuning_profile": "",
+        "via_diameter": 0.45,
+        "via_drill": 0.2,
+        "wire_width": 6
       }
     ],
     "meta": {
@@ -294,7 +370,84 @@
     },
     "net_colors": null,
     "netclass_assignments": null,
-    "netclass_patterns": []
+    "netclass_patterns": [
+      {
+        "netclass": "Power",
+        "pattern": "VBUS"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "VSYS"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "+BATT"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "+5V"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "*/BB_L1"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "*/BB_L2"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "*/BST_SW"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "*/AON_LX*"
+      },
+      {
+        "netclass": "Rail3V3",
+        "pattern": "+3V3"
+      },
+      {
+        "netclass": "Rail3V3",
+        "pattern": "3V3_AON"
+      },
+      {
+        "netclass": "Rail3V3",
+        "pattern": "3V3_PERIPH"
+      },
+      {
+        "netclass": "Rail3V3",
+        "pattern": "VBAT_RTC"
+      },
+      {
+        "netclass": "Touch",
+        "pattern": "*TOUCH_*"
+      },
+      {
+        "netclass": "Clock",
+        "pattern": "FMC_SDCLK"
+      },
+      {
+        "netclass": "Clock",
+        "pattern": "SDRAM_CLK"
+      },
+      {
+        "netclass": "Clock",
+        "pattern": "SDIO_CK"
+      },
+      {
+        "netclass": "Clock",
+        "pattern": "SDCARD_CLK"
+      },
+      {
+        "netclass": "Clock",
+        "pattern": "QUADSPI_CLK"
+      },
+      {
+        "netclass": "Clock",
+        "pattern": "QSPI_FLASH_CLK"
+      }
+    ]
   },
   "pcbnew": {
     "last_paths": {
@@ -311,7 +464,13 @@
     "bus_aliases": {},
     "legacy_lib_dir": "",
     "legacy_lib_list": [],
-    "top_level_sheets": []
+    "top_level_sheets": [
+      {
+        "filename": "stm32-epaper.kicad_sch",
+        "name": "stm32-epaper",
+        "uuid": "00000000-0000-0000-0000-000000000000"
+      }
+    ]
   },
   "sheets": [],
   "text_variables": {},

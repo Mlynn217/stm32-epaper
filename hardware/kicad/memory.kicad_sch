@@ -3688,7 +3688,7 @@
 		)
 		(uuid "9eaa2dd5-09f2-5b2f-8684-5d4dd596331c")
 	)
-	(global_label "FMC_SDCLK"
+	(global_label "SDRAM_CLK"
 		(shape bidirectional)
 		(at 60.96 152.4 180)
 		(fields_autoplaced yes)
@@ -6099,7 +6099,7 @@
 		)
 		(uuid "f081b138-ee77-59bb-aceb-a8842a938890")
 	)
-	(global_label "QUADSPI_CLK"
+	(global_label "QSPI_FLASH_CLK"
 		(shape bidirectional)
 		(at 243.84 71.12 180)
 		(fields_autoplaced yes)
@@ -6928,7 +6928,7 @@
 		)
 		(uuid "65568dd3-a5a1-5315-a517-0ae0836bf868")
 	)
-	(global_label "SDIO_CK"
+	(global_label "SDCARD_CLK"
 		(shape bidirectional)
 		(at 231.14 190.5 180)
 		(fields_autoplaced yes)
@@ -8772,6 +8772,416 @@
 					(reference "#PWRMEM037")
 					(unit 1)
 				)
+			)
+		)
+	)
+	(text "Clock series resistors (22-33R), placed right at the MCU pin: source termination\nfor the SDRAM, microSD and QSPI clocks (point-to-point, up to 90 MHz)."
+		(exclude_from_sim no)
+		(at 20.32 238.76 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left top)
+		)
+		(uuid "e97944f5-c7ca-51c5-a705-8cda49ac3d52")
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 30.48 256.54 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "64ef1798-4c25-5e98-aa9b-816ae5c12e73")
+		(property "Reference" "R208"
+			(at 32.512 256.54 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "22R"
+			(at 30.48 256.54 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 30.48 256.54 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 30.48 256.54 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 30.48 256.54 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "fd3069a7-0354-5722-9264-738b00a97a4f")
+		)
+		(pin "2"
+			(uuid "ce7a4f17-3386-5f9f-b9a9-1e6f0733f98c")
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000006"
+					(reference "R208")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 30.48 252.73)
+			(xy 30.48 250.19)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fb663fbf-3660-5fb1-a5b7-593318b80927")
+	)
+	(global_label "FMC_SDCLK"
+		(shape bidirectional)
+		(at 30.48 250.19 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "9f67ea4d-1be4-534e-8f2b-4b2419395a46")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 30.48 250.19 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 30.48 260.35)
+			(xy 30.48 262.89)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "324b4943-12b5-5d90-a7c1-5397d5df842c")
+	)
+	(global_label "SDRAM_CLK"
+		(shape bidirectional)
+		(at 30.48 262.89 270)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "7b2968e9-ffe2-5a4c-a228-4ce9c497d816")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 30.48 262.89 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 40.64 256.54 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "af77d85f-7d3c-5727-af03-aacc5908d4e6")
+		(property "Reference" "R209"
+			(at 42.672 256.54 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "33R"
+			(at 40.64 256.54 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 40.64 256.54 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 40.64 256.54 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 40.64 256.54 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b96e824b-0e07-5159-bb51-e6b3a5c04dde")
+		)
+		(pin "2"
+			(uuid "5537ef83-54db-5cf4-b7cf-00bbe990dd86")
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000006"
+					(reference "R209")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 40.64 252.73)
+			(xy 40.64 250.19)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "169fa792-3fd8-5d6a-a433-28b32f787901")
+	)
+	(global_label "SDIO_CK"
+		(shape bidirectional)
+		(at 40.64 250.19 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "d4887923-f456-5e40-afad-561d2b441fd4")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 40.64 250.19 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 40.64 260.35)
+			(xy 40.64 262.89)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "87b4aa0c-4ac5-55ce-b83c-1c0f78808e9f")
+	)
+	(global_label "SDCARD_CLK"
+		(shape bidirectional)
+		(at 40.64 262.89 270)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "809f6807-ba83-5237-93d2-1fa0d5e0770e")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 40.64 262.89 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 50.8 256.54 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "6e8fbd9e-7355-5322-961e-75631c94b70b")
+		(property "Reference" "R210"
+			(at 52.832 256.54 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "22R"
+			(at 50.8 256.54 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 50.8 256.54 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 50.8 256.54 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 50.8 256.54 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "aa9099ba-019b-5cbb-aaad-563ac22ede49")
+		)
+		(pin "2"
+			(uuid "a36f73be-741f-5584-a63d-da28196f6fbe")
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000006"
+					(reference "R210")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 50.8 252.73)
+			(xy 50.8 250.19)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7dd65f39-aefb-58f2-8aa5-7c98a79a7761")
+	)
+	(global_label "QUADSPI_CLK"
+		(shape bidirectional)
+		(at 50.8 250.19 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "513f65ad-db2a-58b3-a56b-53514ecad8b3")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 50.8 250.19 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 50.8 260.35)
+			(xy 50.8 262.89)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "88bdc305-7306-5a5c-a484-9a6ba30f2aa1")
+	)
+	(global_label "QSPI_FLASH_CLK"
+		(shape bidirectional)
+		(at 50.8 262.89 270)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "34c24093-53cf-50c1-a687-d6af7d78cbe8")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 50.8 262.89 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 			)
 		)
 	)

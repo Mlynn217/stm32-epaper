@@ -76,6 +76,30 @@ git-ignored (regenerate the files rather than committing them):
 - Before paying for the full set, consider ordering only the front shell's **chin section** (or the
   whole shell alone) as a fit check against the real panel, encoder and connectors.
 
+## Fit-check print (order this first)
+
+`build.py` also exports **`out/fitcheck_chin.step`**: the bottom 38.5 mm of the front shell (the
+chin plus 12 mm of the display window, full depth, 106.8 × 38.5 × 16.2 mm, ~11 g of PA12). It also
+exports **`out/fitcheck_knob.step`**. Together they're about a seventh of the full set's material,
+and they test nearly everything that can go wrong mechanically.
+
+**To order (Craftcloud):** upload both `.step` files, choose **MJF (HP Multi Jet Fusion) PA 12**
+(dyed black is optional), quantity 1 each, and pick the cheapest offer with an acceptable
+delivery time. Also order 2 × M2 heat-set inserts (3.2 mm OD) if you don't have them.
+
+**When it arrives, check:**
+- [ ] **Encoder:** the PEC11R's M7 bushing passes through the chin hole; the knob presses onto
+      the 20 mm shaft (D-flat) firmly, turns freely, and clicks without touching the face.
+- [ ] **USB-C:** a real cable plug (the thickest one you own) fits the bottom opening.
+- [ ] **microSD:** a card slides through the slot; the finger scoop lets you pull it.
+- [ ] **Power-button flexure:** it flexes without cracking; ~0.3 mm of travel feels right.
+- [ ] **Heat-set inserts:** they go into the two chin bosses square and hold an M2 screw.
+- [ ] **Panel:** its bottom edge sits against the locating rib behind the bezel, and the
+      window edge shows no border. This is the quickest way to find out whether the panel is
+      0.67 mm or 1.6 mm thick (see Open items).
+- [ ] **Surface and fit tolerances:** note the print's actual wall thickness and hole sizes;
+      adjust `FIT_CLEAR` / `SLIDE_CLEAR` in `params.py` if the service prints tight or loose.
+
 ## Open items (resolve before ordering)
 
 1. **Measure the placeholders** (`PH` in `params.py`; `build.py` lists them): the panel's

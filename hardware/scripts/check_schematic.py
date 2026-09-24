@@ -163,6 +163,16 @@ def main():
                     fail('MEM: net %s reaches MCU pins %s (PINMAP function %s)'
                          % (want, mcu, af_of_net.get(want)))
 
+    # 4b. Clock series resistors: each bridges its device-side net to the MCU-side bus net.
+    for dev_net, (ref, _, mcu_net) in sheet_memory.SERIES.items():
+        a = {nd for nd in members.get(dev_net, []) if nd.startswith(ref + '.')}
+        b = {nd for nd in members.get(mcu_net, []) if nd.startswith(ref + '.')}
+        mcu = [nd for nd in members.get(mcu_net, []) if nd.startswith('U101.')]
+        if len(a) != 1 or len(b) != 1 or a == b:
+            fail('SERIES: %s must bridge %s and %s' % (ref, mcu_net, dev_net))
+        if len(mcu) != 1 or af_of_net.get(mcu_net) != mcu_net:
+            fail('SERIES: net %s reaches MCU pins %s' % (mcu_net, mcu))
+
     # 5. single-connection nets
     for name, nodes in members.items():
         if len(nodes) < 2 and not name.startswith('unconnected-'):
