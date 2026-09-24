@@ -51,6 +51,7 @@ def main():
         except Exception:
             net_clear[code] = CLEAR
     vias_at = []          # (x, y) of every via added: holes need spacing whatever their net
+    vias_net = []         # (x, y, netcode) of the same, for the shared-via fallback
 
     # Obstacles: (x0, y0, x1, y1, netcode) in mm, board coordinates (y down).
     obst = []
@@ -121,6 +122,7 @@ def main():
         board.Add(v)
         r = VIA_D / 2
         vias_at.append((vx, vy))
+        vias_net.append((vx, vy, pad.GetNetCode()))
         obst.append((vx - r, vy - r, vx + r, vy + r, pad.GetNetCode()))
         lo_x, hi_x = sorted((tomm(p.x), vx))
         lo_y, hi_y = sorted((tomm(p.y), vy))
@@ -134,7 +136,7 @@ def main():
                 return True
         return False
 
-    stats = {'plane': 0, 'plane_skipped': 0, 'fanout': 0, 'fanout_skipped': 0}
+    stats = {'plane': 0, 'plane_shared': 0, 'plane_skipped': 0, 'fanout': 0, 'fanout_skipped': 0}
 
     # 1. Plane vias.
     for pad in board.GetPads():
@@ -160,6 +162,29 @@ def main():
                     break
             if done:
                 break
+        if not done:
+            # Fallback: stub to the nearest same-net via already placed (a neighbouring pin's),
+            # when its own via spot is blocked (typically by a decoupling cap).
+            for vx, vy, code in sorted(((vx, vy, c) for vx, vy, c in vias_net
+                                        if c == pad.GetNetCode()),
+                                       key=lambda v: math.hypot(v[0] - px, v[1] - py)):
+                if math.hypot(vx - px, vy - py) > 2.5:
+                    break
+                if stub_ok(px, py, vx, vy, pad.GetNetCode(), 0.2, own[:4]):
+                    t = pcbnew.PCB_TRACK(board)
+                    t.SetStart(pad.GetPosition())
+                    t.SetEnd(pcbnew.VECTOR2I(mm(vx), mm(vy)))
+                    t.SetWidth(mm(0.2))
+                    t.SetLayer(pcbnew.F_Cu)
+                    t.SetNet(pad.GetNet())
+                    t.SetLocked(True)
+                    board.Add(t)
+                    lo_x, hi_x = sorted((px, vx))
+                    lo_y, hi_y = sorted((py, vy))
+                    obst.append((lo_x - 0.1, lo_y - 0.1, hi_x + 0.1, hi_y + 0.1, pad.GetNetCode()))
+                    done = True
+                    stats['plane_shared'] += 1
+                    break
         stats['plane' if done else 'plane_skipped'] += 1
 
     # 2. MCU dog-bone fanout of signal pins.
@@ -188,7 +213,8 @@ def main():
 
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(BOARD, board)
-    print('pre-routed (locked): %(plane)d plane vias (%(plane_skipped)d skipped), '
+    print('pre-routed (locked): %(plane)d plane pads connected (%(plane_shared)d via a neighbour\'s via, '
+          '%(plane_skipped)d skipped), '
           '%(fanout)d MCU fanouts (%(fanout_skipped)d skipped)' % stats)
 
 

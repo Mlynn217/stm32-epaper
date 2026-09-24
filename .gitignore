@@ -85,3 +85,6 @@ __pycache__/
 
 # Enclosure build outputs (regenerate with hardware/enclosure/build.py)
 hardware/enclosure/out/
+
+# Last routing attempt DRC report (hardware/scripts/route_loop.py)
+hardware/kicad/drc-last.json

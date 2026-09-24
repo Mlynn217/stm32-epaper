@@ -25,6 +25,7 @@ ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 BOARD = os.path.join(ROOT, 'hardware', 'kicad', 'stm32-epaper.kicad_pcb')
 SCH = os.path.join(ROOT, 'hardware', 'kicad', 'stm32-epaper.kicad_sch')
 LOG = os.path.join(ROOT, 'hardware', 'kicad', 'routing-log.md')
+LAST_DRC = os.path.join(ROOT, 'hardware', 'kicad', 'drc-last.json')   # not tracked
 JAR = os.path.expanduser('~/.local/share/freerouting/freerouting-2.4.1.jar')
 
 
@@ -42,7 +43,8 @@ def kpy(script, *args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--variant', choices=('none', 'planes', 'fanout'), required=True)
+    ap.add_argument('--variant', choices=('none', 'planes', 'fanout', 'iterate'), required=True)
+    ap.add_argument('--radius', type=float, default=3.0, help='iterate: rip-up radius, mm')
     ap.add_argument('--passes', type=int, default=20)
     ap.add_argument('--fresh', action='store_true')
     ap.add_argument('--note', default='')
@@ -54,7 +56,12 @@ def main():
         run(['kicad-cli', 'sch', 'export', 'netlist', '--format', 'kicadxml', '-o', net, SCH])
         print(kpy('gen_main_pcb.py', net, '--force').splitlines()[0])
         print(kpy('place_main_pcb.py').strip().splitlines()[-1])
-    if a.variant != 'none':
+    if a.variant == 'iterate':
+        # Rip-up pass on the current board, driven by the previous attempt's DRC report.
+        if not os.path.exists(LAST_DRC):
+            sys.exit('iterate needs %s from a previous attempt' % LAST_DRC)
+        print(kpy('ripup_main_pcb.py', LAST_DRC, str(a.radius)).strip())
+    elif a.variant != 'none':
         print(kpy('preroute_main_pcb.py', *(['--fanout'] if a.variant == 'fanout' else [])).strip())
     print(kpy('route_main_pcb.py', 'export', dsn).strip())
     fr_log = os.path.join(tmp, 'freerouting.log')
@@ -71,6 +78,7 @@ def main():
     run(['kicad-cli', 'pcb', 'drc', '--schematic-parity', '--refill-zones', '--format', 'json',
          '--severity-all', '-o', rpt, BOARD])
     d = json.load(open(rpt))
+    json.dump(d, open(LAST_DRC, 'w'))
     viol = [v for v in d.get('violations', []) if v.get('severity') == 'error']
     kinds = {}
     for v in d.get('violations', []):
