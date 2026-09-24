@@ -44,7 +44,7 @@ def kpy(script, *args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--variant', choices=('none', 'planes', 'fanout', 'iterate'), required=True)
+    ap.add_argument('--variant', choices=('none', 'planes', 'fanout', 'iterate', 'lastmile'), required=True)
     ap.add_argument('--radius', type=float, default=3.0, help='iterate: rip-up radius, mm')
     ap.add_argument('--passes', type=int, default=20)
     ap.add_argument('--tries', type=int, default=1,
@@ -64,8 +64,18 @@ def main():
         if not os.path.exists(LAST_DRC):
             sys.exit('iterate needs %s from a previous attempt' % LAST_DRC)
         print(kpy('ripup_main_pcb.py', LAST_DRC, str(a.radius)).strip())
+    elif a.variant == 'lastmile':
+        # Our own A* router on the gaps the previous attempt's DRC report lists; no freerouting.
+        if not os.path.exists(LAST_DRC):
+            sys.exit('lastmile needs %s from a previous attempt' % LAST_DRC)
+        print(kpy('lastmile_main_pcb.py', LAST_DRC).strip())
     elif a.variant != 'none':
         print(kpy('preroute_main_pcb.py', *(['--fanout'] if a.variant == 'fanout' else [])).strip())
+    if a.variant == 'lastmile':
+        rpt = os.path.join(tmp, 'drc.json')
+        run(['kicad-cli', 'pcb', 'drc', '--schematic-parity', '--refill-zones', '--format', 'json',
+             '--severity-all', '-o', rpt, BOARD])
+        return report(a, rpt)
     print(kpy('route_main_pcb.py', 'export', dsn).strip())
     # freerouting's results vary run to run (multi-threaded search), so optionally run several
     # in parallel on the same DSN and keep the best: fewest unconnected, then fewest DRC errors.
@@ -103,6 +113,10 @@ def main():
     score, best, copy, rpt = min(results)
     shutil.copy(copy, BOARD)
     print('kept run %d of %d' % (best, a.tries))
+    return report(a, rpt)
+
+
+def report(a, rpt):
     d = json.load(open(rpt))
     json.dump(d, open(LAST_DRC, 'w'))
     viol = [v for v in d.get('violations', []) if v.get('severity') == 'error']
