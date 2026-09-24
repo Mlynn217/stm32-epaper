@@ -8,7 +8,7 @@
 Every candidate is collision-checked against other nets' pads and the copper added so far, and
 skipped (left to the autorouter) if it doesn't fit.
 
-    kicad python3.11 hardware/scripts/preroute_main_pcb.py [--fanout]
+    kicad python3.11 hardware/scripts/preroute_main_pcb.py [--fanout] [--board=path] [--list-skipped]
 
 Starts by deleting all tracks/vias, so run it on a placed, unrouted board (place_main_pcb.py).
 """
@@ -37,15 +37,22 @@ def tomm(v):
 
 def main():
     fanout = '--fanout' in sys.argv
-    board = pcbnew.LoadBoard(BOARD)
-    for t in list(board.GetTracks()):
-        board.Remove(t)
+    path = next((a.split('=', 1)[1] for a in sys.argv if a.startswith('--board=')), BOARD)
+    board = pcbnew.LoadBoard(path)
+    skipped = []
+    # Capture everything that needs a board query first: once board.Remove() has been called,
+    # KiCad 10's SWIG wrapper can no longer iterate the board's collections in this session.
+    old_tracks = list(board.GetTracks())
+    all_pads = list(board.GetPads())
+    zones = list(board.Zones())
+    footprints = list(board.GetFootprints())
+    netcodes = {code: net for code, net in board.GetNetsByNetcode().items()}
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
 
     # Per-net clearance from the net classes (Touch 0.4, Power 0.2, ...): a pre-routed via or
     # stub must satisfy the larger of its own class and the obstacle's class.
     net_clear = {}
-    for code, net in board.GetNetsByNetcode().items():
+    for code, net in netcodes.items():
         try:
             net_clear[code] = max(CLEAR, tomm(net.GetNetClass().GetClearance()))
         except Exception:
@@ -55,14 +62,14 @@ def main():
 
     # Obstacles: (x0, y0, x1, y1, netcode) in mm, board coordinates (y down).
     obst = []
-    for pad in board.GetPads():
+    for pad in all_pads:
         bb = pad.GetBoundingBox()
         obst.append((tomm(bb.GetLeft()), tomm(bb.GetTop()), tomm(bb.GetRight()),
                      tomm(bb.GetBottom()), pad.GetNetCode()))
     edge = board.GetBoardEdgesBoundingBox()
     ex0, ey0, ex1, ey1 = (tomm(edge.GetLeft()) + 0.5, tomm(edge.GetTop()) + 0.5,
                           tomm(edge.GetRight()) - 0.5, tomm(edge.GetBottom()) - 0.5)
-    holes = [(tomm(fp.GetPosition().x), tomm(fp.GetPosition().y)) for fp in board.GetFootprints()
+    holes = [(tomm(fp.GetPosition().x), tomm(fp.GetPosition().y)) for fp in footprints
              if fp.GetReference().startswith('H3')]
 
     def clear_box(x0, y0, x1, y1, net):
@@ -131,15 +138,20 @@ def main():
     def plane_at(net, x, y):
         layer = PLANE_NETS[net]
         pt = pcbnew.VECTOR2I(mm(x), mm(y))
-        for z in board.Zones():
+        for z in zones:
             if z.GetNetname() == net and z.GetLayer() == layer and z.HitTestFilledArea(layer, pt, 0):
                 return True
         return False
 
-    stats = {'plane': 0, 'plane_shared': 0, 'plane_skipped': 0, 'fanout': 0, 'fanout_skipped': 0}
+    stats = {'plane': 0, 'plane_shared': 0, 'plane_skipped': 0, 'in_pad': 0, 'fanout': 0,
+             'fanout_skipped': 0}
+
+    # Only now remove the old copper (the queries above are done).
+    for t in old_tracks:
+        board.Remove(t)
 
     # 1. Plane vias.
-    for pad in board.GetPads():
+    for pad in all_pads:
         net = pad.GetNetname()
         if net not in PLANE_NETS or not pad.IsOnLayer(pcbnew.F_Cu) or pad.GetAttribute() != pcbnew.PAD_ATTRIB_SMD:
             continue
@@ -147,6 +159,34 @@ def main():
         px, py = tomm(pad.GetPosition().x), tomm(pad.GetPosition().y)
         cx, cy = tomm(fp.GetPosition().x), tomm(fp.GetPosition().y)
         bb = pad.GetBoundingBox()
+        pw, ph = tomm(bb.GetWidth()), tomm(bb.GetHeight())
+        if math.hypot(px - cx, py - cy) < 0.6 and pw * ph > 1.0:
+            # Exposed/thermal pad at the package centre: vias inside the pad (a stub outward would
+            # cross the IC's own pins). A small grid, 1.0 mm pitch, kept 0.3 mm inside the edge.
+            nx = max(1, int((pw - 0.6) / 1.0) + 1)
+            ny = max(1, int((ph - 0.6) / 1.0) + 1)
+            n_added = 0
+            for i in range(nx):
+                for j in range(ny):
+                    vx = px + (i - (nx - 1) / 2) * 1.0
+                    vy = py + (j - (ny - 1) / 2) * 1.0
+                    if plane_at(net, vx, vy):
+                        v = pcbnew.PCB_VIA(board)
+                        v.SetPosition(pcbnew.VECTOR2I(mm(vx), mm(vy)))
+                        v.SetWidth(mm(VIA_D))
+                        v.SetDrill(mm(VIA_DRILL))
+                        v.SetViaType(pcbnew.VIATYPE_THROUGH)
+                        v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu)
+                        v.SetNet(pad.GetNet())
+                        v.SetLocked(True)
+                        board.Add(v)
+                        vias_at.append((vx, vy))
+                        vias_net.append((vx, vy, pad.GetNetCode()))
+                        n_added += 1
+            if n_added:
+                stats['plane'] += 1
+                stats['in_pad'] += n_added
+                continue
         own = (tomm(bb.GetLeft()), tomm(bb.GetTop()), tomm(bb.GetRight()), tomm(bb.GetBottom()), pad.GetNetCode())
         half = max(tomm(bb.GetWidth()), tomm(bb.GetHeight())) / 2
         away = math.atan2(py - cy, px - cx) if (px, py) != (cx, cy) else 0.0
@@ -165,9 +205,13 @@ def main():
         if not done:
             # Fallback: stub to the nearest same-net via already placed (a neighbouring pin's),
             # when its own via spot is blocked (typically by a decoupling cap).
-            for vx, vy, code in sorted(((vx, vy, c) for vx, vy, c in vias_net
-                                        if c == pad.GetNetCode()),
-                                       key=lambda v: math.hypot(v[0] - px, v[1] - py)):
+            targets = [(vx, vy, c) for vx, vy, c in vias_net if c == pad.GetNetCode()]
+            # ...or the same-net pad of another part (e.g. an MCU power pin into its own
+            # decoupling cap, whose via then serves both).
+            targets += [(tomm(o.GetPosition().x), tomm(o.GetPosition().y), o.GetNetCode())
+                        for o in all_pads if o.GetNetCode() == pad.GetNetCode()
+                        and o.GetParentFootprint().GetReference() != fp.GetReference()]
+            for vx, vy, code in sorted(targets, key=lambda v: math.hypot(v[0] - px, v[1] - py)):
                 if math.hypot(vx - px, vy - py) > 2.5:
                     break
                 if stub_ok(px, py, vx, vy, pad.GetNetCode(), 0.2, own[:4]):
@@ -186,10 +230,12 @@ def main():
                     stats['plane_shared'] += 1
                     break
         stats['plane' if done else 'plane_skipped'] += 1
+        if not done:
+            skipped.append('%s.%s(%s)' % (fp.GetReference(), pad.GetNumber(), net))
 
     # 2. MCU dog-bone fanout of signal pins.
     if fanout:
-        mcu = next(fp for fp in board.GetFootprints() if fp.GetReference() == MCU)
+        mcu = next(fp for fp in footprints if fp.GetReference() == MCU)
         cx, cy = tomm(mcu.GetPosition().x), tomm(mcu.GetPosition().y)
         pads = sorted(mcu.Pads(), key=lambda p: int(p.GetNumber()) if p.GetNumber().isdigit() else 0)
         for i, pad in enumerate(pads):
@@ -211,10 +257,13 @@ def main():
                     break
             stats['fanout' if ok else 'fanout_skipped'] += 1
 
-    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-    pcbnew.SaveBoard(BOARD, board)
+    if not old_tracks:
+        pcbnew.ZONE_FILLER(board).Fill(zones)
+    pcbnew.SaveBoard(path, board)
+    if '--list-skipped' in sys.argv:
+        print('skipped plane pads:', ' '.join(sorted(skipped)))
     print('pre-routed (locked): %(plane)d plane pads connected (%(plane_shared)d via a neighbour\'s via, '
-          '%(plane_skipped)d skipped), '
+          '%(plane_skipped)d skipped; %(in_pad)d vias in thermal pads), '
           '%(fanout)d MCU fanouts (%(fanout_skipped)d skipped)' % stats)
 
 
