@@ -140,7 +140,8 @@ def main():
             if n == net and n:
                 if kind == 'circle':
                     # Same-net vias aren't copper obstacles, but drills still need 0.25 mm spacing.
-                    mark(kind, geom, ls, 0.0, 0.25 + VIA_DRILL / 2 + VIA_DRILL / 2 - geom[2] + VIA_D / 2 - VIA_D / 2)
+                    # centre-to-centre >= drill + 0.25; mark() measures from its copper edge
+                    mark(kind, geom, ls, 0.0, VIA_DRILL + 0.25 - geom[2])
                 continue
             c = max(clr, cls(n)[0] if n else clr)
             mark(kind, geom, ls, c + hw, c + VIA_D / 2)
