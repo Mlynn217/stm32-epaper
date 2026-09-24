@@ -440,16 +440,24 @@ Next steps, in order:
       against DS11189. README "MCU, Memory and Peripherals Sheets" has the decisions. **Not yet
       reviewed by a person.** Power-sheet open items:
   - [x] **TPS63802 footprint** — built from TI's DLA0010A land pattern (`epaper.pretty`).
-  - [ ] **TPS63900 footprint check** — it uses the stock `WSON-10-1EP_2.5x2.5mm` footprint, drawn
-        for TI's DSK package; check it against the TPS63900 datasheet's DSK0010A drawing.
-  - [ ] **Inductors** — L1 is 0.47 µH DFE201612E (from TI's recommended list, 5.5 A saturation) on
-        the stock 2016 footprint, which needs checking against the part's land pattern. L2 is a
-        placeholder DFE201610P 1 µH; check its saturation current against the TPS61023's 3.7 A
-        limit. L3 (TPS63900, DNP) is still to be chosen.
-  - [ ] **Undervoltage cutoff thresholds** — R6/R15 = 2.2M/1.0M on TPS63802 EN (off below ~3.20 V,
-        on above ~3.52 V). Check against the chosen cell's protection-board cutoff, and check
-        that a nearly empty cell recovering after the load is removed doesn't cause restart
-        cycling.
+  - [x] **TPS63900 footprint check** (2026-09-23) — the stock
+        `WSON-10-1EP_2.5x2.5mm_P0.5mm_EP1.2x2mm` matches TI's DSK0010A land pattern (SLVSET3D):
+        same 0.5 mm pitch, 0.25 mm pads and 1.2 × 2.0 mm thermal pad; its pads are 0.225 mm
+        longer outward (IPC toe) and 0.05 mm closer to the EP, both fine.
+  - [x] **Inductors** (2026-09-23) — all three are now Murata DFE201612E (2.0 × 1.6 × 1.2 mm),
+        whose recommended land pattern is exactly the stock `L_Murata_DFE201610P` footprint:
+        L1 -R47M (Isat 5.5 A, 26 mΩ), L2 -1R0M (Isat 4.0 A, covering the TPS61023's 3.7 A valley
+        limit; 48 mΩ), L3 -2R2M (DNP; in TI's TPS63900 list, 2.4 A).
+  - [x] **Undervoltage cutoff thresholds** (2026-09-23) — R6/R15 = 2.2M/1.0M on TPS63802 EN (off
+        below ~3.20 V, on above ~3.52 V, 0.32 V hysteresis). Above the PCM's 3.0 ± 0.1 V cutoff
+        (they can only meet at worst-case tolerances, and a PCM cut is harmless). After a cut
+        under load the pouch rebounds by its IR drop (~0.1 V at a 0.5 A refresh through ~0.2 Ω)
+        plus relaxation, to ~3.35–3.45 V: normally below 3.52 V. A long rest could just reach
+        it, so firmware must not refresh on a low battery at boot (next item).
+  - [ ] **Firmware: low-battery boot rule** — at boot, read `VBAT_SENSE` *before* enabling the
+        HAT or peripheral rail; below ~3.45 V, go straight back to STANDBY without a refresh
+        (the "please charge" screen is already on the e-paper). Prevents a slow
+        boot → refresh → cut → recover cycle.
   - [ ] **Firmware battery measurement + graceful shutdown** — read `VBAT_SENSE` (PA3, ADC1_IN3,
         cell/2). At ~3.4 V under light load: save state, draw a "please charge" screen, enter
         standby. LiPo's sloped curve also makes this a usable fuel estimate (see Fuel gauge).
@@ -476,17 +484,19 @@ Next steps, in order:
         init; before dropping it, put those pins in analog/low (no back-powering); on re-enable,
         redo the SDRAM JEDEC init and re-mount SD. Idle policy: STOP + SDRAM self-refresh
         between page turns, STANDBY + rail off after a few minutes idle.
-  - [ ] **Soft power / EN control** — TPS63802 EN is currently just the undervoltage divider. The
-        power-button scheme (if the button should cut the rail, not just wake the MCU) has to
-        combine with it.
+  - [x] **Soft power / EN control** (2026-09-23) — decided: no latching power switch. "Off" is
+        MCU STANDBY with the button on WKUP; the peripheral rail and HAT are cut and the CAP1188
+        sleeps, leaving tens of µA (years of shelf life; measure at bring-up). TPS63802 EN stays
+        just the undervoltage divider. A firmware IWDG covers hangs.
   - [ ] **TPS63900 EN (v2)** — its EN is a plain logic input (no precise threshold), so when the
         always-on rail is fitted it needs its own undervoltage cutoff.
   - [ ] **Battery connector polarity** — J2 pin 1 = +. JST-PH lead polarity isn't consistent
         across LiPo vendors; confirm against the actual cell before plugging it in.
-  - [ ] **USB-C shield** — tied straight to GND for now; decide on an RC/ferrite.
-  - [ ] **Fuel gauge** — with LiPo, the `VBAT_SENSE` voltage gives a rough % from a lookup
-        table, which may be enough. For an accurate % (load- and age-compensated), add a
-        gauge IC; MAX17261 is in KiCad's stock library.
+  - [x] **USB-C shield** (2026-09-23) — decided: straight to GND. The case is plastic with no
+        earth, so there's no ground loop for an RC to break, and it's the shortest ESD return.
+  - [x] **Fuel gauge** (2026-09-23) — decided: none on v1. LiPo's sloped curve makes the
+        `VBAT_SENSE` voltage (read at rest, between refreshes) a usable % via a lookup table. If
+        that proves too coarse, a MAX17261 (in KiCad's stock library) is the v2 option.
   - [x] **Cold-charge protection** — solved by the switch to LiPo: the BQ24073's TS input with an
         NTC blocks charging outside ~0–50 °C.
   - [x] **NTC coupling** (2026-09-23) — the cell sits beside the PCB, so RT1 is now a leaded
@@ -501,18 +511,27 @@ Next steps, in order:
 - [ ] **Schematic open items (other sheets)**:
   - [ ] **Human review pass** of all four sheets in Eeschema (and tidy the generated layout,
         e.g. the dense VDD pin row on the MCU).
-  - [ ] **Crystals:** choose the actual 8 MHz and 32.768 kHz parts and recompute the load caps
-        (drawn for CL = 10 pF / 6 pF). Check the LSE part against ST AN2867.
+  - [x] **Crystals** (2026-09-23): HSE NDK NX3225GD-8MHZ-STD-CRA-3 (CL 8 pF, 2 × 10 pF); LSE NDK
+        NX3215SA-32.768KHZ-EXS00A-MU00525 (CL 6 pF, ESR ≤ 70 kΩ, 2 × 6.2 pF; footprint now 3215).
+  - [ ] **LSE margin:** AN2867 gm_crit ≈ 0.58 µA/V for that crystal. Compare with the F469
+        datasheet's LSE Gm_crit_max (ST's site wouldn't download here); if it's short, enable the
+        high-drive LSE (RCC_BDCR LSEMOD) in firmware, or pick a lower-ESR crystal.
   - [x] **Electrode pads** (2026-09-23): two small electrode boards (one design, fitted on both
         sides) on JST-SH cables to J302/J303 (touch / GND / touch). Geometry is in
         `hardware/enclosure/out/electrode_board.json`.
-  - [ ] **Electrode board KiCad project**: 74 × 10 mm, 0.8 mm FR4, two 25 × 8 mm pads on the
-        wall side, SM03B-SRSS-TB centred on the back, 1.5 mm clear at each end for the channels.
-        Consider hatched GND on the back side (shields the pads from the internals).
-  - [ ] **ESD:** there's none on the HAT header, encoder or electrodes (only USB has a TVS). Decide
-        once the enclosure is known.
-  - [ ] **HRDY floats** while the HAT is unpowered: use the MCU's internal pull-down then, or add
-        a resistor.
+  - [x] **Electrode board KiCad project** (2026-09-23): `hardware/electrode/`, generated by
+        `hardware/scripts/gen_electrode.py` (schematic, pad footprint) and
+        `gen_electrode_pcb.py` (board, built with KiCad's own pcbnew API). 74 × 10 mm, 0.8 mm
+        FR4; two 25 × 8 mm mask-covered pads on the wall side; SM03B-SRSS-TB on the back, cable
+        pointing at the main PCB; hatched GND pour on the back only. ERC 0, DRC 0 violations /
+        0 unconnected / 0 schematic-parity issues. One design, fitted twice (the right one turned
+        over). Not yet: fab outputs (Gerbers etc.), and a check of the sensitivity on real
+        hardware (the CAP1188 breakout + copper tape through a 2.2 mm PA12 offcut would do).
+  - [x] **ESD** (2026-09-23): U302 TPD4E05U06 (0.5 pF/line) on the four electrode-cable lines;
+        none on the HAT header (internal cable) or the power button (behind a plastic flexure);
+        the encoder's metal shaft already discharges through its mounting lugs to GND, and its
+        lines have the 10k/10 nF filters.
+  - [x] **HRDY floats** (2026-09-23): R316 100k pull-down (reads "busy" while the HAT is off).
   - [ ] **Firmware changes for the custom board:** FMC 16-bit data width; SD detect on PG10; HAT
         pins held low or floating while `EPD_5V_EN` is low (back-powering); TIM3 encoder mode;
         CAP1188 at 0x29; VBUS sensing on PA9.
@@ -536,16 +555,42 @@ Next steps, in order:
         the main PCB, pressed through a flexure tab in the wall); side-wall electrodes on two small
         boards in printed channels; keep the front-face knob; RT1 on leads to the pouch. Schematic
         updated to match (SW302, J302/J303, RT1), `check_schematic.py` passes.
-  - [ ] **Measure the placeholders** (`PH` in `params.py`, listed on every build): panel
-        active-area offset, FPC width/bend, HAT size/height, PEC11R body height/push travel/shaft
-        reference plane, microSD socket height, SKRT body height/travel, JST-SH envelope.
+  - [x] **Datasheet values** (2026-09-23) replaced most placeholders: PEC11R (body 6.5 mm, M7
+        bushing, travel 0.5 ± 0.3 mm, shaft length from the mounting surface), Alps SKRTLAE010
+        (3.3 mm tall, 0.2 mm travel), Molex 104031 (1.42 mm), JST SM03B (4.25 × 5.8 × 2.9).
+        **Consequence: the encoder is now PEC11R-4220F-S0024 (20 mm shaft).** The bushing (5 mm
+        on the 15 mm part) left only ~2.5 mm of shaft for the knob once the push travel is
+        cleared; with 20 mm it grips 5.5 mm and stands 7.9 mm proud. Schematic updated.
+  - [ ] **Measure what no datasheet gives** (`PH` in `params.py`, listed on every build): panel
+        active-area offset, FPC width/bend, **panel thickness** (Waveshare says 0.67 mm, ED060KD1
+        listings say 1.6 mm), HAT outline and height.
   - [ ] **Human review** of the renders / OCP viewer, then a fit-check print (the shell alone or
         its chin section) against the real panel, encoder and connectors before the full set.
-  - [ ] Import `out/pcb_outline.dxf` into Edge.Cuts when layout starts. The DXF import itself
-        hasn't been tried yet.
+  - [x] Board outline into KiCad (2026-09-23): done by `gen_main_pcb.py` from
+        `out/pcb_placement.json` directly (no DXF import step).
 - [ ] **PCB layout** — the next milestone after the enclosure: stackup (4 layers is likely, given
       the FMC bus and LQFP176), placement, then routing. The Freerouting MCP is configured for
       autorouting once parts are placed.
+  - [x] **Bootstrap** (2026-09-23): `hardware/kicad/stm32-epaper.kicad_pcb`, generated once by
+        `hardware/scripts/gen_main_pcb.py` (KiCad's Python, from the schematic netlist and the
+        enclosure's placement JSON). 4 layers, 1.6 mm; outline 97.4 × 60 mm with the chin-boss
+        notches; all 152 footprints with nets and symbol links (DRC schematic parity: 0 issues).
+        Placed by the enclosure: SW301 on the knob axis; J1 USB-C, J201 microSD and SW302 on the
+        bottom edge (mouth/slot/plunger outwards); J302/J303 (electrode cables), J2 (battery),
+        RT1 pads and J301 (HAT) on the top edge; H301–H304 on the standoffs. Everything else is
+        staged to the right of the board by sheet. Fab rules set for a standard 4-layer service:
+        0.127 mm default clearance (0.1 min), 0.15 mm tracks, 0.45/0.2 mm vias, 0.2 mm
+        hole-to-copper. The script refuses to overwrite the board without --force: from here on,
+        the .kicad_pcb is the source of truth.
+  - [ ] **Known DRC items**: 8 hole-clearance errors inside the stock SW302 (Alps SKRT: pegs
+        0.10–0.15 mm from its own pads) and J1 (GCT USB4105: 0.19 mm) footprints, i.e. the
+        vendors' land patterns. Confirm with the fab or exclude them in the DRC dialog.
+  - [ ] **Placement** of the core: MCU (U101) central, SDRAM (U201) hugging the FMC pins, QSPI
+        (U202) near its pins, power stage (U1–U7, L1–L3) near J2/J1 with short switch loops, the
+        CAP1188 near J302/J303, crystals right at the MCU. Keep top-side parts under the backer
+        ≤ 7.9 mm tall (`pcb_placement.json`); J201 and J1 sit 0.85 mm / 0 mm in from the edge.
+  - [ ] **Stackup/planes**: GND on In1, split power on In2; then routing (FMC and SDIO length
+        matching are loose at these speeds, but keep the SDRAM bus short).
 - [ ] **Fabrication outputs and ordering** — DRC clean; Gerbers + drill, pick-and-place and BoM
       with real MPNs (several values are still "verify" placeholders); pick a fab/assembler and
       check part availability (LQFP176 F469, IS42S16400J, TPS63802/TPS63900 stock); order boards,

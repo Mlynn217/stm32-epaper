@@ -16,7 +16,7 @@ def build():
 
     # ---- USB-C (sink) + ESD ------------------------------------------------------------
     s.text('USB-C receptacle, UFP/sink only: 5.1k Rd on each CC.\nD+/D- to MCU USB OTG_FS '
-           '(PA11/PA12) for DFU/CDC.\nSHIELD tied straight to GND for now (revisit: RC/ferrite).',
+           '(PA11/PA12) for DFU/CDC.\nSHIELD straight to GND: plastic case, no earth, so no ground loop for an\nRC to break, and it is the shortest ESD return (U5 returns to GND there too).',
            20.32, 30.48)
     j1 = s.part('J1', 'Connector:USB_C_Receptacle_USB2.0_16P', 'USB_C_Receptacle_USB2.0_16P',
                 40.64, 76.2,
@@ -127,7 +127,7 @@ def build():
     two_pin(s, 'R15', 'R', '1M 1%', 160.02, 210.82, 'BB_EN', 'GND', R0402)
     two_pin(s, 'L1', 'L', '0.47uH', 180.34, 210.82, 'BB_L1', 'BB_L2',
             'Inductor_SMD:L_Murata_DFE201610P',
-            fields={'MPN': 'DFE201612E-R47M (TI Table 10-2: 5.5A Isat; verify land pattern)'})
+            fields={'MPN': 'DFE201612E-R47M=P2 (Isat 5.5A, 26mR; Murata land = this footprint)'})
     two_pin(s, 'R7', 'R', '511k 1%', 190.50, 210.82, '+3V3', 'BB_FB', R0402)
     two_pin(s, 'R8', 'R', '91k 1%', 200.66, 210.82, 'BB_FB', 'GND', R0402)
     two_pin(s, 'C8', 'C', '22uF', 210.82, 210.82, '+3V3', 'GND', C0603)
@@ -146,7 +146,7 @@ def build():
     two_pin(s, 'C11', 'C', '10uF', 274.32, 210.82, 'VSYS', 'GND', C0603)
     two_pin(s, 'L2', 'L', '1uH', 284.48, 210.82, 'VSYS', 'BST_SW',
             'Inductor_SMD:L_Murata_DFE201610P',
-            fields={'MPN': 'DFE201610P-1R0M (verify Isat vs 3.7A valley limit)'})
+            fields={'MPN': 'DFE201612E-1R0M=P2 (Isat 4.0A >= TPS61023 3.7A valley limit, 48mR)'})
     two_pin(s, 'R12', 'R', '1M', 294.64, 210.82, 'EPD_5V_EN', 'GND', R0402)
     two_pin(s, 'R10', 'R', '732k 1%', 304.80, 210.82, '+5V', 'BST_FB', R0402)
     two_pin(s, 'R11', 'R', '100k 1%', 314.96, 210.82, 'BST_FB', 'GND', R0402)
@@ -170,7 +170,7 @@ def build():
     two_pin(s, 'R17', 'R', '100k', 353.06, 104.14, 'VSYS', 'AON_EN', R0402, dnp=True)
     two_pin(s, 'L3', 'L', '2.2uH', 363.22, 104.14, 'AON_LX1', 'AON_LX2',
             'Inductor_SMD:L_Murata_DFE201610P', dnp=True,
-            fields={'MPN': '2.2uH per TPS63900 datasheet; pick the part at v2'})
+            fields={'MPN': 'DFE201612E-2R2M=P2 (TPS63900 datasheet Table 8-2; Isat 2.4A)'})
     two_pin(s, 'R16', 'R', '16.2k 1%', 373.38, 104.14, 'AON_CFG3', 'GND', R0402, dnp=True)
     two_pin(s, 'C7', 'C', '22uF', 383.54, 104.14, '3V3_AON', 'GND', C0603, dnp=True)
     two_pin(s, 'R18', 'R', '0R', 393.7, 104.14, '+3V3', '3V3_AON', R0603)

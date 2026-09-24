@@ -122,7 +122,7 @@ class Sheet:
             self.lib[lib_id] = sym
         return self.lib[lib_id]
 
-    def part(self, ref, lib_id, value, x, y, footprint=None, fields=None, dnp=False):
+    def part(self, ref, lib_id, value, x, y, footprint=None, fields=None, dnp=False, in_bom=True):
         sym = self._lib(lib_id)
         pins = _pins_of(sym)
         lprops = {p[1]: p[2] for p in find(sym, 'property')}
@@ -136,7 +136,7 @@ class Sheet:
         for k, v in (fields or {}).items():
             props.append(_prop(k, v, x, y, hide=True))
         inst = ['symbol', ['lib_id', lib_id], ['at', x, y, 0], ['unit', 1],
-                ['exclude_from_sim', NO], ['in_bom', NO if is_pwr else YES], ['on_board', YES],
+                ['exclude_from_sim', NO], ['in_bom', YES if in_bom and not is_pwr else NO], ['on_board', YES],
                 ['dnp', YES if dnp else NO], ['uuid', uid()], *props]
         for num in pins:
             inst.append(['pin', num, ['uuid', uid()]])

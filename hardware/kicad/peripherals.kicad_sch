@@ -1587,6 +1587,797 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Power_Protection:TPD4E05U06DQA"
+			(pin_names
+				(offset 0)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "U"
+				(at -0.635 8.89 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "TPD4E05U06DQA"
+				(at 1.905 -10.16 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" "Package_SON:USON-10_2.5x1.0mm_P0.5mm"
+				(at 1.905 -12.065 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+						(italic yes)
+					)
+					(justify left)
+				)
+			)
+			(property "Datasheet" "https://www.ti.com/lit/ds/symlink/tpd4e05u06.pdf"
+				(at 1.905 -13.97 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Description" "4-Channel ESD Protection for Super-Speed USB 3.0 Interface, USON-10"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "ESD protection USB 3.0"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "USON*2.5x1.0mm*P0.5mm*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "TPD4E05U06DQA_0_0"
+				(rectangle
+					(start -5.715 6.477)
+					(end 5.715 -6.604)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -3.175 -6.604)
+						(xy -3.175 6.477)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 6.477)
+						(xy 0 -6.604)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 3.175 6.477)
+						(xy 3.175 -6.604)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "TPD4E05U06DQA_0_1"
+				(polyline
+					(pts
+						(xy -7.747 2.54)
+						(xy -3.175 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start -7.62 7.62)
+					(end 7.62 -7.62)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(polyline
+					(pts
+						(xy -7.62 -2.54)
+						(xy -5.715 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center -5.715 -2.54)
+					(radius 0.2794)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy -5.08 5.08)
+						(xy -6.35 5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -5.08 3.81)
+						(xy -6.35 3.81)
+						(xy -5.715 5.08)
+						(xy -5.08 3.81)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -5.08 -3.81)
+						(xy -6.35 -3.81)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -5.08 -5.08)
+						(xy -6.35 -5.08)
+						(xy -5.715 -3.81)
+						(xy -5.08 -5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center -3.175 6.477)
+					(radius 0.2794)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(circle
+					(center -3.175 2.54)
+					(radius 0.2794)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(circle
+					(center -3.175 -6.604)
+					(radius 0.2794)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.54 5.08)
+						(xy -3.81 5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.54 3.81)
+						(xy -3.81 3.81)
+						(xy -3.175 5.08)
+						(xy -2.54 3.81)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.54 -3.81)
+						(xy -3.81 -3.81)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.54 -5.08)
+						(xy -3.81 -5.08)
+						(xy -3.175 -3.81)
+						(xy -2.54 -5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -0.635 0.889)
+						(xy -1.016 0.635)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 0 6.477)
+					(radius 0.2794)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 -6.604)
+						(xy 0 -7.62)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 0 -6.604)
+					(radius 0.2794)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.635 0.889)
+						(xy -0.635 0.889)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.635 0.889)
+						(xy 1.016 1.143)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.635 -0.381)
+						(xy -0.635 -0.381)
+						(xy 0 0.889)
+						(xy 0.635 -0.381)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 3.175 6.477)
+					(radius 0.2794)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(circle
+					(center 3.175 -2.54)
+					(radius 0.2794)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(circle
+					(center 3.175 -6.604)
+					(radius 0.2794)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 3.81 5.08)
+						(xy 2.54 5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 3.81 3.81)
+						(xy 2.54 3.81)
+						(xy 3.175 5.08)
+						(xy 3.81 3.81)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 3.81 -3.81)
+						(xy 2.54 -3.81)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 3.81 -5.08)
+						(xy 2.54 -5.08)
+						(xy 3.175 -3.81)
+						(xy 3.81 -5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 5.715 2.54)
+					(radius 0.2794)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 6.35 5.08)
+						(xy 5.08 5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 6.35 3.81)
+						(xy 5.08 3.81)
+						(xy 5.715 5.08)
+						(xy 6.35 3.81)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 6.35 -3.81)
+						(xy 5.08 -3.81)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 6.35 -5.08)
+						(xy 5.08 -5.08)
+						(xy 5.715 -3.81)
+						(xy 6.35 -5.08)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 7.62 2.54)
+						(xy 5.715 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 7.62 -2.54)
+						(xy 3.175 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "TPD4E05U06DQA_1_1"
+				(pin passive line
+					(at -12.7 2.54 0)
+					(length 5.08)
+					(name "D1+"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -12.7 -2.54 0)
+					(length 5.08)
+					(name "D1-"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 0 -12.7 90)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 12.7 2.54 180)
+					(length 5.08)
+					(name "D2+"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 12.7 -2.54 180)
+					(length 5.08)
+					(name "D2-"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin free line
+					(at 12.7 -7.62 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin free line
+					(at 12.7 7.62 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -12.7 90)
+					(length 5.08)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin free line
+					(at -12.7 -7.62 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "9"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin free line
+					(at -12.7 7.62 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "10"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Device:C"
 			(pin_numbers
 				(hide yes)
@@ -2350,6 +3141,105 @@
 								(size 1.27 1.27)
 							)
 						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "Mechanical:MountingHole"
+			(pin_names
+				(offset 1.016)
+			)
+			(exclude_from_sim no)
+			(in_bom no)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "H"
+				(at 0 5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "MountingHole"
+				(at 0 3.175 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Mounting Hole without connection"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "mounting hole"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "MountingHole*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "MountingHole_0_1"
+				(circle
+					(center 0 0)
+					(radius 1.27)
+					(stroke
+						(width 1.27)
+						(type default)
+					)
+					(fill
+						(type none)
 					)
 				)
 			)
@@ -3151,9 +4041,9 @@
 		)
 		(uuid "b7993975-4c4b-5fb0-9824-8b2b01b51d79")
 	)
-	(text "CAP1188 cap-touch on I2C1. ADDR_COMM 150k -> SMBus address 0x29 (0101_001), same as\nthe Adafruit breakout used for bring-up. SPI_CS# to GND (I2C mode), WAKE 100k\npull-down, RESET (active high) 100k pull-down, ALERT# open-drain 10k pull-up, unused\nLED1-8 and CS5-8 to GND (datasheet Table 1.1). CS1-4 = side-wall electrodes\n(2 per side) on two small electrode boards pressed against the inside of the side\nwalls, each on a short JST-SH cable (touch / GND / touch: GND between the two sense\nlines). Board geometry comes from hardware/enclosure."
+	(text "R316: HRDY would float while the HAT is unpowered; 100k holds it low (reads \"busy\").\nNo ESD on J301: it is an internal cable, never user-accessible."
 		(exclude_from_sim no)
-		(at 20.32 132.08 0)
+		(at 20.32 119.38 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -3163,6 +4053,193 @@
 		(uuid "af39dc9a-8323-5a05-9ee8-edee2ca87c91")
 	)
 	(symbol
+		(lib_id "Device:R")
+		(at 137.16 88.9 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "0828d6c3-e560-50f2-8856-93ffc7845174")
+		(property "Reference" "R316"
+			(at 139.192 88.9 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "100k"
+			(at 137.16 88.9 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 137.16 88.9 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 137.16 88.9 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 137.16 88.9 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "95347a27-fb7f-5b36-a5d8-32516dfd5425")
+		)
+		(pin "2"
+			(uuid "94ed90d9-1ff1-5020-be24-77ff854214bc")
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
+					(reference "R316")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 137.16 85.09)
+			(xy 137.16 82.55)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "19d6e630-f952-5816-8e72-c416ba96e4e0")
+	)
+	(global_label "EPD_HRDY"
+		(shape bidirectional)
+		(at 137.16 82.55 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "1f77ecbe-de36-5839-8609-c269a8f23f3b")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 137.16 82.55 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 137.16 92.71)
+			(xy 137.16 95.25)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0fc97e48-9eb6-5347-a21f-9f9aee9b5e0c")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 137.16 95.25 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(uuid "d4bd188f-7ce0-5a52-979b-88a4eae2a72e")
+		(property "Reference" "#PWRPER003"
+			(at 137.16 101.6 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 137.16 99.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 137.16 95.25 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 137.16 95.25 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 137.16 95.25 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "4be9811f-9ed5-5350-aa9b-fdc95298c953")
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
+					(reference "#PWRPER003")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(text "CAP1188 cap-touch on I2C1. ADDR_COMM 150k -> SMBus address 0x29 (0101_001), same as\nthe Adafruit breakout used for bring-up. SPI_CS# to GND (I2C mode), WAKE 100k\npull-down, RESET (active high) 100k pull-down, ALERT# open-drain 10k pull-up, unused\nLED1-8 and CS5-8 to GND (datasheet Table 1.1). CS1-4 = side-wall electrodes\n(2 per side) on two small electrode boards pressed against the inside of the side\nwalls, each on a short JST-SH cable (touch / GND / touch: GND between the two sense\nlines). Board geometry comes from hardware/enclosure."
+		(exclude_from_sim no)
+		(at 20.32 132.08 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left top)
+		)
+		(uuid "e96def33-07cc-5190-8cda-cebf06e53601")
+	)
+	(symbol
 		(lib_id "epaper:CAP1188")
 		(at 76.2 190.5 0)
 		(unit 1)
@@ -3170,7 +4247,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "0828d6c3-e560-50f2-8856-93ffc7845174")
+		(uuid "d59f902e-861f-5bef-ac5e-60387a9987e7")
 		(property "Reference" "U301"
 			(at 62.23 163.83 0)
 			(effects
@@ -3226,79 +4303,79 @@
 			)
 		)
 		(pin "23"
-			(uuid "95347a27-fb7f-5b36-a5d8-32516dfd5425")
-		)
-		(pin "3"
-			(uuid "94ed90d9-1ff1-5020-be24-77ff854214bc")
-		)
-		(pin "4"
-			(uuid "19d6e630-f952-5816-8e72-c416ba96e4e0")
-		)
-		(pin "13"
-			(uuid "1f77ecbe-de36-5839-8609-c269a8f23f3b")
-		)
-		(pin "24"
-			(uuid "0fc97e48-9eb6-5347-a21f-9f9aee9b5e0c")
-		)
-		(pin "2"
-			(uuid "d4bd188f-7ce0-5a52-979b-88a4eae2a72e")
-		)
-		(pin "1"
-			(uuid "4be9811f-9ed5-5350-aa9b-fdc95298c953")
-		)
-		(pin "14"
-			(uuid "e96def33-07cc-5190-8cda-cebf06e53601")
-		)
-		(pin "22"
-			(uuid "d59f902e-861f-5bef-ac5e-60387a9987e7")
-		)
-		(pin "21"
 			(uuid "1f2e6c82-fbf9-5549-9dad-2e48c8e01088")
 		)
-		(pin "20"
+		(pin "3"
 			(uuid "923bd412-822a-5fec-95b0-32c053f59ff1")
 		)
-		(pin "19"
+		(pin "4"
 			(uuid "195775ae-89b7-56e6-bf84-6e98add078c8")
 		)
-		(pin "18"
+		(pin "13"
 			(uuid "a26d6e2d-8bbf-5cc7-b532-3ab03c23ed67")
 		)
-		(pin "17"
+		(pin "24"
 			(uuid "4e3b4c60-528c-55ce-993c-b1fd9fc20479")
 		)
-		(pin "16"
+		(pin "2"
 			(uuid "4685f666-f507-54b2-88b5-084e06819521")
 		)
-		(pin "15"
+		(pin "1"
 			(uuid "9a66bc47-38f3-59d1-b432-0a1566186a55")
 		)
-		(pin "5"
+		(pin "14"
 			(uuid "99d6fa57-3beb-5ec2-9988-19a03ec8501d")
 		)
-		(pin "6"
+		(pin "22"
 			(uuid "558f2be9-73b5-532f-8df3-298b09f378dc")
 		)
-		(pin "7"
+		(pin "21"
 			(uuid "55bf1eb7-4840-59a3-88ab-972e6c0bb459")
 		)
-		(pin "8"
+		(pin "20"
 			(uuid "fc33e2d2-a3e6-508d-90c7-cc0515f29c92")
 		)
-		(pin "9"
+		(pin "19"
 			(uuid "d511f757-1839-5f0e-97af-2b531b9f6cda")
 		)
-		(pin "10"
+		(pin "18"
 			(uuid "1461e0b5-d021-53ae-b939-794cda31be62")
 		)
-		(pin "11"
+		(pin "17"
 			(uuid "6cffe0d9-e958-5a60-ad8d-aa0713225036")
 		)
-		(pin "12"
+		(pin "16"
 			(uuid "c0c183f7-d182-5433-910f-8d5fbfff64ab")
 		)
-		(pin "25"
+		(pin "15"
 			(uuid "bd2e8681-8f61-50df-8d22-f1976f496283")
+		)
+		(pin "5"
+			(uuid "eeec95bc-5d2e-512d-8c26-a951f6a04efd")
+		)
+		(pin "6"
+			(uuid "c2c7b322-fa18-5ba5-a1fb-ffd172a1a77c")
+		)
+		(pin "7"
+			(uuid "033fa899-b17e-5b6b-a2de-c50ade97e151")
+		)
+		(pin "8"
+			(uuid "b2c18acb-19ed-5d22-9557-b46f70ac9e46")
+		)
+		(pin "9"
+			(uuid "2dbdc585-40e6-52ca-b4e0-3599374aa237")
+		)
+		(pin "10"
+			(uuid "e43c01aa-853e-5b8b-8b70-81e4a49acf05")
+		)
+		(pin "11"
+			(uuid "9a50db88-d748-5440-afac-64a8b1b31a68")
+		)
+		(pin "12"
+			(uuid "a17202b2-11d1-53a8-ba54-2f4153861829")
+		)
+		(pin "25"
+			(uuid "d16db16e-78a0-5040-be0b-ecac8bea096e")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -3318,7 +4395,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "eeec95bc-5d2e-512d-8c26-a951f6a04efd")
+		(uuid "3cdd0820-930e-5bab-928f-ad10d137c928")
 	)
 	(symbol
 		(lib_id "power:VCC")
@@ -3328,8 +4405,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "c2c7b322-fa18-5ba5-a1fb-ffd172a1a77c")
-		(property "Reference" "#PWRPER003"
+		(uuid "430682ab-c088-5264-9a69-52d5866dffe4")
+		(property "Reference" "#PWRPER004"
 			(at 54.61 173.99 0)
 			(hide yes)
 			(effects
@@ -3374,12 +4451,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "033fa899-b17e-5b6b-a2de-c50ade97e151")
+			(uuid "e702d405-4be9-57a7-b856-03f393060266")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER003")
+					(reference "#PWRPER004")
 					(unit 1)
 				)
 			)
@@ -3394,7 +4471,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "b2c18acb-19ed-5d22-9557-b46f70ac9e46")
+		(uuid "bbe6a3d6-726d-51b6-a66c-46fe91f30ea4")
 	)
 	(global_label "I2C1_SDA"
 		(shape bidirectional)
@@ -3406,7 +4483,7 @@
 			)
 			(justify right)
 		)
-		(uuid "2dbdc585-40e6-52ca-b4e0-3599374aa237")
+		(uuid "aeda4315-a595-51d3-8a46-fa1c5ed91768")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 57.15 175.26 0)
 			(hide yes)
@@ -3427,7 +4504,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "e43c01aa-853e-5b8b-8b70-81e4a49acf05")
+		(uuid "201d813c-fc5e-5757-86c8-c891d6962b9f")
 	)
 	(global_label "I2C1_SCL"
 		(shape bidirectional)
@@ -3439,7 +4516,7 @@
 			)
 			(justify right)
 		)
-		(uuid "9a50db88-d748-5440-afac-64a8b1b31a68")
+		(uuid "e215e39c-6237-5f8d-98a9-cb630c580337")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 57.15 177.8 0)
 			(hide yes)
@@ -3460,7 +4537,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a17202b2-11d1-53a8-ba54-2f4153861829")
+		(uuid "4c7fdaca-f3b4-5b85-8a76-cf29d6cf750c")
 	)
 	(global_label "CAP_ALERT"
 		(shape bidirectional)
@@ -3472,7 +4549,7 @@
 			)
 			(justify right)
 		)
-		(uuid "d16db16e-78a0-5040-be0b-ecac8bea096e")
+		(uuid "e7e7e6d5-ea4e-503f-b08a-ca28c8e46ab3")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 57.15 180.34 0)
 			(hide yes)
@@ -3493,7 +4570,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "3cdd0820-930e-5bab-928f-ad10d137c928")
+		(uuid "1d9962fc-1ff7-55d0-a5dc-94890f59a52e")
 	)
 	(global_label "CAP_RESET"
 		(shape bidirectional)
@@ -3505,7 +4582,7 @@
 			)
 			(justify right)
 		)
-		(uuid "430682ab-c088-5264-9a69-52d5866dffe4")
+		(uuid "b722c390-acd6-5163-80fb-f23282bb1e15")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 57.15 182.88 0)
 			(hide yes)
@@ -3526,7 +4603,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "e702d405-4be9-57a7-b856-03f393060266")
+		(uuid "9ede502a-e60c-556b-a285-937e781f820f")
 	)
 	(label "CAP_WAKE"
 		(at 57.15 187.96 180)
@@ -3536,7 +4613,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "bbe6a3d6-726d-51b6-a66c-46fe91f30ea4")
+		(uuid "34e923f6-7f64-545c-9018-c81a3e85c59b")
 	)
 	(wire
 		(pts
@@ -3547,7 +4624,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "aeda4315-a595-51d3-8a46-fa1c5ed91768")
+		(uuid "44d429a7-343e-5818-9d7d-ed1e94a7b6f9")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -3557,8 +4634,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "201d813c-fc5e-5757-86c8-c891d6962b9f")
-		(property "Reference" "#PWRPER004"
+		(uuid "d42e1c00-0b39-54e0-8f39-ad61d0bab054")
+		(property "Reference" "#PWRPER005"
 			(at 54.61 196.85 0)
 			(hide yes)
 			(effects
@@ -3603,12 +4680,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "e215e39c-6237-5f8d-98a9-cb630c580337")
+			(uuid "b7c55566-7b8e-5542-8f41-8c7fa68bc4a1")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER004")
+					(reference "#PWRPER005")
 					(unit 1)
 				)
 			)
@@ -3623,7 +4700,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "4c7fdaca-f3b4-5b85-8a76-cf29d6cf750c")
+		(uuid "eacaff01-ce52-5369-b1ce-5e78ac0ced83")
 	)
 	(label "CAP_ADDR"
 		(at 57.15 195.58 180)
@@ -3633,7 +4710,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "e7e7e6d5-ea4e-503f-b08a-ca28c8e46ab3")
+		(uuid "29923672-d105-5f6c-8e52-740d447a85b7")
 	)
 	(wire
 		(pts
@@ -3644,7 +4721,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "1d9962fc-1ff7-55d0-a5dc-94890f59a52e")
+		(uuid "0b00029f-0bac-5454-9a16-8c12f1a015df")
 	)
 	(label "TOUCH_L1"
 		(at 95.25 170.18 0)
@@ -3654,7 +4731,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "b722c390-acd6-5163-80fb-f23282bb1e15")
+		(uuid "4e4e0708-2f0b-5bfd-ab15-33082efc9cfb")
 	)
 	(wire
 		(pts
@@ -3665,7 +4742,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "9ede502a-e60c-556b-a285-937e781f820f")
+		(uuid "5f945232-7dd0-56bc-acd3-a959f235c4a2")
 	)
 	(label "TOUCH_L2"
 		(at 95.25 172.72 0)
@@ -3675,7 +4752,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "34e923f6-7f64-545c-9018-c81a3e85c59b")
+		(uuid "9ff6263c-da8d-5df8-8809-79f6ac6fa90c")
 	)
 	(wire
 		(pts
@@ -3686,7 +4763,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "44d429a7-343e-5818-9d7d-ed1e94a7b6f9")
+		(uuid "6ab31861-3e4d-5578-9ffd-cf62f8e0deb1")
 	)
 	(label "TOUCH_R1"
 		(at 95.25 175.26 0)
@@ -3696,7 +4773,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d42e1c00-0b39-54e0-8f39-ad61d0bab054")
+		(uuid "c699a438-1a58-5ba7-a068-92330aa86572")
 	)
 	(wire
 		(pts
@@ -3707,7 +4784,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "b7c55566-7b8e-5542-8f41-8c7fa68bc4a1")
+		(uuid "4f42ff60-fee7-55c6-a147-a4ae810d93f2")
 	)
 	(label "TOUCH_R2"
 		(at 95.25 177.8 0)
@@ -3717,7 +4794,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "eacaff01-ce52-5369-b1ce-5e78ac0ced83")
+		(uuid "33bd0954-acc9-5000-9d8f-6744db99460f")
 	)
 	(wire
 		(pts
@@ -3728,7 +4805,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "29923672-d105-5f6c-8e52-740d447a85b7")
+		(uuid "9a8b86c8-6f5e-5b58-9177-97f301b096c5")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -3738,8 +4815,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "0b00029f-0bac-5454-9a16-8c12f1a015df")
-		(property "Reference" "#PWRPER005"
+		(uuid "fe8b34fc-c2bf-56f6-a6b7-38525fda7979")
+		(property "Reference" "#PWRPER006"
 			(at 97.79 186.69 0)
 			(hide yes)
 			(effects
@@ -3784,12 +4861,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "4e4e0708-2f0b-5bfd-ab15-33082efc9cfb")
+			(uuid "94af8173-21b2-5410-bc2a-b923e3d8993b")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER005")
+					(reference "#PWRPER006")
 					(unit 1)
 				)
 			)
@@ -3804,7 +4881,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "5f945232-7dd0-56bc-acd3-a959f235c4a2")
+		(uuid "f8727f1c-2e47-57cb-9231-280db42b5f8f")
 	)
 	(wire
 		(pts
@@ -3815,7 +4892,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "9ff6263c-da8d-5df8-8809-79f6ac6fa90c")
+		(uuid "edbe23fb-a9ce-5216-be8a-fdb40157ba22")
 	)
 	(wire
 		(pts
@@ -3826,7 +4903,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "6ab31861-3e4d-5578-9ffd-cf62f8e0deb1")
+		(uuid "173abd4f-28eb-564a-aed0-e9551aa7d9ca")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -3836,8 +4913,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "c699a438-1a58-5ba7-a068-92330aa86572")
-		(property "Reference" "#PWRPER006"
+		(uuid "c1171188-c4ce-5494-99ec-7d2b4532ad87")
+		(property "Reference" "#PWRPER007"
 			(at 97.79 191.77 0)
 			(hide yes)
 			(effects
@@ -3882,12 +4959,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "4f42ff60-fee7-55c6-a147-a4ae810d93f2")
+			(uuid "d758896e-ed34-5862-a57e-e53356803ba8")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER006")
+					(reference "#PWRPER007")
 					(unit 1)
 				)
 			)
@@ -3902,7 +4979,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "33bd0954-acc9-5000-9d8f-6744db99460f")
+		(uuid "7b1631f3-ee01-5c5f-bf36-02a324840cab")
 	)
 	(wire
 		(pts
@@ -3913,7 +4990,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "9a8b86c8-6f5e-5b58-9177-97f301b096c5")
+		(uuid "d541925c-c1db-5202-96b0-ca0c69c68f05")
 	)
 	(wire
 		(pts
@@ -3924,7 +5001,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "fe8b34fc-c2bf-56f6-a6b7-38525fda7979")
+		(uuid "479cdab5-0704-5c80-a12a-fac2ae25a485")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -3934,8 +5011,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "94af8173-21b2-5410-bc2a-b923e3d8993b")
-		(property "Reference" "#PWRPER007"
+		(uuid "5b34527a-7a36-5d02-b8a9-1bc3111096b0")
+		(property "Reference" "#PWRPER008"
 			(at 97.79 199.39 0)
 			(hide yes)
 			(effects
@@ -3980,12 +5057,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "f8727f1c-2e47-57cb-9231-280db42b5f8f")
+			(uuid "95e6fdac-d041-56b9-8b18-53df71a2d3bc")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER007")
+					(reference "#PWRPER008")
 					(unit 1)
 				)
 			)
@@ -4000,7 +5077,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "edbe23fb-a9ce-5216-be8a-fdb40157ba22")
+		(uuid "c4933424-5459-5104-9be6-b2fdd5f4faf3")
 	)
 	(wire
 		(pts
@@ -4011,7 +5088,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "173abd4f-28eb-564a-aed0-e9551aa7d9ca")
+		(uuid "6424f5db-2e95-56db-a46a-dd0a2647a028")
 	)
 	(wire
 		(pts
@@ -4022,7 +5099,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "c1171188-c4ce-5494-99ec-7d2b4532ad87")
+		(uuid "bdb96fb8-d4b1-5208-80e4-aba5916fc689")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -4032,8 +5109,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "d758896e-ed34-5862-a57e-e53356803ba8")
-		(property "Reference" "#PWRPER008"
+		(uuid "1535c35a-c1b0-54f1-8562-5dedf7bc3743")
+		(property "Reference" "#PWRPER009"
 			(at 97.79 204.47 0)
 			(hide yes)
 			(effects
@@ -4078,12 +5155,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "7b1631f3-ee01-5c5f-bf36-02a324840cab")
+			(uuid "18101563-30d4-5828-a322-3c4dbb29f639")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER008")
+					(reference "#PWRPER009")
 					(unit 1)
 				)
 			)
@@ -4098,7 +5175,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d541925c-c1db-5202-96b0-ca0c69c68f05")
+		(uuid "eff64963-9d81-53d2-9167-5bee6fcb5591")
 	)
 	(wire
 		(pts
@@ -4109,7 +5186,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "479cdab5-0704-5c80-a12a-fac2ae25a485")
+		(uuid "735b4b68-bfb5-52d2-810f-ca183aebc43d")
 	)
 	(wire
 		(pts
@@ -4120,7 +5197,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "5b34527a-7a36-5d02-b8a9-1bc3111096b0")
+		(uuid "020b41a6-f4a2-5489-b095-a685ef4f2d0d")
 	)
 	(wire
 		(pts
@@ -4131,7 +5208,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "95e6fdac-d041-56b9-8b18-53df71a2d3bc")
+		(uuid "2366dcff-dc52-522d-89f2-305d5e889349")
 	)
 	(wire
 		(pts
@@ -4142,7 +5219,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "c4933424-5459-5104-9be6-b2fdd5f4faf3")
+		(uuid "fa763072-7b6e-51a6-86a7-de04e754d837")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -4152,8 +5229,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "6424f5db-2e95-56db-a46a-dd0a2647a028")
-		(property "Reference" "#PWRPER009"
+		(uuid "8a44c79e-216f-5ae6-a883-a3c60926b272")
+		(property "Reference" "#PWRPER010"
 			(at 97.79 212.09 0)
 			(hide yes)
 			(effects
@@ -4198,12 +5275,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "bdb96fb8-d4b1-5208-80e4-aba5916fc689")
+			(uuid "6ef1ecd7-1276-54e0-99a6-199b2b1b676d")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER009")
+					(reference "#PWRPER010")
 					(unit 1)
 				)
 			)
@@ -4218,7 +5295,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "1535c35a-c1b0-54f1-8562-5dedf7bc3743")
+		(uuid "444788f3-e997-595f-b4a5-62403b26960f")
 	)
 	(wire
 		(pts
@@ -4229,7 +5306,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "18101563-30d4-5828-a322-3c4dbb29f639")
+		(uuid "7c4d22b3-6478-5e46-97c3-5f6f07d2c708")
 	)
 	(wire
 		(pts
@@ -4240,7 +5317,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "eff64963-9d81-53d2-9167-5bee6fcb5591")
+		(uuid "3ea20f93-4a88-591d-a308-b85021ede7fd")
 	)
 	(wire
 		(pts
@@ -4251,7 +5328,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "735b4b68-bfb5-52d2-810f-ca183aebc43d")
+		(uuid "50ffd8b1-716d-59d0-86a5-c13f4fa2fdec")
 	)
 	(wire
 		(pts
@@ -4262,7 +5339,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "020b41a6-f4a2-5489-b095-a685ef4f2d0d")
+		(uuid "d8455b8c-1dcf-53d3-9352-5afc24744a15")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -4272,8 +5349,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "2366dcff-dc52-522d-89f2-305d5e889349")
-		(property "Reference" "#PWRPER010"
+		(uuid "58ebf97c-8aac-5162-ab96-a72b9267d22d")
+		(property "Reference" "#PWRPER011"
 			(at 67.31 224.79 0)
 			(hide yes)
 			(effects
@@ -4318,12 +5395,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "fa763072-7b6e-51a6-86a7-de04e754d837")
+			(uuid "8179690d-ac94-5429-9d97-e9572754422c")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER010")
+					(reference "#PWRPER011")
 					(unit 1)
 				)
 			)
@@ -4337,7 +5414,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "8a44c79e-216f-5ae6-a883-a3c60926b272")
+		(uuid "e9677e9f-5fff-599c-a723-1d41761af524")
 		(property "Reference" "J302"
 			(at 147.32 165.1 0)
 			(effects
@@ -4391,13 +5468,13 @@
 			)
 		)
 		(pin "1"
-			(uuid "6ef1ecd7-1276-54e0-99a6-199b2b1b676d")
+			(uuid "1ed6a1d2-6ca9-512b-8c7c-31a906d34d4c")
 		)
 		(pin "2"
-			(uuid "444788f3-e997-595f-b4a5-62403b26960f")
+			(uuid "b6c11f5c-011e-556a-b078-12a2df079ccc")
 		)
 		(pin "3"
-			(uuid "7c4d22b3-6478-5e46-97c3-5f6f07d2c708")
+			(uuid "8ced14de-b4c3-54e3-95d2-03483f86192c")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -4417,7 +5494,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "3ea20f93-4a88-591d-a308-b85021ede7fd")
+		(uuid "494465fc-0a7c-574d-a529-1889f9177dcb")
 	)
 	(label "TOUCH_L1"
 		(at 139.7 167.64 180)
@@ -4427,7 +5504,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "50ffd8b1-716d-59d0-86a5-c13f4fa2fdec")
+		(uuid "c89cb0d2-bcb6-54ab-adfc-ac2c9ae72d8c")
 	)
 	(wire
 		(pts
@@ -4438,7 +5515,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d8455b8c-1dcf-53d3-9352-5afc24744a15")
+		(uuid "0d92b4f5-a357-5712-89ff-ae560c8bab92")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -4448,8 +5525,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "58ebf97c-8aac-5162-ab96-a72b9267d22d")
-		(property "Reference" "#PWRPER011"
+		(uuid "0fd1126a-6200-5c33-9bf1-cc353f50dd06")
+		(property "Reference" "#PWRPER012"
 			(at 137.16 176.53 0)
 			(hide yes)
 			(effects
@@ -4494,12 +5571,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "8179690d-ac94-5429-9d97-e9572754422c")
+			(uuid "8f28942e-8a25-5b0d-aa33-8e611f6a0e12")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER011")
+					(reference "#PWRPER012")
 					(unit 1)
 				)
 			)
@@ -4514,7 +5591,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "e9677e9f-5fff-599c-a723-1d41761af524")
+		(uuid "ab310584-5ee6-5933-a260-e4e50421a241")
 	)
 	(label "TOUCH_L2"
 		(at 139.7 172.72 180)
@@ -4524,7 +5601,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "1ed6a1d2-6ca9-512b-8c7c-31a906d34d4c")
+		(uuid "de6f99a5-c9b0-56a9-a17d-efa5f2c0dbbe")
 	)
 	(symbol
 		(lib_id "Connector_Generic:Conn_01x03")
@@ -4534,7 +5611,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "b6c11f5c-011e-556a-b078-12a2df079ccc")
+		(uuid "650cabb0-cee6-550a-b394-279a219ddbc1")
 		(property "Reference" "J303"
 			(at 172.72 165.1 0)
 			(effects
@@ -4588,13 +5665,13 @@
 			)
 		)
 		(pin "1"
-			(uuid "8ced14de-b4c3-54e3-95d2-03483f86192c")
+			(uuid "1175fbd0-712b-5b99-a1d6-1425e8754438")
 		)
 		(pin "2"
-			(uuid "494465fc-0a7c-574d-a529-1889f9177dcb")
+			(uuid "018428f4-0e47-59b7-b2b6-1d6a3ae89192")
 		)
 		(pin "3"
-			(uuid "c89cb0d2-bcb6-54ab-adfc-ac2c9ae72d8c")
+			(uuid "7242e868-4253-5dae-be5c-48820aa10724")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -4614,7 +5691,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "0d92b4f5-a357-5712-89ff-ae560c8bab92")
+		(uuid "f2c9e9d9-0816-5a10-8e5f-b84976182097")
 	)
 	(label "TOUCH_R1"
 		(at 165.1 167.64 180)
@@ -4624,7 +5701,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "0fd1126a-6200-5c33-9bf1-cc353f50dd06")
+		(uuid "cbd69413-125f-5294-99aa-c39e1aa486ea")
 	)
 	(wire
 		(pts
@@ -4635,7 +5712,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "8f28942e-8a25-5b0d-aa33-8e611f6a0e12")
+		(uuid "a3dc46fc-5cb5-58ba-b7d8-87981866df32")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -4645,8 +5722,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "ab310584-5ee6-5933-a260-e4e50421a241")
-		(property "Reference" "#PWRPER012"
+		(uuid "097afa3e-9c7d-501b-816d-b4724e41451f")
+		(property "Reference" "#PWRPER013"
 			(at 162.56 176.53 0)
 			(hide yes)
 			(effects
@@ -4691,12 +5768,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "de6f99a5-c9b0-56a9-a17d-efa5f2c0dbbe")
+			(uuid "8a83f4a1-4fe4-5e11-89f4-daacf4e75473")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER012")
+					(reference "#PWRPER013")
 					(unit 1)
 				)
 			)
@@ -4711,7 +5788,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "650cabb0-cee6-550a-b394-279a219ddbc1")
+		(uuid "5b61c2e6-f04f-5ab0-b817-3be28b353aed")
 	)
 	(label "TOUCH_R2"
 		(at 165.1 172.72 180)
@@ -4721,7 +5798,295 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "1175fbd0-712b-5b99-a1d6-1425e8754438")
+		(uuid "9d297099-8579-5a67-b8f9-eff11ca2aae1")
+	)
+	(text "U302: ESD on the electrode cables (the boards sit behind 2.2 mm of PA12, but the\nback-cover seam is ~0.2 mm from their edge). 0.5 pF/line: negligible next to the pads.\nNC pins are the flow-through partners of the IO pins (TPD4E05U06 datasheet) - route through."
+		(exclude_from_sim no)
+		(at 147.32 195.58 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left top)
+		)
+		(uuid "d11fcf69-3ac4-571c-b8e1-fb5f902ce736")
+	)
+	(symbol
+		(lib_id "Power_Protection:TPD4E05U06DQA")
+		(at 160.02 215.9 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "c42b6925-8d42-5b56-a1b8-ace578154512")
+		(property "Reference" "U302"
+			(at 159.385 207.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "TPD4E05U06DQAR"
+			(at 161.925 226.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_SON:USON-10_2.5x1.0mm_P0.5mm"
+			(at 160.02 215.9 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/tpd4e05u06.pdf"
+			(at 160.02 215.9 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "4-Channel ESD Protection for Super-Speed USB 3.0 Interface, USON-10"
+			(at 160.02 215.9 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "TPD4E05U06DQAR"
+			(at 160.02 215.9 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "ac0fd5d5-3710-5598-9fe1-9179eefc6a54")
+		)
+		(pin "2"
+			(uuid "de2e78d0-90c1-5399-862c-b9c1b4691d09")
+		)
+		(pin "3"
+			(uuid "ebaee448-9f50-55df-9710-0af2dd4e2b4d")
+		)
+		(pin "4"
+			(uuid "4a46f0de-8b21-5808-9231-b3758faf342a")
+		)
+		(pin "5"
+			(uuid "c567f783-b2bc-59c1-a5e9-2f3bbf0b88cf")
+		)
+		(pin "6"
+			(uuid "836628b2-7aea-5089-9bb3-6d106fd35ab6")
+		)
+		(pin "7"
+			(uuid "c40bd76c-9598-5787-b146-db62ef8c4056")
+		)
+		(pin "8"
+			(uuid "437d1af2-8d9d-5a66-afc1-8718ded8137e")
+		)
+		(pin "9"
+			(uuid "1397ed7c-8755-59a2-b1fb-2d98a3deb1f8")
+		)
+		(pin "10"
+			(uuid "056c0fec-6115-5a1f-907b-6651883dddfe")
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
+					(reference "U302")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 147.32 213.36)
+			(xy 144.78 213.36)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "40cb886b-6858-5c1f-8189-7390c19bdddb")
+	)
+	(label "TOUCH_L1"
+		(at 144.78 213.36 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "323f5ac6-ea1b-5442-bde2-ddd4684fc32d")
+	)
+	(wire
+		(pts
+			(xy 147.32 218.44)
+			(xy 144.78 218.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e886473b-4891-5928-94ba-8ab02008ae5a")
+	)
+	(label "TOUCH_L2"
+		(at 144.78 218.44 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "d2951bd2-33fa-51e0-b1dc-becc709675b7")
+	)
+	(wire
+		(pts
+			(xy 160.02 228.6)
+			(xy 160.02 231.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "40ef6ee4-7fee-52c5-89db-9881ff6f59ea")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 160.02 231.14 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(uuid "b8f681f2-ea2f-5921-a757-b82777f9e9fd")
+		(property "Reference" "#PWRPER014"
+			(at 160.02 237.49 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 160.02 234.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 160.02 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 160.02 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 160.02 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b03d07db-79fb-5c99-8ca5-c3f146412629")
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
+					(reference "#PWRPER014")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 172.72 213.36)
+			(xy 175.26 213.36)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "18a6a39e-7bb0-50af-af28-d163111db9dd")
+	)
+	(label "TOUCH_R1"
+		(at 175.26 213.36 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "37504d34-4378-514a-810f-bade07b10ad6")
+	)
+	(wire
+		(pts
+			(xy 172.72 218.44)
+			(xy 175.26 218.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "69a33fd7-4dd3-5169-b143-2614edf84153")
+	)
+	(label "TOUCH_R2"
+		(at 175.26 218.44 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f1919476-d5a5-5b5b-a972-ce4622e32813")
+	)
+	(no_connect
+		(at 172.72 223.52)
+		(uuid "0d27f078-e8c2-5a7b-9aa8-5d66520cacdd")
+	)
+	(no_connect
+		(at 172.72 208.28)
+		(uuid "1df261f5-c1c5-5ad0-99d7-e7563d7330e5")
+	)
+	(no_connect
+		(at 147.32 223.52)
+		(uuid "161e4c0e-9c82-561d-8850-f60e3a58b4c1")
+	)
+	(no_connect
+		(at 147.32 208.28)
+		(uuid "18f29e9a-ccb8-54d0-981d-767de58d5097")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -4731,7 +6096,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "018428f4-0e47-59b7-b2b6-1d6a3ae89192")
+		(uuid "e612acea-e9a3-5c1c-b09d-285daa6e1348")
 		(property "Reference" "R304"
 			(at 32.512 238.76 90)
 			(effects
@@ -4776,10 +6141,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "7242e868-4253-5dae-be5c-48820aa10724")
+			(uuid "7a66c4c2-52b7-5dab-ab4f-293fe59d8d30")
 		)
 		(pin "2"
-			(uuid "f2c9e9d9-0816-5a10-8e5f-b84976182097")
+			(uuid "2f4d9870-cc32-53e4-a0a8-879eae4ba1ef")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -4799,7 +6164,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "cbd69413-125f-5294-99aa-c39e1aa486ea")
+		(uuid "17bb7c53-19f4-5ec8-b739-3973e28a06e8")
 	)
 	(symbol
 		(lib_id "power:VCC")
@@ -4809,8 +6174,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "a3dc46fc-5cb5-58ba-b7d8-87981866df32")
-		(property "Reference" "#PWRPER013"
+		(uuid "03f302d7-b281-585c-b5d6-82b6664498d1")
+		(property "Reference" "#PWRPER015"
 			(at 30.48 236.22 0)
 			(hide yes)
 			(effects
@@ -4855,12 +6220,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "097afa3e-9c7d-501b-816d-b4724e41451f")
+			(uuid "5f020dfb-6983-57d2-bdf3-e327badd268d")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER013")
+					(reference "#PWRPER015")
 					(unit 1)
 				)
 			)
@@ -4875,7 +6240,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "8a83f4a1-4fe4-5e11-89f4-daacf4e75473")
+		(uuid "aeadc3de-0d9f-52c9-a05f-6127a906170f")
 	)
 	(global_label "I2C1_SCL"
 		(shape bidirectional)
@@ -4887,7 +6252,7 @@
 			)
 			(justify right)
 		)
-		(uuid "5b61c2e6-f04f-5ab0-b817-3be28b353aed")
+		(uuid "eb420a64-8104-5a66-b0ff-e29fdfcdd93a")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 30.48 245.11 0)
 			(hide yes)
@@ -4907,7 +6272,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "9d297099-8579-5a67-b8f9-eff11ca2aae1")
+		(uuid "a7d8f30a-e0c2-51a1-92da-7539e238bb30")
 		(property "Reference" "R305"
 			(at 42.672 238.76 90)
 			(effects
@@ -4952,10 +6317,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "d11fcf69-3ac4-571c-b8e1-fb5f902ce736")
+			(uuid "84eeec9c-a601-5f98-b4e9-79dc4ea151be")
 		)
 		(pin "2"
-			(uuid "c42b6925-8d42-5b56-a1b8-ace578154512")
+			(uuid "d40da5a7-46ac-50c8-89e0-13a025b0e6d9")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -4975,7 +6340,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "ac0fd5d5-3710-5598-9fe1-9179eefc6a54")
+		(uuid "2ae7ec42-34a4-518e-93b9-1e9f342e7d43")
 	)
 	(symbol
 		(lib_id "power:VCC")
@@ -4985,8 +6350,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "de2e78d0-90c1-5399-862c-b9c1b4691d09")
-		(property "Reference" "#PWRPER014"
+		(uuid "9d3a2601-42c3-5090-b88c-3b7d226d6182")
+		(property "Reference" "#PWRPER016"
 			(at 40.64 236.22 0)
 			(hide yes)
 			(effects
@@ -5031,12 +6396,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "ebaee448-9f50-55df-9710-0af2dd4e2b4d")
+			(uuid "cbc9704d-e5f7-564d-b3d9-9932f91a3e34")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER014")
+					(reference "#PWRPER016")
 					(unit 1)
 				)
 			)
@@ -5051,7 +6416,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "4a46f0de-8b21-5808-9231-b3758faf342a")
+		(uuid "71787beb-7010-5c50-92ba-a3486b860e1c")
 	)
 	(global_label "I2C1_SDA"
 		(shape bidirectional)
@@ -5063,7 +6428,7 @@
 			)
 			(justify right)
 		)
-		(uuid "c567f783-b2bc-59c1-a5e9-2f3bbf0b88cf")
+		(uuid "0b1a1e47-a152-5ca4-9a57-4818bf483555")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 40.64 245.11 0)
 			(hide yes)
@@ -5083,7 +6448,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "836628b2-7aea-5089-9bb3-6d106fd35ab6")
+		(uuid "596a3cc3-7f50-5f2e-b318-552779e368f2")
 		(property "Reference" "R306"
 			(at 52.832 238.76 90)
 			(effects
@@ -5128,10 +6493,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "c40bd76c-9598-5787-b146-db62ef8c4056")
+			(uuid "84976137-e9a1-5399-b5c9-792107abc2d3")
 		)
 		(pin "2"
-			(uuid "437d1af2-8d9d-5a66-afc1-8718ded8137e")
+			(uuid "26b9679c-6e24-57a3-beca-360b68e63194")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -5151,7 +6516,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "1397ed7c-8755-59a2-b1fb-2d98a3deb1f8")
+		(uuid "45800d02-a555-5c6c-9089-f049c1d2f400")
 	)
 	(symbol
 		(lib_id "power:VCC")
@@ -5161,8 +6526,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "056c0fec-6115-5a1f-907b-6651883dddfe")
-		(property "Reference" "#PWRPER015"
+		(uuid "d3d567d9-5be3-5779-99d6-0ae55925cd38")
+		(property "Reference" "#PWRPER017"
 			(at 50.8 236.22 0)
 			(hide yes)
 			(effects
@@ -5207,12 +6572,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "40cb886b-6858-5c1f-8189-7390c19bdddb")
+			(uuid "aadbca42-3aa5-5eaa-9c13-dd9cb75b115f")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER015")
+					(reference "#PWRPER017")
 					(unit 1)
 				)
 			)
@@ -5227,7 +6592,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "323f5ac6-ea1b-5442-bde2-ddd4684fc32d")
+		(uuid "fb972c4f-4f5e-57e1-bca2-73b31661df6c")
 	)
 	(global_label "CAP_ALERT"
 		(shape bidirectional)
@@ -5239,7 +6604,7 @@
 			)
 			(justify right)
 		)
-		(uuid "e886473b-4891-5928-94ba-8ab02008ae5a")
+		(uuid "7d7d5f58-c6df-5b47-a1d4-c637e7c08db0")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 50.8 245.11 0)
 			(hide yes)
@@ -5259,7 +6624,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "d2951bd2-33fa-51e0-b1dc-becc709675b7")
+		(uuid "b57e3a79-553e-5313-8719-bce1ca7b1197")
 		(property "Reference" "R307"
 			(at 62.992 238.76 90)
 			(effects
@@ -5304,10 +6669,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "40ef6ee4-7fee-52c5-89db-9881ff6f59ea")
+			(uuid "2c596862-ba49-5b60-b59e-e2e43bda235a")
 		)
 		(pin "2"
-			(uuid "b8f681f2-ea2f-5921-a757-b82777f9e9fd")
+			(uuid "bec18ae8-884c-5822-b140-41c5e5d11d5a")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -5327,7 +6692,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "b03d07db-79fb-5c99-8ca5-c3f146412629")
+		(uuid "a146f9f7-9e4c-5bcf-a54d-19a0cdc8bd2d")
 	)
 	(global_label "CAP_RESET"
 		(shape bidirectional)
@@ -5339,7 +6704,7 @@
 			)
 			(justify left)
 		)
-		(uuid "18a6a39e-7bb0-50af-af28-d163111db9dd")
+		(uuid "2a867b8f-22cd-5e71-8e87-93bf92c464ef")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 60.96 232.41 0)
 			(hide yes)
@@ -5360,7 +6725,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "37504d34-4378-514a-810f-bade07b10ad6")
+		(uuid "5355e432-860e-5338-b207-98d247840fba")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -5370,8 +6735,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "69a33fd7-4dd3-5169-b143-2614edf84153")
-		(property "Reference" "#PWRPER016"
+		(uuid "caa2edd5-b45e-57be-854e-1159aa6c64da")
+		(property "Reference" "#PWRPER018"
 			(at 60.96 251.46 0)
 			(hide yes)
 			(effects
@@ -5416,12 +6781,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "f1919476-d5a5-5b5b-a972-ce4622e32813")
+			(uuid "754d6db0-fc14-5b9c-96dd-836b379fa7d0")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER016")
+					(reference "#PWRPER018")
 					(unit 1)
 				)
 			)
@@ -5435,7 +6800,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "0d27f078-e8c2-5a7b-9aa8-5d66520cacdd")
+		(uuid "e29a598a-e100-5443-a1d0-93288e6d42b8")
 		(property "Reference" "R308"
 			(at 73.152 238.76 90)
 			(effects
@@ -5480,10 +6845,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "1df261f5-c1c5-5ad0-99d7-e7563d7330e5")
+			(uuid "a3454cb5-2334-5648-b125-829ccaeb37a3")
 		)
 		(pin "2"
-			(uuid "161e4c0e-9c82-561d-8850-f60e3a58b4c1")
+			(uuid "f23ad9a3-6f77-5265-ab9f-a04092778668")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -5503,7 +6868,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "18f29e9a-ccb8-54d0-981d-767de58d5097")
+		(uuid "347d9633-a655-5f32-8bdd-a23c9c8ac55d")
 	)
 	(label "CAP_WAKE"
 		(at 71.12 232.41 90)
@@ -5513,7 +6878,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "e612acea-e9a3-5c1c-b09d-285daa6e1348")
+		(uuid "398ab992-3ef5-5412-bd5b-f8732d42c607")
 	)
 	(wire
 		(pts
@@ -5524,7 +6889,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "7a66c4c2-52b7-5dab-ab4f-293fe59d8d30")
+		(uuid "932c416d-3888-5b61-bc9a-529dc4dffe58")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -5534,8 +6899,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "2f4d9870-cc32-53e4-a0a8-879eae4ba1ef")
-		(property "Reference" "#PWRPER017"
+		(uuid "808a9c24-1689-5cc4-acb8-98986066817d")
+		(property "Reference" "#PWRPER019"
 			(at 71.12 251.46 0)
 			(hide yes)
 			(effects
@@ -5580,12 +6945,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "17bb7c53-19f4-5ec8-b739-3973e28a06e8")
+			(uuid "b5638b2c-754d-5ff5-823f-3aca0127e5e8")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER017")
+					(reference "#PWRPER019")
 					(unit 1)
 				)
 			)
@@ -5599,7 +6964,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "03f302d7-b281-585c-b5d6-82b6664498d1")
+		(uuid "ef70bd0e-d687-57bf-99b9-b67340a49814")
 		(property "Reference" "R309"
 			(at 83.312 238.76 90)
 			(effects
@@ -5644,10 +7009,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "5f020dfb-6983-57d2-bdf3-e327badd268d")
+			(uuid "b9ea079c-5929-5784-9fc9-5fd54f65bd65")
 		)
 		(pin "2"
-			(uuid "aeadc3de-0d9f-52c9-a05f-6127a906170f")
+			(uuid "1119dcc6-a536-51a1-890b-e8166f60d5dd")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -5667,7 +7032,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "eb420a64-8104-5a66-b0ff-e29fdfcdd93a")
+		(uuid "fe9219a0-f801-5763-9eef-ce170d1765e8")
 	)
 	(label "CAP_ADDR"
 		(at 81.28 232.41 90)
@@ -5677,7 +7042,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "a7d8f30a-e0c2-51a1-92da-7539e238bb30")
+		(uuid "e2c94c37-0600-54ce-bd38-164bf476aa4d")
 	)
 	(wire
 		(pts
@@ -5688,7 +7053,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "84eeec9c-a601-5f98-b4e9-79dc4ea151be")
+		(uuid "579e3a37-bfbb-5097-9340-f596956dec95")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -5698,8 +7063,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "d40da5a7-46ac-50c8-89e0-13a025b0e6d9")
-		(property "Reference" "#PWRPER018"
+		(uuid "7f8fb34b-f73f-50f8-ad7e-14d31d416291")
+		(property "Reference" "#PWRPER020"
 			(at 81.28 251.46 0)
 			(hide yes)
 			(effects
@@ -5744,12 +7109,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "2ae7ec42-34a4-518e-93b9-1e9f342e7d43")
+			(uuid "6ddbe332-837c-5d10-878d-697584086c5a")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER018")
+					(reference "#PWRPER020")
 					(unit 1)
 				)
 			)
@@ -5763,7 +7128,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "9d3a2601-42c3-5090-b88c-3b7d226d6182")
+		(uuid "df094e16-7fa0-5638-b4d9-ae46a1cd9d31")
 		(property "Reference" "C301"
 			(at 92.075 236.22 0)
 			(effects
@@ -5810,10 +7175,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "cbc9704d-e5f7-564d-b3d9-9932f91a3e34")
+			(uuid "34b65a93-076f-5aee-8ead-b34e4c8022a8")
 		)
 		(pin "2"
-			(uuid "71787beb-7010-5c50-92ba-a3486b860e1c")
+			(uuid "d56d47a2-7dcf-5043-8134-a6c079f99fed")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -5833,7 +7198,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "0b1a1e47-a152-5ca4-9a57-4818bf483555")
+		(uuid "164cb00d-86b1-5e18-99b0-2266c1f5c785")
 	)
 	(symbol
 		(lib_id "power:VCC")
@@ -5843,8 +7208,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "596a3cc3-7f50-5f2e-b318-552779e368f2")
-		(property "Reference" "#PWRPER019"
+		(uuid "bca08606-f2f1-5081-9851-cb5df30e9268")
+		(property "Reference" "#PWRPER021"
 			(at 91.44 236.22 0)
 			(hide yes)
 			(effects
@@ -5889,12 +7254,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "84976137-e9a1-5399-b5c9-792107abc2d3")
+			(uuid "cbb7584a-100a-506a-9c03-8775af78bb3a")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER019")
+					(reference "#PWRPER021")
 					(unit 1)
 				)
 			)
@@ -5909,7 +7274,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "26b9679c-6e24-57a3-beca-360b68e63194")
+		(uuid "f2ef34ff-8469-5442-a7ac-91d767fa9bb7")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -5919,8 +7284,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "45800d02-a555-5c6c-9089-f049c1d2f400")
-		(property "Reference" "#PWRPER020"
+		(uuid "28336c6f-a8fa-5d02-8317-f40d17607e95")
+		(property "Reference" "#PWRPER022"
 			(at 91.44 251.46 0)
 			(hide yes)
 			(effects
@@ -5965,12 +7330,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "d3d567d9-5be3-5779-99d6-0ae55925cd38")
+			(uuid "97672d74-4227-596c-9acd-356143268892")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER020")
+					(reference "#PWRPER022")
 					(unit 1)
 				)
 			)
@@ -5984,7 +7349,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "aadbca42-3aa5-5eaa-9c13-dd9cb75b115f")
+		(uuid "4f09fc48-e810-5a39-be3c-0cc13eea4d39")
 		(property "Reference" "C302"
 			(at 102.235 236.22 0)
 			(effects
@@ -6031,10 +7396,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "fb972c4f-4f5e-57e1-bca2-73b31661df6c")
+			(uuid "1eff6119-6bef-506a-80a3-20df03b1facc")
 		)
 		(pin "2"
-			(uuid "7d7d5f58-c6df-5b47-a1d4-c637e7c08db0")
+			(uuid "af1e9e5f-4585-5581-a4e0-f27365a74ad3")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -6054,7 +7419,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "b57e3a79-553e-5313-8719-bce1ca7b1197")
+		(uuid "9d307649-ceb6-5124-bb98-919e0f6c7d75")
 	)
 	(symbol
 		(lib_id "power:VCC")
@@ -6064,8 +7429,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "2c596862-ba49-5b60-b59e-e2e43bda235a")
-		(property "Reference" "#PWRPER021"
+		(uuid "76e24be1-1004-5fde-9046-44baaf501abb")
+		(property "Reference" "#PWRPER023"
 			(at 101.6 236.22 0)
 			(hide yes)
 			(effects
@@ -6110,12 +7475,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "bec18ae8-884c-5822-b140-41c5e5d11d5a")
+			(uuid "7948ab76-ac1c-5e05-84f4-b9cfda386d5a")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER021")
+					(reference "#PWRPER023")
 					(unit 1)
 				)
 			)
@@ -6130,7 +7495,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "a146f9f7-9e4c-5bcf-a54d-19a0cdc8bd2d")
+		(uuid "f201101e-5364-59e9-a77a-5d5e97b70dc2")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -6140,8 +7505,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "2a867b8f-22cd-5e71-8e87-93bf92c464ef")
-		(property "Reference" "#PWRPER022"
+		(uuid "6fc214a4-a71d-5304-92a0-c3a076ed3138")
+		(property "Reference" "#PWRPER024"
 			(at 101.6 251.46 0)
 			(hide yes)
 			(effects
@@ -6186,18 +7551,18 @@
 			)
 		)
 		(pin "1"
-			(uuid "5355e432-860e-5338-b207-98d247840fba")
+			(uuid "90434a27-cf73-5b43-b97e-d626cf904b91")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER022")
+					(reference "#PWRPER024")
 					(unit 1)
 				)
 			)
 		)
 	)
-	(text "Bourns PEC11R-4215F-S0024 (24 detents, push switch). Bourns suggested filter per\nchannel: 10k pull-up, 10k series, 10nF to GND -> TIM3 encoder mode (PA6/PA7).\nSwitch: 10k pull-up + 10nF, active low. Mounting lugs to GND (metal shaft ESD path)."
+	(text "Bourns PEC11R-4220F-S0024 (24 detents, push switch, 20 mm shaft). Bourns suggested filter per\nchannel: 10k pull-up, 10k series, 10nF to GND -> TIM3 encoder mode (PA6/PA7).\nSwitch: 10k pull-up + 10nF, active low. Mounting lugs to GND (metal shaft ESD path)."
 		(exclude_from_sim no)
 		(at 218.44 30.48 0)
 		(effects
@@ -6206,7 +7571,7 @@
 			)
 			(justify left top)
 		)
-		(uuid "caa2edd5-b45e-57be-854e-1159aa6c64da")
+		(uuid "c2c326a4-5e22-5610-8f58-2454fc80bcc3")
 	)
 	(symbol
 		(lib_id "Device:RotaryEncoder_Switch_MP")
@@ -6216,7 +7581,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "754d6db0-fc14-5b9c-96dd-836b379fa7d0")
+		(uuid "9db063de-6841-521c-9778-99e49279ac2f")
 		(property "Reference" "SW301"
 			(at 256.54 74.93 0)
 			(effects
@@ -6225,7 +7590,7 @@
 				)
 			)
 		)
-		(property "Value" "PEC11R-4215F-S0024"
+		(property "Value" "PEC11R-4220F-S0024"
 			(at 256.54 77.47 0)
 			(effects
 				(font
@@ -6260,7 +7625,7 @@
 				)
 			)
 		)
-		(property "MPN" "PEC11R-4215F-S0024"
+		(property "MPN" "PEC11R-4220F-S0024"
 			(at 256.54 83.82 0)
 			(hide yes)
 			(effects
@@ -6270,22 +7635,22 @@
 			)
 		)
 		(pin "A"
-			(uuid "e29a598a-e100-5443-a1d0-93288e6d42b8")
+			(uuid "c44161eb-d804-5f86-8c4e-e94f6b5f9a30")
 		)
 		(pin "B"
-			(uuid "a3454cb5-2334-5648-b125-829ccaeb37a3")
+			(uuid "92220737-e3f4-5afb-b783-41fa63d61937")
 		)
 		(pin "C"
-			(uuid "f23ad9a3-6f77-5265-ab9f-a04092778668")
+			(uuid "b31a9c69-56e9-5dcc-aa36-5622c24c3f82")
 		)
 		(pin "MP"
-			(uuid "347d9633-a655-5f32-8bdd-a23c9c8ac55d")
+			(uuid "06896b81-6e74-54d4-9c2a-1450527e5450")
 		)
 		(pin "S1"
-			(uuid "398ab992-3ef5-5412-bd5b-f8732d42c607")
+			(uuid "6d432446-c990-53c0-87a2-f4637eda7411")
 		)
 		(pin "S2"
-			(uuid "932c416d-3888-5b61-bc9a-529dc4dffe58")
+			(uuid "dc60ba4d-8c99-515b-ab11-4498675cace0")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -6305,7 +7670,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "808a9c24-1689-5cc4-acb8-98986066817d")
+		(uuid "fba2b3a7-8362-5aac-9cb1-78c502eda240")
 	)
 	(label "ENC_A_RAW"
 		(at 246.38 81.28 180)
@@ -6315,7 +7680,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "b5638b2c-754d-5ff5-823f-3aca0127e5e8")
+		(uuid "ee88bc88-035e-51e2-9b63-0e70d486f80c")
 	)
 	(wire
 		(pts
@@ -6326,7 +7691,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "ef70bd0e-d687-57bf-99b9-b67340a49814")
+		(uuid "02a434dc-cf49-5add-a324-05c46a88f583")
 	)
 	(label "ENC_B_RAW"
 		(at 246.38 86.36 180)
@@ -6336,7 +7701,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "b9ea079c-5929-5784-9fc9-5fd54f65bd65")
+		(uuid "39405b88-eab9-5910-ae49-e96421cc6566")
 	)
 	(wire
 		(pts
@@ -6347,7 +7712,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "1119dcc6-a536-51a1-890b-e8166f60d5dd")
+		(uuid "4d7c5db9-61c4-572a-b0a9-d6d2e24e3bdf")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -6357,8 +7722,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "fe9219a0-f801-5763-9eef-ce170d1765e8")
-		(property "Reference" "#PWRPER023"
+		(uuid "263e0c87-f88b-5573-a1d9-3de709d3e9ec")
+		(property "Reference" "#PWRPER025"
 			(at 243.84 90.17 0)
 			(hide yes)
 			(effects
@@ -6403,12 +7768,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "e2c94c37-0600-54ce-bd38-164bf476aa4d")
+			(uuid "bc53efbb-3076-5872-876d-3e33c2f1fcd6")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER023")
+					(reference "#PWRPER025")
 					(unit 1)
 				)
 			)
@@ -6423,7 +7788,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "579e3a37-bfbb-5097-9340-f596956dec95")
+		(uuid "6a04cdb9-c140-5971-a336-d88605b183b8")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -6433,8 +7798,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "7f8fb34b-f73f-50f8-ad7e-14d31d416291")
-		(property "Reference" "#PWRPER024"
+		(uuid "e8bf7ead-6191-5699-8328-7243b1720a24")
+		(property "Reference" "#PWRPER026"
 			(at 269.24 87.63 0)
 			(hide yes)
 			(effects
@@ -6479,12 +7844,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "6ddbe332-837c-5d10-878d-697584086c5a")
+			(uuid "d00a1588-4bf4-5329-880e-bf05e4a5ddca")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER024")
+					(reference "#PWRPER026")
 					(unit 1)
 				)
 			)
@@ -6499,7 +7864,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "df094e16-7fa0-5638-b4d9-ae46a1cd9d31")
+		(uuid "fc2499ff-0dd2-5c17-a559-16a274bbc40e")
 	)
 	(global_label "ENC_SW"
 		(shape bidirectional)
@@ -6511,7 +7876,7 @@
 			)
 			(justify left)
 		)
-		(uuid "34b65a93-076f-5aee-8ead-b34e4c8022a8")
+		(uuid "aa424444-2b46-52eb-aed1-9dfbdca34817")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 266.7 86.36 0)
 			(hide yes)
@@ -6532,7 +7897,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d56d47a2-7dcf-5043-8134-a6c079f99fed")
+		(uuid "3641e03a-da44-5e4f-8ee2-b37823fd1407")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -6542,8 +7907,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "164cb00d-86b1-5e18-99b0-2266c1f5c785")
-		(property "Reference" "#PWRPER025"
+		(uuid "dbacf1f9-8053-5ad7-96cb-37915dad508f")
+		(property "Reference" "#PWRPER027"
 			(at 256.54 100.33 0)
 			(hide yes)
 			(effects
@@ -6588,12 +7953,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "bca08606-f2f1-5081-9851-cb5df30e9268")
+			(uuid "867fd98d-94b3-539c-b2b0-db2d15a8606c")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER025")
+					(reference "#PWRPER027")
 					(unit 1)
 				)
 			)
@@ -6607,7 +7972,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "cbb7584a-100a-506a-9c03-8775af78bb3a")
+		(uuid "d4ae2ad4-65ed-5fb7-878f-0060560abfb1")
 		(property "Reference" "R310"
 			(at 299.212 81.28 90)
 			(effects
@@ -6652,10 +8017,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "f2ef34ff-8469-5442-a7ac-91d767fa9bb7")
+			(uuid "997494cb-5a7f-53ec-ab02-dae9a9d0cfe0")
 		)
 		(pin "2"
-			(uuid "28336c6f-a8fa-5d02-8317-f40d17607e95")
+			(uuid "393c8362-45cf-5de5-ad50-fff1e0bf2916")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -6675,7 +8040,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "97672d74-4227-596c-9acd-356143268892")
+		(uuid "dc9d427d-babb-55a4-bcda-65f12417933d")
 	)
 	(symbol
 		(lib_id "power:VCC")
@@ -6685,8 +8050,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "4f09fc48-e810-5a39-be3c-0cc13eea4d39")
-		(property "Reference" "#PWRPER026"
+		(uuid "56d64de7-df35-53f7-92f3-eb2ac770d158")
+		(property "Reference" "#PWRPER028"
 			(at 297.18 78.74 0)
 			(hide yes)
 			(effects
@@ -6731,12 +8096,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "1eff6119-6bef-506a-80a3-20df03b1facc")
+			(uuid "5b055378-9862-5186-83af-d5089e15c7f6")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER026")
+					(reference "#PWRPER028")
 					(unit 1)
 				)
 			)
@@ -6751,7 +8116,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "af1e9e5f-4585-5581-a4e0-f27365a74ad3")
+		(uuid "27f720bc-39f6-5bcd-8271-ab3ddeb22363")
 	)
 	(label "ENC_A_RAW"
 		(at 297.18 87.63 270)
@@ -6761,7 +8126,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "9d307649-ceb6-5124-bb98-919e0f6c7d75")
+		(uuid "b4f3a362-a08b-5b9b-8bc1-30ace2c4993d")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -6771,7 +8136,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "76e24be1-1004-5fde-9046-44baaf501abb")
+		(uuid "138be75d-52db-5357-b3df-38980290378c")
 		(property "Reference" "R311"
 			(at 309.372 81.28 90)
 			(effects
@@ -6816,10 +8181,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "7948ab76-ac1c-5e05-84f4-b9cfda386d5a")
+			(uuid "1d540df4-7397-5765-a277-bc6ce5dddeed")
 		)
 		(pin "2"
-			(uuid "f201101e-5364-59e9-a77a-5d5e97b70dc2")
+			(uuid "7e610da7-4130-523c-b1b4-5c3883d70cbf")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -6839,7 +8204,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "6fc214a4-a71d-5304-92a0-c3a076ed3138")
+		(uuid "fc8dc816-1d85-5ed2-b4a1-3d0f9675d4ff")
 	)
 	(label "ENC_A_RAW"
 		(at 307.34 74.93 90)
@@ -6849,7 +8214,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "90434a27-cf73-5b43-b97e-d626cf904b91")
+		(uuid "6a26f296-29ac-574f-927f-50a3b46dbedc")
 	)
 	(wire
 		(pts
@@ -6860,7 +8225,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "c2c326a4-5e22-5610-8f58-2454fc80bcc3")
+		(uuid "3c45d8ff-b22b-594d-81a6-a8b3c82af2d3")
 	)
 	(global_label "ENC_A"
 		(shape bidirectional)
@@ -6872,7 +8237,7 @@
 			)
 			(justify right)
 		)
-		(uuid "9db063de-6841-521c-9778-99e49279ac2f")
+		(uuid "6956e728-7354-58ba-96f4-53db351486a1")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 307.34 87.63 0)
 			(hide yes)
@@ -6892,7 +8257,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "c44161eb-d804-5f86-8c4e-e94f6b5f9a30")
+		(uuid "00edcae2-a843-5197-b870-d08264a44b0d")
 		(property "Reference" "C303"
 			(at 318.135 78.74 0)
 			(effects
@@ -6939,10 +8304,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "92220737-e3f4-5afb-b783-41fa63d61937")
+			(uuid "8d07ea1b-b9f2-5f09-9164-35591c73e534")
 		)
 		(pin "2"
-			(uuid "b31a9c69-56e9-5dcc-aa36-5622c24c3f82")
+			(uuid "127a19ce-e893-5ec3-974b-bdcb51cb4d88")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -6962,7 +8327,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "06896b81-6e74-54d4-9c2a-1450527e5450")
+		(uuid "b25118e2-3c24-5fbb-b6df-da13aea4899f")
 	)
 	(global_label "ENC_A"
 		(shape bidirectional)
@@ -6974,7 +8339,7 @@
 			)
 			(justify left)
 		)
-		(uuid "6d432446-c990-53c0-87a2-f4637eda7411")
+		(uuid "c488ae5a-cc83-56c8-bc0d-560c1206ce58")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 317.5 74.93 0)
 			(hide yes)
@@ -6995,7 +8360,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "dc60ba4d-8c99-515b-ab11-4498675cace0")
+		(uuid "95448e88-d34d-5d5c-8782-e748dfff46e1")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -7005,8 +8370,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "fba2b3a7-8362-5aac-9cb1-78c502eda240")
-		(property "Reference" "#PWRPER027"
+		(uuid "97512e2c-a7d8-5f9d-985c-55ecc9cce9d1")
+		(property "Reference" "#PWRPER029"
 			(at 317.5 93.98 0)
 			(hide yes)
 			(effects
@@ -7051,12 +8416,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "ee88bc88-035e-51e2-9b63-0e70d486f80c")
+			(uuid "238cd053-3f36-5657-b663-6f8adad8c68a")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER027")
+					(reference "#PWRPER029")
 					(unit 1)
 				)
 			)
@@ -7070,7 +8435,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "02a434dc-cf49-5add-a324-05c46a88f583")
+		(uuid "fa146866-f808-5ebc-8e84-3fe63c2d1a32")
 		(property "Reference" "R312"
 			(at 334.772 81.28 90)
 			(effects
@@ -7115,10 +8480,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "39405b88-eab9-5910-ae49-e96421cc6566")
+			(uuid "89822ad9-b1e5-505c-a114-b8e2dc6f1401")
 		)
 		(pin "2"
-			(uuid "4d7c5db9-61c4-572a-b0a9-d6d2e24e3bdf")
+			(uuid "86467739-dd3c-52ed-add1-1e60c084a784")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -7138,7 +8503,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "263e0c87-f88b-5573-a1d9-3de709d3e9ec")
+		(uuid "4696cee9-e4b0-5511-b474-5a8358165b61")
 	)
 	(symbol
 		(lib_id "power:VCC")
@@ -7148,8 +8513,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "bc53efbb-3076-5872-876d-3e33c2f1fcd6")
-		(property "Reference" "#PWRPER028"
+		(uuid "bfea8c60-2bd2-5ead-9fda-ecc007180519")
+		(property "Reference" "#PWRPER030"
 			(at 332.74 78.74 0)
 			(hide yes)
 			(effects
@@ -7194,12 +8559,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "6a04cdb9-c140-5971-a336-d88605b183b8")
+			(uuid "ef1034c6-f17a-5ad4-a76e-46515d835ee4")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER028")
+					(reference "#PWRPER030")
 					(unit 1)
 				)
 			)
@@ -7214,7 +8579,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "e8bf7ead-6191-5699-8328-7243b1720a24")
+		(uuid "6fb19660-51a5-5d06-bd04-d06c4e4d9a53")
 	)
 	(label "ENC_B_RAW"
 		(at 332.74 87.63 270)
@@ -7224,7 +8589,7 @@
 			)
 			(justify right bottom)
 		)
-		(uuid "d00a1588-4bf4-5329-880e-bf05e4a5ddca")
+		(uuid "e2de43da-9705-5312-bb45-63b1e7dc5f1e")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -7234,7 +8599,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "fc2499ff-0dd2-5c17-a559-16a274bbc40e")
+		(uuid "065ee574-8754-5bb2-9562-28d8d6ec594e")
 		(property "Reference" "R313"
 			(at 344.932 81.28 90)
 			(effects
@@ -7279,10 +8644,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "aa424444-2b46-52eb-aed1-9dfbdca34817")
+			(uuid "68816754-6c32-572b-8aa9-a2e4d8cb89db")
 		)
 		(pin "2"
-			(uuid "3641e03a-da44-5e4f-8ee2-b37823fd1407")
+			(uuid "eaae4065-386c-556c-991a-a1f82aba988f")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -7302,7 +8667,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "dbacf1f9-8053-5ad7-96cb-37915dad508f")
+		(uuid "84faa33a-b6ed-59ab-ae18-d1fe441ae8c3")
 	)
 	(label "ENC_B_RAW"
 		(at 342.9 74.93 90)
@@ -7312,7 +8677,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "867fd98d-94b3-539c-b2b0-db2d15a8606c")
+		(uuid "a50894de-de93-54f9-a5e9-cf6e664544a2")
 	)
 	(wire
 		(pts
@@ -7323,7 +8688,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "d4ae2ad4-65ed-5fb7-878f-0060560abfb1")
+		(uuid "c62e2a12-a45f-56b4-87a7-c6e2f97adef7")
 	)
 	(global_label "ENC_B"
 		(shape bidirectional)
@@ -7335,7 +8700,7 @@
 			)
 			(justify right)
 		)
-		(uuid "997494cb-5a7f-53ec-ab02-dae9a9d0cfe0")
+		(uuid "12b9cece-4b82-5b9c-889d-79822f494fb4")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 342.9 87.63 0)
 			(hide yes)
@@ -7355,7 +8720,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "393c8362-45cf-5de5-ad50-fff1e0bf2916")
+		(uuid "8460d46a-dbaf-57be-b33c-44c4d060076a")
 		(property "Reference" "C304"
 			(at 353.695 78.74 0)
 			(effects
@@ -7402,10 +8767,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "dc9d427d-babb-55a4-bcda-65f12417933d")
+			(uuid "8ce629e1-4cb5-5fbc-b5f5-fa9ea1495ae8")
 		)
 		(pin "2"
-			(uuid "56d64de7-df35-53f7-92f3-eb2ac770d158")
+			(uuid "2d474fd9-bbc1-5560-9edc-08a36b89d922")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -7425,7 +8790,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "5b055378-9862-5186-83af-d5089e15c7f6")
+		(uuid "dff3ce11-ed05-5c0d-a8ee-238f9f8a4971")
 	)
 	(global_label "ENC_B"
 		(shape bidirectional)
@@ -7437,7 +8802,7 @@
 			)
 			(justify left)
 		)
-		(uuid "27f720bc-39f6-5bcd-8271-ab3ddeb22363")
+		(uuid "d1d40f9d-8d64-5488-9f55-c17b7fcf81dd")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 353.06 74.93 0)
 			(hide yes)
@@ -7458,7 +8823,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "b4f3a362-a08b-5b9b-8bc1-30ace2c4993d")
+		(uuid "7e3c7a17-ff71-5631-b29f-a6f355ea8db3")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -7468,8 +8833,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "138be75d-52db-5357-b3df-38980290378c")
-		(property "Reference" "#PWRPER029"
+		(uuid "04b53370-a082-5938-b5ba-36339ac1a76b")
+		(property "Reference" "#PWRPER031"
 			(at 353.06 93.98 0)
 			(hide yes)
 			(effects
@@ -7514,12 +8879,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "1d540df4-7397-5765-a277-bc6ce5dddeed")
+			(uuid "a1c0a460-1313-5d30-b8b4-04a1f83c78dd")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER029")
+					(reference "#PWRPER031")
 					(unit 1)
 				)
 			)
@@ -7533,7 +8898,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "7e610da7-4130-523c-b1b4-5c3883d70cbf")
+		(uuid "0ff507be-12a7-58dc-970b-756aa583aed9")
 		(property "Reference" "R314"
 			(at 299.212 114.3 90)
 			(effects
@@ -7578,10 +8943,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "fc8dc816-1d85-5ed2-b4a1-3d0f9675d4ff")
+			(uuid "a0f3b077-8956-5e72-9bad-2b5da0d45bb7")
 		)
 		(pin "2"
-			(uuid "6a26f296-29ac-574f-927f-50a3b46dbedc")
+			(uuid "740300de-0c56-571e-bce5-56cdc1ec8173")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -7601,7 +8966,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "3c45d8ff-b22b-594d-81a6-a8b3c82af2d3")
+		(uuid "63edab36-0510-5d58-9ddf-17fd3bfca67b")
 	)
 	(symbol
 		(lib_id "power:VCC")
@@ -7611,8 +8976,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "6956e728-7354-58ba-96f4-53db351486a1")
-		(property "Reference" "#PWRPER030"
+		(uuid "c92d8734-2e97-5858-b3df-142857ad6834")
+		(property "Reference" "#PWRPER032"
 			(at 297.18 111.76 0)
 			(hide yes)
 			(effects
@@ -7657,12 +9022,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "00edcae2-a843-5197-b870-d08264a44b0d")
+			(uuid "31722df0-4ffa-5803-b577-16e2211fdd50")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER030")
+					(reference "#PWRPER032")
 					(unit 1)
 				)
 			)
@@ -7677,7 +9042,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "8d07ea1b-b9f2-5f09-9164-35591c73e534")
+		(uuid "374725ed-d51b-52ea-b57e-b83b8d0f059a")
 	)
 	(global_label "ENC_SW"
 		(shape bidirectional)
@@ -7689,7 +9054,7 @@
 			)
 			(justify right)
 		)
-		(uuid "127a19ce-e893-5ec3-974b-bdcb51cb4d88")
+		(uuid "22af98e9-6ae7-5bdf-837a-979d9e2339bc")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 297.18 120.65 0)
 			(hide yes)
@@ -7709,7 +9074,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "b25118e2-3c24-5fbb-b6df-da13aea4899f")
+		(uuid "69898674-04c2-5fa5-a81e-e8cda146da34")
 		(property "Reference" "C305"
 			(at 307.975 111.76 0)
 			(effects
@@ -7756,10 +9121,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "c488ae5a-cc83-56c8-bc0d-560c1206ce58")
+			(uuid "4ed3a65a-e190-5efb-8025-f1bdeb79e42b")
 		)
 		(pin "2"
-			(uuid "95448e88-d34d-5d5c-8782-e748dfff46e1")
+			(uuid "c685f800-859d-5436-b2fb-b142132c09e0")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -7779,7 +9144,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "97512e2c-a7d8-5f9d-985c-55ecc9cce9d1")
+		(uuid "f0de6aac-a0b3-5d1f-b603-9e993fe328dc")
 	)
 	(global_label "ENC_SW"
 		(shape bidirectional)
@@ -7791,7 +9156,7 @@
 			)
 			(justify left)
 		)
-		(uuid "238cd053-3f36-5657-b663-6f8adad8c68a")
+		(uuid "750daeee-eb9a-591c-942c-e5c3d4b9b28e")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 307.34 107.95 0)
 			(hide yes)
@@ -7812,7 +9177,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "fa146866-f808-5ebc-8e84-3fe63c2d1a32")
+		(uuid "c00983c5-e9fc-595f-b2dd-f9e5809c415b")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -7822,8 +9187,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "89822ad9-b1e5-505c-a114-b8e2dc6f1401")
-		(property "Reference" "#PWRPER031"
+		(uuid "433ad04d-fc49-5889-9ff8-f5321548aabb")
+		(property "Reference" "#PWRPER033"
 			(at 307.34 127 0)
 			(hide yes)
 			(effects
@@ -7868,12 +9233,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "86467739-dd3c-52ed-add1-1e60c084a784")
+			(uuid "7a77e7f4-73f2-5e31-9410-8e06689b7909")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER031")
+					(reference "#PWRPER033")
 					(unit 1)
 				)
 			)
@@ -7888,7 +9253,7 @@
 			)
 			(justify left top)
 		)
-		(uuid "4696cee9-e4b0-5511-b474-5a8358165b61")
+		(uuid "f235ff22-4f84-56af-83c0-32de8bceae54")
 	)
 	(symbol
 		(lib_id "Switch:SW_Push")
@@ -7898,7 +9263,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "bfea8c60-2bd2-5ead-9fda-ecc007180519")
+		(uuid "2a6f2a26-8310-571b-8b39-6b7ece7ad490")
 		(property "Reference" "SW302"
 			(at 257.81 177.8 0)
 			(effects
@@ -7953,10 +9318,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "ef1034c6-f17a-5ad4-a76e-46515d835ee4")
+			(uuid "a4729d80-a8f2-53ca-98d1-7b9af7c59a69")
 		)
 		(pin "2"
-			(uuid "6fb19660-51a5-5d06-bd04-d06c4e4d9a53")
+			(uuid "019be9dd-84fb-58e5-a64c-9c15a3b4e490")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -7976,7 +9341,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "e2de43da-9705-5312-bb45-63b1e7dc5f1e")
+		(uuid "7d5ce035-7605-56cb-9286-57223a5e8b3f")
 	)
 	(symbol
 		(lib_id "power:VCC")
@@ -7986,8 +9351,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "065ee574-8754-5bb2-9562-28d8d6ec594e")
-		(property "Reference" "#PWRPER032"
+		(uuid "803956fa-5752-5f31-89a2-113f8bbe5846")
+		(property "Reference" "#PWRPER034"
 			(at 246.38 184.15 0)
 			(hide yes)
 			(effects
@@ -8032,12 +9397,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "68816754-6c32-572b-8aa9-a2e4d8cb89db")
+			(uuid "b5235f56-e300-58a8-81da-e6385295f45f")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER032")
+					(reference "#PWRPER034")
 					(unit 1)
 				)
 			)
@@ -8052,7 +9417,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "eaae4065-386c-556c-991a-a1f82aba988f")
+		(uuid "636b5315-482d-5030-919c-e6ccea7b3fb8")
 	)
 	(global_label "PWR_BTN"
 		(shape bidirectional)
@@ -8064,7 +9429,7 @@
 			)
 			(justify left)
 		)
-		(uuid "84faa33a-b6ed-59ab-ae18-d1fe441ae8c3")
+		(uuid "bc53af53-34d2-586b-ab51-92dc5a559993")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 264.16 180.34 0)
 			(hide yes)
@@ -8084,7 +9449,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "a50894de-de93-54f9-a5e9-cf6e664544a2")
+		(uuid "59f5b4a0-20c7-5fdc-884d-4804e6cd5627")
 		(property "Reference" "R315"
 			(at 289.052 187.96 90)
 			(effects
@@ -8129,10 +9494,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "c62e2a12-a45f-56b4-87a7-c6e2f97adef7")
+			(uuid "fc0858d6-7eee-5e28-9f9a-438c137e8f7f")
 		)
 		(pin "2"
-			(uuid "12b9cece-4b82-5b9c-889d-79822f494fb4")
+			(uuid "e3f003b4-d088-5e7f-b15a-f769a3008b60")
 		)
 		(instances
 			(project "stm32-epaper"
@@ -8152,7 +9517,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "8460d46a-dbaf-57be-b33c-44c4d060076a")
+		(uuid "4a68408b-1ab7-55a2-b68c-128897d144b0")
 	)
 	(global_label "PWR_BTN"
 		(shape bidirectional)
@@ -8164,7 +9529,7 @@
 			)
 			(justify left)
 		)
-		(uuid "8ce629e1-4cb5-5fbc-b5f5-fa9ea1495ae8")
+		(uuid "be7784e8-21a2-5f77-9bb1-92ba1233442d")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 287.02 181.61 0)
 			(hide yes)
@@ -8185,7 +9550,7 @@
 			(width 0)
 			(type default)
 		)
-		(uuid "2d474fd9-bbc1-5560-9edc-08a36b89d922")
+		(uuid "a2dd47ab-e581-5984-989c-4c6e9cd2f258")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -8195,8 +9560,8 @@
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
-		(uuid "dff3ce11-ed05-5c0d-a8ee-238f9f8a4971")
-		(property "Reference" "#PWRPER033"
+		(uuid "2bd56176-d5b5-5778-9a55-55475d86853b")
+		(property "Reference" "#PWRPER035"
 			(at 287.02 200.66 0)
 			(hide yes)
 			(effects
@@ -8241,12 +9606,267 @@
 			)
 		)
 		(pin "1"
-			(uuid "d1d40f9d-8d64-5488-9f55-c17b7fcf81dd")
+			(uuid "6ff6eb64-9c19-54b2-acc0-625ad6a7d92f")
 		)
 		(instances
 			(project "stm32-epaper"
 				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
-					(reference "#PWRPER033")
+					(reference "#PWRPER035")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(text "Mounting holes: M2 thread-forming screws into standoffs on the back cover. Positions\ncome from hardware/enclosure (out/pcb_placement.json)."
+		(exclude_from_sim no)
+		(at 218.44 215.9 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left top)
+		)
+		(uuid "7b9a25ad-5787-5f12-b480-e4cdd9a5326a")
+	)
+	(symbol
+		(lib_id "Mechanical:MountingHole")
+		(at 228.6 231.14 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(uuid "2cf8af8e-b12a-5c5b-894f-e643cfb6eeae")
+		(property "Reference" "H301"
+			(at 228.6 226.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "M2"
+			(at 228.6 227.965 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "MountingHole:MountingHole_2.2mm_M2"
+			(at 228.6 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 228.6 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Mounting Hole without connection"
+			(at 228.6 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
+					(reference "H301")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Mechanical:MountingHole")
+		(at 241.3 231.14 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(uuid "72b57b8e-0e4e-5500-baf6-444f92e5542b")
+		(property "Reference" "H302"
+			(at 241.3 226.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "M2"
+			(at 241.3 227.965 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "MountingHole:MountingHole_2.2mm_M2"
+			(at 241.3 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 241.3 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Mounting Hole without connection"
+			(at 241.3 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
+					(reference "H302")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Mechanical:MountingHole")
+		(at 254 231.14 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(uuid "807eca7d-68db-53ba-9e04-7f5bf897a3d4")
+		(property "Reference" "H303"
+			(at 254 226.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "M2"
+			(at 254 227.965 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "MountingHole:MountingHole_2.2mm_M2"
+			(at 254 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 254 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Mounting Hole without connection"
+			(at 254 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
+					(reference "H303")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Mechanical:MountingHole")
+		(at 266.7 231.14 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(uuid "24851797-48f6-5aed-bc0f-ae270df61636")
+		(property "Reference" "H304"
+			(at 266.7 226.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "M2"
+			(at 266.7 227.965 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "MountingHole:MountingHole_2.2mm_M2"
+			(at 266.7 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 266.7 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Mounting Hole without connection"
+			(at 266.7 231.14 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(instances
+			(project "stm32-epaper"
+				(path "/6f1d3c2a-5b7e-4c1d-9a0f-000000000001/6f1d3c2a-5b7e-4c1d-9a0f-000000000008"
+					(reference "H304")
 					(unit 1)
 				)
 			)

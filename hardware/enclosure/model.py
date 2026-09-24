@@ -75,13 +75,16 @@ BATT_ZONE_L = BATT_L + 2 * BATT_SWELL
 BATT_Y0 = BATT_Y1 - BATT_ZONE_L               # PCM strip + lead exit on this (bottom) edge
 
 ENC_X, ENC_Y = 0.0, CHIN_CY
-KNOB_HUB_D = ENC_SHAFT_D + 3.0
-KNOB_HOLE_D = KNOB_HUB_D + 2 * SLIDE_CLEAR
+KNOB_HOLE_D = ENC_BUSH_D + 2 * SLIDE_CLEAR   # the bushing comes up through the front face
 Z_ENC_TOP = Z_PCB_TOP + ENC_BODY_T
+Z_BUSH_TOP = Z_ENC_TOP + ENC_BUSH_L
 Z_SHAFT_TIP = Z_PCB_TOP + ENC_SHAFT_L
-Z_KNOB_HUB0 = Z_ENC_TOP + ENC_PUSH_TRAVEL + 0.3
 Z_KNOB_CAP0 = OUTER_T + KNOB_GAP
-Z_KNOB_TOP = max(Z_KNOB_CAP0 + 4.0, Z_SHAFT_TIP + 1.0)
+# The knob's D-bore starts above the bushing by the push travel (+0.2) so pressing never lands the
+# knob on the bushing; below that a counterbore clears the bushing. Through-bore, shaft end flush
+# with the top (a closed top would add a 1 mm wall to an already tall knob).
+Z_KNOB_BORE0 = max(Z_BUSH_TOP, Z_KNOB_CAP0) + ENC_PUSH_TRAVEL + 0.2
+Z_KNOB_TOP = Z_SHAFT_TIP
 
 USB_DEPTH = 7.35                             # USB4105 body depth (Y)
 USB_ZC = Z_PCB_TOP + USB_T / 2
@@ -96,8 +99,6 @@ BTN_TAB_Z1 = BTN_TAB_Z0 + BTN_TAB_L          # hinge (towards the front)
 BTN_NUB_Y = BTN_TIP_Y - BTN_PRELOAD_GAP      # nub face
 
 # Electrode boards: against the inner side walls, pads outwards, slid into channels from the back.
-EB_Y0 = min(ELECTRODE_Y) - ELECTRODE_H / 2 - EB_MARGIN
-EB_Y1 = max(ELECTRODE_Y) + ELECTRODE_H / 2 + EB_MARGIN
 EB_Z0 = Z_BACK_IN + 0.2
 EB_Z1 = EB_Z0 + EB_W
 EB_CH_WALL = 1.0                             # channel lip thickness
@@ -117,7 +118,8 @@ def components():
                              Z_BACK_IN, Z_BACK_IN + BATT_ZONE_T)
     c["pcb"] = pcb()
     c["encoder_body"] = slab(ENC_BODY_W, ENC_BODY_D, Z_PCB_TOP, Z_ENC_TOP, ENC_X, ENC_Y)
-    c["encoder_shaft"] = post(ENC_SHAFT_D, Z_ENC_TOP, Z_SHAFT_TIP, ENC_X, ENC_Y)
+    c["encoder_bushing"] = post(ENC_BUSH_D, Z_ENC_TOP, Z_BUSH_TOP, ENC_X, ENC_Y)
+    c["encoder_shaft"] = post(ENC_SHAFT_D, Z_BUSH_TOP, Z_SHAFT_TIP, ENC_X, ENC_Y)
     c["usb_c"] = span(USB_X - USB_W / 2, USB_X + USB_W / 2, PCB_Y0, PCB_Y0 + USB_DEPTH,
                       Z_PCB_TOP, Z_PCB_TOP + USB_T)
     # A mated plug (USB-IF max overmold) - proves the opening admits real cables.
@@ -264,11 +266,11 @@ def back_cover():
 def knob():
     k = post(KNOB_D, Z_KNOB_CAP0, Z_KNOB_TOP, ENC_X, ENC_Y)
     k = fillet(k.edges().group_by(Axis.Z)[-1], 1.5)
-    k += post(KNOB_HUB_D, Z_KNOB_HUB0, Z_KNOB_CAP0 + 0.1, ENC_X, ENC_Y)
-    # D-flat bore: 6 mm shaft with a flat 1.5 mm deep (PEC11R "F" shaft), + 0.1 press fit clearance.
-    bore = post(ENC_SHAFT_D + 0.1, Z_KNOB_HUB0 - 1, Z_SHAFT_TIP + 0.3, ENC_X, ENC_Y)
+    k -= post(ENC_BUSH_D + 2 * 0.4, Z_KNOB_CAP0 - 1, Z_KNOB_BORE0, ENC_X, ENC_Y)
+    # D-flat bore: 6 mm shaft, 4.5 across the flat (PEC11R "F" shaft), + 0.1 press-fit clearance.
+    bore = post(ENC_SHAFT_D + 0.1, Z_KNOB_BORE0 - 0.1, Z_KNOB_TOP + 1, ENC_X, ENC_Y)
     key = span(ENC_X - ENC_SHAFT_D, ENC_X + ENC_SHAFT_D, ENC_Y + ENC_SHAFT_D / 2 - 1.5 + 0.05,
-               ENC_Y + ENC_SHAFT_D, Z_KNOB_HUB0 - 1, Z_SHAFT_TIP + 0.3)
+               ENC_Y + ENC_SHAFT_D, Z_KNOB_BORE0 - 0.1, Z_KNOB_TOP + 1)
     k -= bore - key
     # Grip flutes round the rim.
     for i in range(18):

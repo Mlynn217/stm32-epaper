@@ -79,10 +79,11 @@ git-ignored (regenerate the files rather than committing them):
 ## Open items (resolve before ordering)
 
 1. **Measure the placeholders** (`PH` in `params.py`; `build.py` lists them): the panel's
-   active-area offset and FPC width/bend, the HAT's size and height, the PEC11R body height and push
-   travel, the microSD socket height, the SKRT switch height and travel, and the JST-SH envelope.
-2. **Encoder shaft reference plane:** the model assumes the "15 mm" is measured from the PCB
-   seating plane. If Bourns measures it from the bushing, the knob sits higher. Check the drawing.
+   active-area offset, FPC width/bend and **thickness** (Waveshare says 0.67 mm, ED060KD1 listings
+   1.6 mm), and the HAT's size and height. The part dimensions come from datasheets.
+2. **Knob height:** 7.9 mm proud, set by the PEC11R's M7 bushing (13.5 mm above the PCB on the
+   20 mm-shaft part) plus the 0.8 mm worst-case push travel. Cutting the shaft down later would
+   lower it, at the cost of grip.
 3. **Panel active-area position:** the window is centred on the panel. If the real active area is
    offset (usually away from the FPC edge), set `ACTIVE_DX/DY`.
 4. **Electrode board KiCad project** (see TODO.md): the geometry is in `out/electrode_board.json`.

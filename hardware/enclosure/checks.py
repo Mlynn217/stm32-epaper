@@ -50,8 +50,11 @@ def rules():
                     ("BACKER_T", BACKER_T)):
         check(t >= WALL_MIN, f"{name} {t} mm >= WALL_MIN {WALL_MIN}")
 
-    engage = m.Z_SHAFT_TIP - m.Z_KNOB_HUB0
+    engage = m.Z_SHAFT_TIP - m.Z_KNOB_BORE0
     check(engage >= 5.0, f"knob grips {engage:.1f} mm of encoder shaft (want >= 5)")
+    check(m.Z_KNOB_BORE0 - m.Z_BUSH_TOP > ENC_PUSH_TRAVEL,
+          f"knob bore clears the bushing by {m.Z_KNOB_BORE0 - m.Z_BUSH_TOP:.1f} mm "
+          f"> push travel {ENC_PUSH_TRAVEL} mm")
     proud = m.Z_KNOB_TOP - OUTER_T
     check(3.0 <= proud <= 8.0, f"knob stands {proud:.1f} mm proud of the front face (want 3-8)")
     check(KNOB_GAP > ENC_PUSH_TRAVEL,

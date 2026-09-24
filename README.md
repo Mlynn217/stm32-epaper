@@ -32,6 +32,10 @@ Not done yet — see [TODO.md](TODO.md) for the full list, but the near-term hig
   Peripherals sheets). It's ERC-clean and machine-checked (pin mux, nets, footprint pads), but not
   yet reviewed by a person, and there's no PCB layout yet. v1 scope: the Waveshare HAT stays
   external on an SPI connector (see [Custom PCB (Planned)](#custom-pcb-planned))
+- Custom PCB layout **started**: `hardware/kicad/stm32-epaper.kicad_pcb` has the enclosure-derived
+  outline, every footprint with its nets, and the enclosure-fixed parts placed; core placement and
+  routing are next. The side-wall electrode board (`hardware/electrode/`) is fully laid out and
+  DRC-clean
 - Enclosure: a **v0 parametric draft** in `hardware/enclosure/` (build123d). It passes its own fit
   checks and exports STEP/STL/3MF, but several dimensions are still placeholders and nothing has
   been printed (see [Enclosure](#enclosure-v0-draft))
@@ -135,7 +139,7 @@ platform until the PCB is built.
 |---|---|---|---|
 | Prev / Next page | CAP1188-1-SL (Microchip) | I²C + ALERT interrupt | 8-channel; side-wall electrodes |
 | Side-wall electrodes | 2 small electrode boards (0.8 mm FR4), 2 pads each | JST-SH cable per side (J302/J303) | Pads pressed against the inside of each side wall; plastic wall as dielectric (up to ~4mm) |
-| Library / menu scroll | Bourns PEC11R-4215F-S0024 | 2× GPIO (A, B quadrature) | 24 detents / 24 pulses per revolution, 15mm flatted shaft |
+| Library / menu scroll | Bourns PEC11R-4220F-S0024 | 2× GPIO (A, B quadrature) | 24 detents / 24 pulses per revolution, 20mm flatted shaft (the M7 bushing leaves too little of a 15mm shaft for the knob to grip through the front face; the Discovery bring-up used the 15mm -4215F) |
 | Confirm / select | Encoder push | 1× GPIO (SW) | Built into the PEC11R (the "S" in S0024) |
 | Power / wake | Alps SKRTLAE010 side-actuated tact switch | 1× GPIO (WKUP pin) | Bottom edge, on the main PCB, pressed through a flexure tab in the wall; physical, not capacitive |
 
@@ -301,8 +305,8 @@ with `3V3_AON` fed from +3V3 through a fitted 0Ω link.
 
 | Component | Value / Part | Notes |
 |---|---|---|
-| HSE crystal | 8MHz (Abracon ABM8 or equiv.) | PLL source → 180MHz system clock |
-| RTC crystal | 32.768kHz, part TBD | Pick a low-load-capacitance crystal (~6–7 pF) that the STM32's low-power oscillator drives reliably (ST AN2867) |
+| HSE crystal | 8MHz NDK NX3225GD-8MHZ-STD-CRA-3 (CL 8pF), 2 × 10pF C0G | PLL source → 180MHz system clock |
+| RTC crystal | 32.768kHz NDK NX3215SA-32.768KHZ-EXS00A-MU00525 (CL 6pF, ESR ≤ 70kΩ), 2 × 6.2pF C0G | AN2867 gm_crit ≈ 0.58 µA/V: confirm against the F469 datasheet's LSE Gm_crit_max; the LSE high-drive mode (LSEMOD) is the fallback |
 | Decoupling caps | 100nF + 10µF per supply pin | Standard STM32 layout |
 | I²C pull-ups | 4.7kΩ to 3.3V | For I²C bus (CAP1188, fuel gauge) |
 | Ferrite bead | Optional | Between analog and digital GND if needed |
@@ -325,9 +329,10 @@ it:
   - **Input current:** EN2 = 0, EN1 = 1 (pulled up to VBUS) → **USB500**, the USB-C default,
     because the board doesn't read the source's CC advertisement. R_ILIM = 1.54k (1.0 A) must be
     fitted anyway: an open ILIM disables charging.
-  - **Temperature:** TS goes to an **on-board 10k NTC** (NCP15XH103, placed touching the cell),
-    because off-the-shelf LiPos have no thermistor lead. The charger blocks charging outside
-    ~0–50 °C.
+  - **Temperature:** TS goes to a **10k NTC on leads** (Murata NXFT15XH103, same curve as the
+    NCP15XH103 it replaced), soldered to the PCB with its head taped to the cell, because
+    off-the-shelf LiPos have no thermistor lead and the cell sits beside the PCB. The charger
+    blocks charging outside ~0–50 °C.
   - **The cells only allow 0–45 °C.** TI's resistor network (SLUS810N eq. 8–9) can only *widen*
     the window: a 3–43 °C window needs an NTC whose resistance ratio between those temperatures
     is ≥ 7, and 10k NTCs with B ≈ 3380–3435 only reach ~4.7–4.8. So the hot end is enforced in
@@ -343,8 +348,9 @@ it:
 - **USB-C:** sink-only (5.1k Rd on each CC). A USBLC6-2SC6 protects D+/D−, which go to the MCU as
   `USB_DP`/`USB_DM` (OTG_FS).
 - **TPS63802 → +3V3:** 511k/91k feedback → 3.308 V. MODE low (power-save mode). EN comes from the
-  undervoltage divider R6/R15 described above. Soft-power control from the power button is still
-  undecided and will have to work alongside this divider.
+  undervoltage divider R6/R15 described above, and nothing else: "off" is MCU STANDBY, woken by
+  the power button on WKUP (decided 2026-09-23; see TODO.md for the standby budget and the
+  low-battery boot rule).
 - **TPS61023 → +5V (external HAT):** 732k/100k → 4.99 V. EN is `EPD_5V_EN` from the MCU, with a 1M
   pull-down. It truly disconnects in shutdown, so the HAT is fully unpowered until enabled.
 - **RTC:** cell → MCP1700 3.0 V LDO (1.6 µA quiescent) → `VBAT_RTC`. A full LiPo (4.2 V) minus a
@@ -422,10 +428,12 @@ confirm each memory pin reaches an MCU pin that really provides that function.
 - **HAT connector:** 1×8 2.54 mm header (1 +5V, 2 GND, 3 SCK, 4 MOSI, 5 MISO, 6 CS, 7 RST, 8 HRDY),
   with 33 Ω series resistors on SCK, MOSI and CS. **Firmware rule:** while `EPD_5V_EN` is low (HAT
   unpowered), drive SCK/MOSI/CS/RST low or leave them floating. Otherwise the MCU back-powers the
-  IT8951 through its I/O clamp diodes.
+  IT8951 through its I/O clamp diodes. R316 (100k) pulls HRDY low so it reads "busy" rather than
+  floating while the HAT is off.
 - **CAP1188:** I²C address 0x29 (150k on ADDR_COMM, the same as the Adafruit breakout), CS1–4 to two
   JST-SH 3-pin connectors (J302 left, J303 right: touch / GND / touch) that cable to the side-wall
-  electrode boards; unused inputs and LED pins to GND.
+  electrode boards, with U302 (TPD4E05U06, 0.5 pF/line) as ESD protection on all four lines;
+  unused inputs and LED pins to GND.
 - **PEC11R encoder:** Bourns' suggested filter on each channel (10k pull-up, 10k series, 10 nF), and
   mounting lugs to GND.
 - **Power button:** Alps SKRTLAE010 (side-actuated) on the bottom edge; pulls PA0 up, with a 100k
@@ -572,6 +580,15 @@ still needs the `arm-none-eabi-gcc` toolchain, OpenOCD, Ninja, and the relevant 
   - `gen_footprints.py`: the project footprints.
   - `check_schematic.py`: design-intent checks (see "Checking the Schematic"). Keep its tables in
     sync with deliberate edits.
+  - `gen_main_pcb.py`: one-shot bootstrap of the main board (outline from the enclosure, all
+    footprints with nets, enclosure-fixed parts placed). Runs under KiCad's bundled Python:
+    `kicad python3.11 hardware/scripts/gen_main_pcb.py <netlist.xml>` (see its docstring). It
+    refuses to overwrite the board without `--force`.
+- `hardware/electrode/`: KiCad project for the side-wall electrode board (one design, two
+  fitted), generated from the enclosure's `params.py`:
+  `KICAD_SYMBOL_DIR=<kicad share>/symbols python3 hardware/scripts/gen_electrode.py --force`, then
+  `kicad python3.11 hardware/scripts/gen_electrode_pcb.py` (KiCad's bundled Python, which has
+  pcbnew). Check with `kicad-cli pcb drc --schematic-parity --refill-zones`.
 - `hardware/enclosure/`: the parametric enclosure (build123d): `params.py` (every dimension, with
   its source), `model.py`, `checks.py`, `build.py` (checks + STEP/STL/3MF/DXF export + renders to
   the git-ignored `out/`), `show.py` (OCP CAD Viewer). See its README.

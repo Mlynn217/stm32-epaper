@@ -99,7 +99,12 @@ def bourns_pec11r_4xxxf_s():
           _text('Value', name, 0, 10.5, 'F.Fab'),
           ['attr', Sym('through_hole')], ['duplicate_pad_numbers_are_jumpers', N]]
     fp += _rect(-6.25, -6.7, 6.25, 6.7, 'F.Fab', 0.1)   # 12.5 x 13.4 body
-    fp += _rect(-6.37, -6.82, 6.37, 6.82, 'F.SilkS', 0.12)
+    # Silk: corner marks only - a full outline at the body edge crosses the MP slots (x ±6.6,
+    # y ±1.75) and the A/B/C / switch pads (|x| <= 3.4, |y| >= 6.1).
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            fp.append(_line(sx * 6.37, sy * 6.82, sx * 3.9, sy * 6.82, 'F.SilkS', 0.12))
+            fp.append(_line(sx * 6.37, sy * 6.82, sx * 6.37, sy * 2.2, 'F.SilkS', 0.12))
     fp += _rect(-8.0, -8.5, 8.0, 9.0, 'F.CrtYd', 0.05)
     for num, x in (('A', -2.5), ('C', 0.0), ('B', 2.5)):
         fp.append(_tht(num, x, 7.5, 1.05, 1.8))
