@@ -44,7 +44,35 @@ FLOORPLAN = {
 }
 
 
-def PLANES(full, rect):
+def peripheral_outline(mem_x0):
+    """The L-shaped 3V3_PERIPH zone: memory block (left edge = mem_x0, from placement), a strip
+    along the bottom under the encoder, and the microSD socket."""
+    return ((14.0, 0.3), (33.0, 0.3), (33.0, 15.5), (95.1, 15.5), (95.1, 52.0), (mem_x0, 52.0),
+            (mem_x0, 18.5), (14.0, 18.5))
+
+
+PLUS3V3_RECT = (2.3, 19.0, 31.0, 52.5)
+
+
+def in_poly(x, y, poly):
+    inside = False
+    for (ax, ay), (bx, by) in zip(poly, poly[1:] + poly[:1]):
+        if (ay > y) != (by > y) and x < ax + (y - ay) * (bx - ax) / (by - ay):
+            inside = not inside
+    return inside
+
+
+def in2_net_at(x, y, mem_x0):
+    """Which 3.3 V rail's plane is under PCB-frame point (x, y) on In2."""
+    if in_poly(x, y, list(peripheral_outline(mem_x0))):
+        return '3V3_PERIPH'
+    x0, y0, x1, y1 = PLUS3V3_RECT
+    if x0 <= x <= x1 and y0 <= y <= y1:
+        return '+3V3'
+    return '3V3_AON'
+
+
+def PLANES(full, rect, mem_x0):
     """(zone name, layer, net, priority, [outline polygons in the PCB frame])"""
     return [
         ('GND plane', pcbnew.In1_Cu, 'GND', 0, [full]),
@@ -53,10 +81,8 @@ def PLANES(full, rect):
         # encoder) and the microSD socket - separate islands would need a long trace between them.
         # Both islands stop 2 mm short of the side edges, leaving 3V3_AON a channel up each side:
         # the bottom strip would otherwise cut the 3V3_AON plane in two.
-        ('3V3_PERIPH plane', pcbnew.In2_Cu, '3V3_PERIPH', 1,
-         [((14.0, 0.3), (33.0, 0.3), (33.0, 15.5), (95.1, 15.5), (95.1, 52.0), (62.0, 52.0),
-           (62.0, 18.5), (14.0, 18.5))]),
-        ('+3V3 plane', pcbnew.In2_Cu, '+3V3', 1, [rect(2.3, 19.0, 31.0, 52.5)]),
+        ('3V3_PERIPH plane', pcbnew.In2_Cu, '3V3_PERIPH', 1, [peripheral_outline(mem_x0)]),
+        ('+3V3 plane', pcbnew.In2_Cu, '+3V3', 1, [rect(*PLUS3V3_RECT)]),
     ]
 
 
@@ -99,9 +125,9 @@ def optimise_core(fps, put, box, free, occupied, W):
                 for y in ys:
                     put(ref, x, y, a)
                     b = box(fps[ref])
-                    if not free(b) or any(not (b[2] + 0.5 <= o[0] or o[2] + 0.5 <= b[0] or
-                                               b[3] + 0.5 <= o[1] or o[3] + 0.5 <= b[1])
-                                          for o in others):
+                    if not free(b) or any(not (b[2] + g <= o[0] or o[2] + g <= b[0] or
+                                               b[3] + g <= o[1] or o[3] + g <= b[1])
+                                          for o, g in others):
                         continue
                     c = cost([ref])
                     if best is None or c < best[0]:
@@ -115,11 +141,12 @@ def optimise_core(fps, put, box, free, occupied, W):
     for mcu_a in (0, 90, 180, 270):
         put('U101', MCU_AT[0], MCU_AT[1], mcu_a)
         mb = box(fps['U101'])
-        s1 = best_spot('U201', (0, 90), xs, ys, [mb])
+        # 3.5 mm from the MCU: its decoupling caps need to fit in between.
+        s1 = best_spot('U201', (0, 90), xs, ys, [(mb, 3.5)])
         if not s1:
             continue
         put('U201', *s1[1:4])
-        s2 = best_spot('U202', (0, 90, 180, 270), xs, ys, [mb, s1[4]])
+        s2 = best_spot('U202', (0, 90, 180, 270), xs, ys, [(mb, 3.5), (s1[4], 0.5)])
         if not s2:
             continue
         put('U202', *s2[1:4])
@@ -199,6 +226,8 @@ def main():
     cap_x, cap_y, _ = FLOORPLAN['U301']
     occupied.append((cap_x - 3.0, cap_y + 1.6, cap_x + 3.0, H - EDGE_KEEP))
     core = optimise_core(fps, put, box, free, occupied, W)
+    # The 3V3_PERIPH island's left edge follows the memories actually placed.
+    mem_x0 = min(box(fps['U201'])[0], box(fps['U202'])[0]) - 0.5
     placed = set(FIXED) | set(FLOORPLAN) | set(core)
 
     # Power pins of the ICs, for decoupling assignment: {net: [(x, y, ic_ref)]}, consumed as used.
@@ -237,7 +266,9 @@ def main():
             if not cands:
                 continue
             if ic:
-                pref = [c for c in cands if c[2] == ic] or cands
+                pref = [c for c in cands if c[2] == ic]
+                if not pref:
+                    continue      # its own IC's pins are taken: fall through to the IC itself
             else:   # power sheet: the power IC pins, nearest to the power cluster
                 pref = [c for c in cands if c[2] in ('U1', 'U2', 'U3', 'U4', 'U7')] or cands
                 pref.sort(key=lambda c: math.hypot(c[0] - 15, c[1] - 35))
@@ -265,11 +296,17 @@ def main():
         return None
 
     def spiral(ax, ay, fp):
+        # Plane-aware: a part on exactly one 3.3 V rail must sit over that rail's In2 plane, or
+        # its pad has no plane to via into (C104/C105 once landed over the 3V3_PERIPH island).
+        rails = {p.GetNetname() for p in fp.Pads()} & {'3V3_AON', '3V3_PERIPH', '+3V3'}
+        rail = next(iter(rails)) if len(rails) == 1 else None
         for r in [i * 0.5 for i in range(0, 120)]:
             steps = max(1, int(2 * math.pi * r / 0.5))
             for k in range(steps):
                 t = 2 * math.pi * k / steps
                 x, y = ax + r * math.cos(t), ay + r * math.sin(t)
+                if rail and in2_net_at(x, y, mem_x0) != rail:
+                    continue
                 for a in (0, 90):
                     put(fp.GetReference(), x, y, a)
                     b = box(fp)
@@ -324,7 +361,7 @@ def main():
 
     def rect(x0, y0, x1, y1):
         return ((x0, y0), (x1, y0), (x1, y1), (x0, y1))
-    for name, layer, net, prio, outlines in PLANES(full, rect):
+    for name, layer, net, prio, outlines in PLANES(full, rect, mem_x0):
         if name in have:
             continue
         z = pcbnew.ZONE(board)
@@ -336,9 +373,13 @@ def main():
             for x, y in poly:
                 ol.Append(P(x, y).x, P(x, y).y)
         z.SetAssignedPriority(prio)
-        z.SetMinThickness(mm(0.2))
-        z.SetLocalClearance(mm(0.2))
-        z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL)
+        # 0.15 mm clearance/min width: each foreign via cuts a 0.75 mm hole; with the pre-router's
+        # >= 0.95 mm via spacing a >= 0.2 mm copper web always survives between two holes. (At
+        # 0.2 mm the 0.85 mm holes merged into walls along via rows and fragmented the plane.)
+        # Solid connections: no starved thermal spokes in crowded spots.
+        z.SetMinThickness(mm(0.15))
+        z.SetLocalClearance(mm(0.15))
+        z.SetPadConnection(pcbnew.ZONE_CONNECTION_FULL)
         z.SetZoneName(name)
         board.Add(z)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())

@@ -88,7 +88,7 @@ def main():
             return False
         # Drill-to-drill spacing between any two vias, same net or not (0.25 mm + drills), and
         # room for the autorouter's own vias between ours.
-        if any(math.hypot(x - vx, y - vy) < VIA_D + 0.3 for vx, vy in vias_at):
+        if any(math.hypot(x - vx, y - vy) < VIA_D + 0.5 for vx, vy in vias_at):
             return False
         return clear_box(x - r, y - r, x + r, y + r, net)
 
