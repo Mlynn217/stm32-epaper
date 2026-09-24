@@ -49,9 +49,12 @@ def PLANES(full, rect):
     return [
         ('GND plane', pcbnew.In1_Cu, 'GND', 0, [full]),
         ('3V3_AON plane', pcbnew.In2_Cu, '3V3_AON', 0, [full]),
+        # One L-shaped 3V3_PERIPH zone: the memory block, a strip along the bottom (under the
+        # encoder) and the microSD socket - separate islands would need a long trace between them.
         ('3V3_PERIPH plane', pcbnew.In2_Cu, '3V3_PERIPH', 1,
-         [rect(62.0, 16.0, 97.1, 52.0), rect(14.0, 0.3, 33.0, 14.5)]),
-        ('+3V3 plane', pcbnew.In2_Cu, '+3V3', 1, [rect(0.3, 14.5, 31.0, 52.5)]),
+         [((14.0, 0.3), (33.0, 0.3), (33.0, 15.5), (97.1, 15.5), (97.1, 52.0), (62.0, 52.0),
+           (62.0, 18.5), (14.0, 18.5))]),
+        ('+3V3 plane', pcbnew.In2_Cu, '+3V3', 1, [rect(0.3, 19.0, 31.0, 52.5)]),
     ]
 
 
@@ -282,10 +285,9 @@ def main():
             remaining.sort(key=lambda r: (-links(r), r))
             ref = remaining.pop(0)
         fp = fps[ref]
-        # Bring-up test points: kept together in the bottom-right corner, easy to probe.
-        if ref.startswith('TP'):
-            a = (W - 8.0, 8.0)
-        elif ref in SOURCE_TERM:
+        # (Bring-up test points used to be clustered in a corner: that forced a 42 mm +3V3 trace
+        # across the board. They now go next to their own rail like any power-only part.)
+        if ref in SOURCE_TERM:
             a = mcu_pin(SOURCE_TERM[ref])
         else:
             a = anchor(fp)

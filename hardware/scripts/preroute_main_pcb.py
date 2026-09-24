@@ -144,7 +144,7 @@ def main():
         return False
 
     stats = {'plane': 0, 'plane_shared': 0, 'plane_skipped': 0, 'in_pad': 0, 'fanout': 0,
-             'fanout_skipped': 0}
+             'fanout_skipped': 0, 'escapes': 0}
 
     # Only now remove the old copper (the queries above are done).
     for t in old_tracks:
@@ -190,10 +190,13 @@ def main():
         own = (tomm(bb.GetLeft()), tomm(bb.GetTop()), tomm(bb.GetRight()), tomm(bb.GetBottom()), pad.GetNetCode())
         half = max(tomm(bb.GetWidth()), tomm(bb.GetHeight())) / 2
         away = math.atan2(py - cy, px - cx) if (px, py) != (cx, cy) else 0.0
+        # Directions to try: for the MCU, straight IN first (vias under the LQFP body - the ring
+        # outside is full of pins and decoupling caps); otherwise out, then fanning round to in.
+        dirs = [away + math.pi * s_ for s_ in (1.0,)] if fp.GetReference() == MCU else []
+        dirs += [away + sgn * k * math.pi / 4 for k in range(5) for sgn in ((1,) if k in (0, 4) else (1, -1))]
         done = False
         for d in (half + VIA_D / 2 + 0.25, half + VIA_D / 2 + 0.6, half + VIA_D / 2 + 1.0):
-            for k in range(8):
-                a = away + (k // 2) * (math.pi / 4) * (1 if k % 2 == 0 else -1)
+            for a in dirs:
                 vx, vy = px + d * math.cos(a), py + d * math.sin(a)
                 if via_ok(vx, vy, pad.GetNetCode()) and plane_at(net, vx, vy) and \
                         stub_ok(px, py, vx, vy, pad.GetNetCode(), 0.25, own[:4]):
@@ -233,7 +236,28 @@ def main():
         if not done:
             skipped.append('%s.%s(%s)' % (fp.GetReference(), pad.GetNumber(), net))
 
-    # 2. MCU dog-bone fanout of signal pins.
+    # 2a. CAP1188 touch-pin escapes (always): the last few mm out of the QFN are where the touch
+    #     lines failed; a dog-bone per pin gives the router a via to start from.
+    cap = next((fp for fp in footprints if fp.GetReference() == 'U301'), None)
+    if cap is not None:
+        ccx, ccy = tomm(cap.GetPosition().x), tomm(cap.GetPosition().y)
+        for pad in cap.Pads():
+            if 'TOUCH_' not in pad.GetNetname():
+                continue
+            px, py = tomm(pad.GetPosition().x), tomm(pad.GetPosition().y)
+            dx, dy = px - ccx, py - ccy
+            ux, uy = (math.copysign(1, dx), 0.0) if abs(dx) > abs(dy) else (0.0, math.copysign(1, dy))
+            bb = pad.GetBoundingBox()
+            own = (tomm(bb.GetLeft()), tomm(bb.GetTop()), tomm(bb.GetRight()), tomm(bb.GetBottom()))
+            reach = max(tomm(bb.GetWidth()), tomm(bb.GetHeight())) / 2
+            for d in (0.6, 1.0, 1.5):
+                vx, vy = px + ux * (reach + d), py + uy * (reach + d)
+                if via_ok(vx, vy, pad.GetNetCode()) and stub_ok(px, py, vx, vy, pad.GetNetCode(), 0.15, own):
+                    add(pad, vx, vy, 0.15)
+                    stats['escapes'] += 1
+                    break
+
+    # 2b. MCU dog-bone fanout of signal pins.
     if fanout:
         mcu = next(fp for fp in footprints if fp.GetReference() == MCU)
         cx, cy = tomm(mcu.GetPosition().x), tomm(mcu.GetPosition().y)
@@ -264,7 +288,7 @@ def main():
         print('skipped plane pads:', ' '.join(sorted(skipped)))
     print('pre-routed (locked): %(plane)d plane pads connected (%(plane_shared)d via a neighbour\'s via, '
           '%(plane_skipped)d skipped; %(in_pad)d vias in thermal pads), '
-          '%(fanout)d MCU fanouts (%(fanout_skipped)d skipped)' % stats)
+          '%(escapes)d CAP1188 touch escapes, %(fanout)d MCU fanouts (%(fanout_skipped)d skipped)' % stats)
 
 
 if __name__ == '__main__':
