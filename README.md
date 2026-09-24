@@ -32,10 +32,13 @@ Not done yet — see [TODO.md](TODO.md) for the full list, but the near-term hig
   Peripherals sheets). It's ERC-clean and machine-checked (pin mux, nets, footprint pads), but not
   yet reviewed by a person. v1 scope: the Waveshare HAT stays external on an SPI connector (see
   [Custom PCB (Planned)](#custom-pcb-planned))
-- Custom PCB layout **in progress**: `hardware/kicad/stm32-epaper.kicad_pcb` is placed (4 layers,
-  enclosure-derived outline, planes on the inner layers) and being autorouted with freerouting;
-  length/skew rules are in its `.kicad_dru` (see [Layout rules](#layout-rules-main-board)). The
-  side-wall electrode board (`hardware/electrode/`) is fully laid out and DRC-clean
+- Custom PCB layout **nearly routed**: `hardware/kicad/stm32-epaper.kicad_pcb` is placed and
+  routed (4 layers, enclosure-derived outline, inner planes) except **2 of ~460 connections**,
+  both at the CAP1188. Some SDRAM/SDIO length and skew rules still need tuning (see TODO.md and
+  [Layout rules](#layout-rules-main-board)). It's scripted end to end: placement,
+  pre-routing, offline freerouting and our own last-mile router, with every attempt in
+  `hardware/kicad/routing-log.md`. The side-wall electrode board (`hardware/electrode/`) is
+  fully laid out and DRC-clean
 - Enclosure: a **v0 parametric draft** in `hardware/enclosure/` (build123d). It passes its own fit
   checks and exports STEP/STL/3MF, but several dimensions are still placeholders and nothing has
   been printed (see [Enclosure](#enclosure-v0-draft))
@@ -430,10 +433,12 @@ confirm each memory pin reaches an MCU pin that really provides that function.
   unpowered), drive SCK/MOSI/CS/RST low or leave them floating. Otherwise the MCU back-powers the
   IT8951 through its I/O clamp diodes. R316 (100k) pulls HRDY low so it reads "busy" rather than
   floating while the HAT is off.
-- **CAP1188:** I²C address 0x29 (150k on ADDR_COMM, the same as the Adafruit breakout), CS1–4 to two
-  JST-SH 3-pin connectors (J302 left, J303 right: touch / GND / touch) that cable to the side-wall
-  electrode boards, with U302 (TPD4E05U06, 0.5 pF/line) as ESD protection on all four lines;
-  unused inputs and LED pins to GND.
+- **CAP1188:** I²C address 0x29 (150k on ADDR_COMM, the same as the Adafruit breakout). The
+  electrodes are on **CS3/CS4 (left) and CS5/CS6 (right)**: those pins face the two connectors.
+  CS1–4 are all on the chip's top side and fenced in its VDD pin. They go to two JST-SH 3-pin
+  connectors (J302 left, J303 right: touch / GND / touch) that cable to the side-wall electrode
+  boards. ESD protection is a TPD2E2U06 (~1.5 pF/line) right at each connector (U302, U303).
+  Unused inputs and LED pins go to GND.
 - **PEC11R encoder:** Bourns' suggested filter on each channel (10k pull-up, 10k series, 10 nF), and
   mounting lugs to GND.
 - **Power button:** Alps SKRTLAE010 (side-actuated) on the bottom edge; pulls PA0 up, with a 100k
@@ -629,6 +634,11 @@ still needs the `arm-none-eabi-gcc` toolchain, OpenOCD, Ninja, and the relevant 
     and the inner planes (In1 GND, In2 +3V3). Re-running discards hand moves.
   - `route_main_pcb.py`: Specctra DSN export / SES import around a headless freerouting run
     (commands in its docstring).
+  - `preroute_main_pcb.py`, `lastmile_main_pcb.py`, `ripup_main_pcb.py`, `report_main_pcb.py`:
+    the pre-router (locked plane vias etc.), our A* last-mile router, the rip-up prep (tried,
+    doesn't help with freerouting), and the per-bus length/skew report.
+  - `route_loop.py`: one measured attempt end to end (fresh placement, pre-route, freerouting or
+    last-mile, DRC), logged to `hardware/kicad/routing-log.md`. Commit after each attempt.
 - `.mcp.json`: the **freerouting MCP server, offline**. It runs the local jar
   (`~/.local/share/freerouting/freerouting-2.4.1.jar`) over stdio, with no API key. Its API server
   binds a fixed port, so only one instance can run at a time across sessions.

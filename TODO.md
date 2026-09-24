@@ -536,7 +536,8 @@ Next steps, in order:
   - [x] **HRDY floats** (2026-09-23): R316 100k pull-down (reads "busy" while the HAT is off).
   - [ ] **Firmware changes for the custom board:** FMC 16-bit data width; SD detect on PG10; HAT
         pins held low or floating while `EPD_5V_EN` is low (back-powering); TIM3 encoder mode;
-        CAP1188 at 0x29; VBUS sensing on PA9.
+        CAP1188 at 0x29, **electrodes on channels CS3/CS4 (left) and CS5/CS6 (right)** (not
+        CS1-4, changed for layout); VBUS sensing on PA9.
 - [ ] **Mechanical / enclosure** — gates layout, so do it first: board outline; where the external
       HAT and the panel mount; side-wall thickness and material for the CAP1188 electrodes (the
       README draft assumes ≤ ~4 mm plastic); encoder (bottom edge) and power button (top edge)
@@ -590,12 +591,31 @@ Next steps, in order:
   - [ ] **Known DRC items**: 8 hole-clearance errors inside the stock SW302 (Alps SKRT: pegs
         0.10–0.15 mm from its own pads) and J1 (GCT USB4105: 0.19 mm) footprints, i.e. the
         vendors' land patterns. Confirm with the fab or exclude them in the DRC dialog.
-  - [ ] **Placement** of the core: MCU (U101) central, SDRAM (U201) hugging the FMC pins, QSPI
-        (U202) near its pins, power stage (U1–U7, L1–L3) near J2/J1 with short switch loops, the
-        CAP1188 near J302/J303, crystals right at the MCU. Keep top-side parts under the backer
-        ≤ 7.9 mm tall (`pcb_placement.json`); J201 and J1 sit 0.85 mm / 0 mm in from the edge.
-  - [ ] **Stackup/planes**: GND on In1, split power on In2; then routing (FMC and SDIO length
-        matching are loose at these speeds, but keep the SDRAM bus short).
+  - [x] **Placement + planes** (2026-09-24, `place_main_pcb.py`): MCU rotation and memory
+        positions chosen by a bus-ratsnest optimiser (MCU at 90 deg: -26 %); hand floorplan for
+        the power stage, CAP1188 (top-middle, with a placement corridor over its touch pins),
+        ESD at each electrode connector, debug parts; greedy placer for the rest (next to what
+        they connect to; crystals and clock resistors first; decoupling at its IC's power pins).
+        **Plane-aware**: a part on one 3.3 V rail only goes over that rail's In2 plane. In1 =
+        GND; In2 = 3V3_AON base with 3V3_PERIPH (L-shaped: memory block + microSD, edge from
+        placement) and +3V3 (power stage) islands, 2 mm side channels keep 3V3_AON whole.
+  - [x] **Routing workflow** (2026-09-24): `route_loop.py` = pre-route (locked plane vias
+        incl. thermal-pad vias and under-body vias for the MCU's power pins, pin-to-cap stubs,
+        CAP1188 escapes) -> headless freerouting (offline) -> DRC -> one row in
+        `hardware/kicad/routing-log.md` -> commit; then `--variant lastmile`, our own A* router
+        (0.1 mm grid, class clearances, footprint keep-outs) for the leftover gaps. 81 -> 2
+        unconnected over 15 attempts; the log has the story of each change.
+  - [ ] **Last 2 connections** (attempt 15 + last-mile, commit 26838ec): the CAP1188's VDD pin
+        to its via (1.7 mm) and I2C1_SDA at the CAP1188 (11 mm). For 4 attempts every leftover
+        has been at a CAP1188 pin: it's a 0.5 mm-pitch QFN in the thin strip between the MCU's
+        decoupling ring and the top edge. Either finish them in pcbnew (push-and-shove makes
+        these a few minutes' work) or move the CAP1188 somewhere roomier and re-run.
+  - [ ] **Length/skew rules still failing** (freerouting can't see them): SDRAM skew ~53 mm
+        (limit 30; ~350 ps, still inside a 5 %-of-period budget but short of the 3x margin),
+        SDIO skew 15.1 mm (limit 15), one LSE net 12.9 mm (limit 12). Tune in pcbnew's length
+        tuner, or shorten by hand. 4 power tracks necked below 0.25 mm near pads: widen.
+  - [ ] **Verify TPD2E2U06DCK pinout** (U302/U303) against TI's datasheet: the schematic assumes
+        1 = IO1, 2 = IO2, 3 = GND (KiCad's symbol has unnamed pins).
 - [ ] **Fabrication outputs and ordering** — DRC clean; Gerbers + drill, pick-and-place and BoM
       with real MPNs (several values are still "verify" placeholders); pick a fab/assembler and
       check part availability (LQFP176 F469, IS42S16400J, TPS63802/TPS63900 stock); order boards,
