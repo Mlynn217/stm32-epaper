@@ -103,6 +103,34 @@ LOCAL = {'HSE_IN', 'HSE_OUT', 'LSE_IN', 'LSE_OUT', 'NRST', 'BOOT0', 'BOOT1', 'SW
          'LED1_A', 'VBUS_SENSE'}
 
 
+# MCU pins drawn wired to their circuit on this sheet instead of a stub + label.
+DRAWN = {'PB8', 'PB9'}
+
+
+def i2c_pullups(s, u, by_name):
+    """I2C1 pull-ups (4.7k to 3V3_AON) drawn on the MCU's SCL/SDA pins: both lines run out past
+    the neighbouring pins' labels, jog apart (SCL up, SDA down) and each gets its pull-up hanging
+    to a 3V3_AON rail symbol, with junction dots - then on to the CAP1188 via the global labels."""
+    G = 2.54
+    (scl,) = by_name['PB8']
+    (sda,) = by_name['PB9']
+    xs, ys, _ = u.pin_xy(scl)
+    xd, yd, _ = u.pin_xy(sda)
+    out = xs + 14 * G           # clear of the neighbours' labels
+    end = xs + 22 * G
+    for pin_x, pin_y, jog, net, ref, rx in ((xs, ys, -2 * G, 'I2C1_SCL', 'R105', xs + 17 * G),
+                                            (xd, yd, 2 * G, 'I2C1_SDA', 'R106', xs + 19 * G)):
+        line_y = pin_y + jog
+        s.wire_path([(pin_x, pin_y), (out, pin_y), (out, line_y), (rx, line_y)])
+        s.wire(rx, line_y, end, line_y)
+        s.junction(rx, line_y)
+        # Device:R pins sit at +-3.81 mm: pin 2 (bottom) on the line, pin 1 up to the rail.
+        s.part(ref, 'Device:R', '4.7k', rx, line_y - 3.81, footprint=R0402)
+        s.net_at('3V3_AON', rx, line_y - 7.62, 0, -1)
+        s.net_at(net, end, line_y, 1, 0)
+    s.text('I2C1 pull-ups (CAP1188 on the Peripherals sheet)', xs + 14 * G, ys - 9 * G, size=1.27)
+
+
 def _global(net):
     return None if net in LOCAL else 'bidirectional'
 
@@ -122,8 +150,10 @@ def build():
     used = set()
     for pin, net, _af in PINMAP:
         (num,) = by_name[pin]
-        s.conn(u, num, net)
         used.add(num)
+        if pin in DRAWN:
+            continue      # wired to its circuit below, not just a stub + label
+        s.conn(u, num, net)
     hidden = hidden_pins(s, MCU_LIB)
     for name, net in SUPPLY.items():
         for num in by_name[name]:
@@ -133,6 +163,8 @@ def build():
     for num in u.pins:
         if num not in used:
             s.no_connect(u, num)
+
+    i2c_pullups(s, u, by_name)
 
     # ---- decoupling (DS11189 Fig. 24): 100nF per VDD + 4.7uF, VDDUSB, VDDA/VREF+, VCAPs ----
     s.text('Decoupling per DS11189 Fig. 24: 100nF on each of the 13 VDD pins + 4.7uF; 100nF on\n'

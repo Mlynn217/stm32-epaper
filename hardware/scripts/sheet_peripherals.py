@@ -63,8 +63,7 @@ def build():
         esd = s.part('U%d' % (302 + i), 'Power_Protection:TPD2E2U06DCK', 'TPD2E2U06DCKR',
                      160.02 + i * 25.4, 215.9, fields={'MPN': 'TPD2E2U06DCKR'})
         s.conns(esd, {'1': 'TOUCH_%s1' % side, '2': 'TOUCH_%s2' % side, '3': 'GND'})
-    two_pin(s, 'R304', 'R', '4.7k', 30.48, 238.76, '3V3_AON', 'I2C1_SCL', R0402)
-    two_pin(s, 'R305', 'R', '4.7k', 40.64, 238.76, '3V3_AON', 'I2C1_SDA', R0402)
+    # (I2C1 pull-ups R105/R106 are drawn on the MCU sheet, wired to PB8/PB9.)
     two_pin(s, 'R306', 'R', '10k', 50.8, 238.76, '3V3_AON', 'CAP_ALERT', R0402)
     two_pin(s, 'R307', 'R', '100k', 60.96, 238.76, 'CAP_RESET', 'GND', R0402)
     two_pin(s, 'R308', 'R', '100k', 71.12, 238.76, 'CAP_WAKE', 'GND', R0402)

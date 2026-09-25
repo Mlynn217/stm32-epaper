@@ -162,6 +162,15 @@ class Sheet:
         self.items.append(['wire', ['pts', ['xy', x0, y0], ['xy', x1, y1]],
                            ['stroke', ['width', 0], ['type', Sym('default')]], ['uuid', uid()]])
 
+    def wire_path(self, pts):
+        """Wire through a list of (x, y) points (orthogonal polyline)."""
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+            self.wire(x0, y0, x1, y1)
+
+    def junction(self, x, y):
+        self.items.append(['junction', ['at', x, y], ['diameter', 0], ['color', 0, 0, 0, 0],
+                           ['uuid', uid()]])
+
     def no_connect(self, part, num):
         x, y, _ = part.pin_xy(num)
         self.items.append(['no_connect', ['at', x, y], ['uuid', uid()]])
