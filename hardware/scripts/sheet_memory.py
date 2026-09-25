@@ -6,7 +6,7 @@ check_schematic.py can confirm end to end that each memory pin reaches an MCU pi
 provides that function.
 """
 from common import C0402, C0603, C0805, R0402, conn_by_name, new_sheet
-from wiring import G, bank, path, pin, two
+from wiring import G, bank, by_name, path, pin, two
 
 LOCAL = set()
 
@@ -48,15 +48,6 @@ def series_clock(s, pin_xy, dev_net, x_r, label_dx=G):
     s.net_at(mcu_net, p2[0] - G, p2[1], -1, 0)
 
 
-def _by_name(part):
-    """Pin number for each pin name (the lowest, for stacked duplicates)."""
-    out = {}
-    for num, (_, _, _, name) in sorted(part.pins.items(), key=lambda kv: int(kv[0])
-                                       if kv[0].isdigit() else 999):
-        out.setdefault(name, num)
-    return out
-
-
 def build():
     s = new_sheet('Memory', lambda n: None if n in LOCAL else 'bidirectional')
     s.text('MEMORY — all on 3V3_PERIPH. Net names = STM32 alternate functions (see sheet_mcu.PINMAP).',
@@ -72,7 +63,7 @@ def build():
     u = s.part('U201', 'Memory_RAM:IS42S16400J-xT', 'IS42S16400J-6TLI', 76.2, 134.62,
                fields={'MPN': 'IS42S16400J-6TLI'})
     conn_by_name(s, u, SDRAM, drawn={'VDD', 'VDDQ', 'CLK'})
-    un = _by_name(u)
+    un = by_name(u)
     # VDD + VDDQ straight up onto the 3V3_PERIPH rail, the decoupling bank beside them.
     y_r = 99.06 - 6 * G
     tops = []
@@ -90,7 +81,7 @@ def build():
     q = s.part('U202', 'Memory_Flash:W25Q128JVS', 'W25Q128JVSIQ', 256.54, 76.2,
                fields={'MPN': 'W25Q128JVSIQ'})
     conn_by_name(s, q, QSPI, drawn={'VCC', '~{CS}', 'CLK'})
-    qn = _by_name(q)
+    qn = by_name(q)
     x, y = pin(q, qn['VCC'])
     y_r = y - 3 * G
     s.wire(x, y, x, y_r)
@@ -115,7 +106,7 @@ def build():
                fields={'MPN': 'Molex 1040310811'})
     conn_by_name(s, j, SD, drawn={'DAT0', 'DAT1', 'DAT2', 'DAT3/CD', 'CMD', 'CLK', 'VDD', 'VSS',
                                   'DET_A', 'DET_B'})
-    jn = _by_name(j)
+    jn = by_name(j)
     y_rail = 162.56
     x_lab = 167.64
     # Pull-ups hang from a 3V3_PERIPH rail above the socket, one column per signal (topmost pin

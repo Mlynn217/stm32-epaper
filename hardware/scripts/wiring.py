@@ -80,3 +80,12 @@ def bank(s, caps, x0, y_top, rail_net, gnd='GND', pitch=4 * G, extra_top=(), lab
         s.net_at(rail_net, left[0], left[1], 0, -1)
     s.net_at(gnd, bots[0][0], bots[0][1], 0, 1)
     return top_pts
+
+
+def by_name(part):
+    """Pin number for each pin name (the lowest-numbered one, for stacked duplicates)."""
+    out = {}
+    for num, (_, _, _, name) in sorted(part.pins.items(),
+                                       key=lambda kv: int(kv[0]) if kv[0].isdigit() else 999):
+        out.setdefault(name, num)
+    return out

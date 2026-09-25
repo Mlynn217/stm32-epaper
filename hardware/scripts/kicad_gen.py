@@ -131,19 +131,26 @@ class Sheet:
         return self.lib[lib_id]
 
     def part(self, ref, lib_id, value, x, y, footprint=None, fields=None, dnp=False, in_bom=True,
-             angle=0):
+             angle=0, label_at=None):
+        """label_at=(dx, dy, justify): Reference/Value stacked horizontally at that offset from
+        the symbol origin (for rotated multi-pin parts, whose library field spots end up sideways
+        across the body)."""
         sym = self._lib(lib_id)
         pins = _pins_of(sym)
         lprops = {p[1]: p[2] for p in find(sym, 'property')}
         fp = footprint if footprint is not None else lprops.get('Footprint', '')
         is_pwr = ref.startswith('#')
-        if angle and not is_pwr and len(pins) == 2:
+        # (90/270: KiCad composes a field's angle with the symbol's; 180: it keeps text upright.)
+        ta = 0 if angle % 360 == 180 else (360 - angle) % 360
+        if label_at:
+            dx, dy, just = label_at
+            props = [_prop('Reference', ref, x + dx, y + dy - 1.27, justify=just, angle=ta),
+                     _prop('Value', value, x + dx, y + dy + 1.27, justify=just, angle=ta)]
+        elif angle and not is_pwr and len(pins) == 2:
             # Rotated two-pin part: keep the text horizontal (KiCad composes a field's angle with
             # the symbol's, so counter-rotate it) and beside the body: to the right of a vertical
             # body, above/below a horizontal one.
             (p1x, p1y), (p2x, p2y) = [_rot(px, py, angle) for px, py, _, _ in pins.values()]
-            # (90/270: KiCad composes the angles; 180: it keeps field text upright by itself.)
-            ta = 0 if angle % 360 == 180 else (360 - angle) % 360
             if abs(p1x - p2x) < 1e-6:          # vertical body
                 props = [_prop('Reference', ref, x + 2.54, y - 1.27, justify='left', angle=ta),
                          _prop('Value', value, x + 2.54, y + 1.27, justify='left', angle=ta)]
