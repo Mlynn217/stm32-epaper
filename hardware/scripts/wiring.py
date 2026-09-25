@@ -31,7 +31,8 @@ def path(s, pts):
             s.wire(x0, y0, x1, y1)
 
 
-def two(s, ref, lib_id, value, p1, d, footprint=None, fields=None, pin_a='1', pin_b='2', dnp=False):
+def two(s, ref, lib_id, value, p1, d, footprint=None, fields=None, pin_a='1', pin_b='2', dnp=False,
+        label_at=None):
     """Place a two-pin part with `pin_a` exactly at p1 and `pin_b` along direction d = (dx, dy).
     Returns (pin_b position, part)."""
     pins = _pins_of(s._lib(lib_id))
@@ -43,7 +44,8 @@ def two(s, ref, lib_id, value, p1, d, footprint=None, fields=None, pin_a='1', pi
         n = math.hypot(vx, vy)
         if abs(vx / n - d[0]) < 1e-6 and abs(vy / n - d[1]) < 1e-6:
             part = s.part(ref, lib_id, value, round(p1[0] - rax, 4), round(p1[1] + ray, 4),
-                          footprint=footprint, fields=fields, dnp=dnp, angle=ang)
+                          footprint=footprint, fields=fields, dnp=dnp, angle=ang,
+                          label_at=label_at)
             return pin(part, pin_b), part
     raise ValueError('%s: no rotation gives direction %s' % (ref, d))
 

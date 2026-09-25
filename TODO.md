@@ -432,6 +432,14 @@ power tree, board scope and alternatives considered. **BoM review done 2026-09-2
   with a power-up order, a crystal and a waveform flash.
 
 Next steps, in order:
+- [x] **Schematic redrawn as wired circuits** (2026-09-25; branch `worktree-pcb-layout`): all four
+      sheets now draw passives connected to their pins (decoupling banks on rails, pull-ups on
+      the lines, clock series resistors inline, converter parts wired) instead of label-joined
+      stubs; Power moved to A2. Each sheet proven electrically identical with
+      `compare_netlists.py` (156 parts, 193 nets), board footprints re-linked with
+      `sync_board_to_schematic.py` - routing untouched, DRC 0 unconnected / 0 parity, ERC 0.
+      Gotcha: a pass-through part (USBLC6 I/O1 = pins 1 and 6) can't be drawn inline - KiCad
+      treats the two pins as separate nodes, so both must be tapped onto the one line.
 - [x] **KiCad schematic — all four sheets drafted** (2026-09-22; branch `pcb-schematic`):
       Power, MCU (STM32F469IIT6 LQFP176), Memory (SDRAM/QSPI/microSD) and Peripherals (HAT header,
       CAP1188, PEC11R, power button). ERC reports 0 violations; `hardware/scripts/check_schematic.py`

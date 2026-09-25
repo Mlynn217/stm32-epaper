@@ -619,9 +619,21 @@ still needs the `arm-none-eabi-gcc` toolchain, OpenOCD, Ninja, and the relevant 
   - `epaper.kicad_sym` and `epaper.pretty/`: project-local symbols and footprints for parts not in
     KiCad's stock libraries, each transcribed from the datasheet it cites.
 - `hardware/scripts/`:
-  - `gen_schematic.py`: a one-shot generator that bootstrapped every sheet, from `common.py` plus
-    one `sheet_*.py` per sheet. It refuses to overwrite without `--force`. Once a sheet is edited
-    in Eeschema, the `.kicad_sch` is the source of truth.
+  - `gen_schematic.py`: generates every sheet from `common.py` plus one `sheet_*.py` per sheet;
+    the scripts are the source of truth (it refuses to overwrite without `--force`). The sheets
+    are drawn as conventional wired circuits: decoupling banks on rails wired to the power pins,
+    pull-ups/downs teed onto their lines, series parts inline, converters with their inductors,
+    dividers and caps wired to the pins. `wiring.py` holds the drawing helpers (`two`, `rail`,
+    `bank`, `path`). Net labels only join sheets, or name a local net whose name is used
+    elsewhere (net classes, DRC rules, `check_schematic.py`).
+  - `compare_netlists.py`: proves a redraw is electrically identical (same parts, values,
+    footprints, pin-level connectivity, named nets keep their names):
+    `python3 compare_netlists.py before.xml after.xml` on two `kicad-cli sch export netlist
+    --format kicadxml` exports.
+  - `sync_board_to_schematic.py`: after a redraw (symbol UUIDs are deterministic per sheet in
+    drawing order, so they change), re-links the board's footprints to the new symbol paths
+    without touching placement or routing: `kicad python3.11 sync_board_to_schematic.py
+    <netlist.xml>`, then check `kicad-cli pcb drc --schematic-parity` for 0 parity issues.
   - `gen_footprints.py`: the project footprints.
   - `check_schematic.py`: design-intent checks (see "Checking the Schematic"). Keep its tables in
     sync with deliberate edits.
