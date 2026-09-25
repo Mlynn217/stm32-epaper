@@ -7,6 +7,7 @@ respin. Assignments follow the STM32F469I-DISCO wherever the peripheral carries 
 existing firmware / CubeMX config keeps working (see README "MCU sheet").
 """
 from common import C0402, C0603, R0402, flag, hidden_pins, new_sheet, two_pin
+from wiring import G, bank, path, pin, rail, two
 
 MCU_LIB = 'MCU_ST_STM32F4:STM32F469IITx'
 
@@ -104,7 +105,7 @@ LOCAL = {'HSE_IN', 'HSE_OUT', 'LSE_IN', 'LSE_OUT', 'NRST', 'BOOT0', 'BOOT1', 'SW
 
 
 # MCU pins drawn wired to their circuit on this sheet instead of a stub + label.
-DRAWN = {'PB8', 'PB9'}
+DRAWN = {'PB8', 'PB9', 'PH0', 'PH1', 'PC14', 'PC15', 'PB2', 'PA9', 'PG6'}
 
 
 def i2c_pullups(s, u, by_name):
@@ -158,68 +159,21 @@ def build():
     for name, net in SUPPLY.items():
         for num in by_name[name]:
             used.add(num)
+            if name in SUPPLY_DRAWN:
+                continue      # wired to its decoupling below
             if num not in hidden:  # hidden duplicates are stacked on a visible pin
                 s.conn(u, num, net)
     for num in u.pins:
         if num not in used:
             s.no_connect(u, num)
 
+    power_pins(s, u, by_name)
+    vcap(s, u, by_name)
+    clocks(s, u, by_name)
     i2c_pullups(s, u, by_name)
-
-    # ---- decoupling (DS11189 Fig. 24): 100nF per VDD + 4.7uF, VDDUSB, VDDA/VREF+, VCAPs ----
-    s.text('Decoupling per DS11189 Fig. 24: 100nF on each of the 13 VDD pins + 4.7uF; 100nF on\n'
-           'VDDUSB; VDDA and VREF+ (tied, fed through FB101) 1uF + 100nF each; VCAP1/VCAP2\n'
-           '2.2uF (ESR < 2 ohm). Place each 100nF at its pin. VDD12DSI/VCAPDSI: no cap (DSI unused).',
-           398.78, 30.48)
-    x = 401.32
-    for i in range(13):
-        two_pin(s, 'C%d' % (101 + i), 'C', '100nF', x + i * 10.16, 60.96, '3V3_AON', 'GND', C0402)
-    two_pin(s, 'C114', 'C', '4.7uF', x + 13 * 10.16, 60.96, '3V3_AON', 'GND', C0603)
-    two_pin(s, 'C115', 'C', '100nF', x, 96.52, '3V3_AON', 'GND', C0402)  # VDDUSB
-    s.text('VDDUSB', x - 2.54, 104.14, size=1)
-    fb = s.part('FB101', 'Device:FerriteBead_Small', 'BLM18PG221SN1', x + 20.32, 96.52,
-                footprint='Inductor_SMD:L_0603_1608Metric')
-    s.conns(fb, {'1': '3V3_AON', '2': 'VDDA'})
-    two_pin(s, 'C116', 'C', '1uF', x + 30.48, 96.52, 'VDDA', 'GND', C0402)
-    two_pin(s, 'C117', 'C', '100nF', x + 40.64, 96.52, 'VDDA', 'GND', C0402)
-    two_pin(s, 'C118', 'C', '1uF', x + 50.8, 96.52, 'VDDA', 'GND', C0402)
-    two_pin(s, 'C119', 'C', '100nF', x + 60.96, 96.52, 'VDDA', 'GND', C0402)
-    flag(s, 'VDDA', x + 71.12, 88.9)
-    two_pin(s, 'C120', 'C', '2.2uF', x + 91.44, 96.52, 'VCAP1', 'GND', C0402,
-            fields={'Note': 'ESR < 2 ohm'})
-    two_pin(s, 'C121', 'C', '2.2uF', x + 101.6, 96.52, 'VCAP2', 'GND', C0402,
-            fields={'Note': 'ESR < 2 ohm'})
-
-    # ---- clocks ----------------------------------------------------------------------------
-    s.text('HSE 8MHz (PLL -> 180MHz), NDK NX3225GD CL = 8pF: C = 2*(CL - Cstray) = 2*(8 - 3) =\n'
-           '10pF (C0G). LSE: NDK NX3215SA CL = 6pF, ESR <= 70k: C = 2*(6 - 3) = 6.2pF (C0G).\n'
-           'AN2867 gm_crit = 4*ESR*(2*pi*f)^2*(C0+CL)^2: HSE ~0.16-0.25 mA/V vs 1 mA/V max (ok).\n'
-           'LSE ~0.58 uA/V: OVER the 0.56 uA/V low-power max (DS Table 38), under the 1.5 uA/V\n'
-           'high-drive max -> FIRMWARE MUST select LSE high-drive mode before enabling the LSE.',
-           20.32, 30.48)
-    y1 = s.part('Y101', 'Device:Crystal_GND24', '8MHz CL8pF', 40.64, 68.58,
-                footprint='Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm',
-                fields={'MPN': 'NX3225GD-8MHZ-STD-CRA-3'})
-    s.conns(y1, {'1': 'HSE_IN', '3': 'HSE_OUT', '2': 'GND', '4': 'GND'})
-    two_pin(s, 'C122', 'C', '10pF', 30.48, 88.9, 'HSE_IN', 'GND', C0402)
-    two_pin(s, 'C123', 'C', '10pF', 50.8, 88.9, 'HSE_OUT', 'GND', C0402)
-    y2 = s.part('Y102', 'Device:Crystal', '32.768kHz CL6pF', 96.52, 68.58,
-                footprint='Crystal:Crystal_SMD_3215-2Pin_3.2x1.5mm',
-                fields={'MPN': 'NX3215SA-32.768KHZ-EXS00A-MU00525'})
-    s.conns(y2, {'1': 'LSE_IN', '2': 'LSE_OUT'})
-    two_pin(s, 'C124', 'C', '6.2pF', 86.36, 88.9, 'LSE_IN', 'GND', C0402)
-    two_pin(s, 'C125', 'C', '6.2pF', 106.68, 88.9, 'LSE_OUT', 'GND', C0402)
-
-    # ---- reset / boot ----------------------------------------------------------------------
-    s.text('Reset: 100nF on NRST (internal pull-up). BOOT0 10k pull-down + BOOT button to 3V3:\n'
-           'hold BOOT while resetting (or plugging USB) to enter the ROM USB DFU bootloader.\n'
-           'PB2 = BOOT1 pulled low so BOOT0=1 selects system memory.', 20.32, 116.84)
-    two_pin(s, 'C126', 'C', '100nF', 30.48, 142.24, 'NRST', 'GND', C0402)
-    two_pin(s, 'R101', 'R', '10k', 50.8, 142.24, 'BOOT0', 'GND', R0402)
-    sw = s.part('SW101', 'Switch:SW_Push', 'BOOT', 71.12, 134.62,
-                footprint='Button_Switch_SMD:SW_Push_1P1T_NO_CK_KMR2')
-    s.conns(sw, {'1': '3V3_AON', '2': 'BOOT0'})
-    two_pin(s, 'R102', 'R', '10k', 96.52, 142.24, 'BOOT1', 'GND', R0402)
+    right_side_resistors(s, u, by_name)
+    status_led(s, u, by_name)
+    reset_boot(s)
 
     # ---- debug: TC2050 (ARM 10-pin Cortex debug pinout, 1:1) + UART header ------------------
     s.text('SWD on TC2050-IDC-NL pads (no header on the board). The TC2050-IDC cable maps 1:1\n'
@@ -233,13 +187,180 @@ def build():
     ju = s.part('J102', 'Connector_Generic:Conn_01x03', 'UART (TX RX GND)', 50.8, 248.92,
                 footprint='Connector_PinHeader_1.27mm:PinHeader_1x03_P1.27mm_Vertical')
     s.conns(ju, {'1': 'USART3_TX', '2': 'USART3_RX', '3': 'GND'})
-
-    two_pin(s, 'R104', 'R', '1k', 71.12, 287.02, 'VBUS', 'VBUS_SENSE', R0402)
-
-    # ---- status LED ------------------------------------------------------------------------
-    two_pin(s, 'R103', 'R', '1k', 30.48, 287.02, 'LED_STATUS', 'LED1_A', R0402)
-    d = s.part('D101', 'Device:LED', 'STATUS (green)', 55.88, 297.18,
-               footprint='LED_SMD:LED_0603_1608Metric')
-    s.conns(d, {'2': 'LED1_A', '1': 'GND'})
     return s
+
+
+# Supply pins drawn wired to their decoupling instead of a stub + power symbol.
+SUPPLY_DRAWN = {'VDD', 'VDDDSI', 'VDDUSB', 'VDDA', 'VBAT', 'VCAP1', 'VCAP2', 'BYPASS_REG',
+                'PDR_ON'}
+
+
+def power_pins(s, u, by_name):
+    """Top edge: the 13 VDD pins on one 3V3_AON rail with the decoupling bank hanging from it;
+    VDDDSI/VDDUSB on a second rail with C115; VDDA through FB101 with its own bank."""
+    vdd = sorted(pin(u, n) for n in by_name['VDD'])
+    y_r = vdd[0][1] - 2 * G
+    for x, y in vdd:
+        s.wire(x, y, x, y_r)
+    caps = [('C%d' % (101 + i), '100nF', C0402, None) for i in range(13)]
+    caps.append(('C114', '4.7uF', C0603, None))
+    bank(s, caps, 114.3, y_r, '3V3_AON', extra_top=[(x, y_r) for x, _ in vdd])
+    s.text('Decoupling (DS11189 Fig. 24): 100nF per VDD pin + 4.7uF; place each 100nF at its pin',
+           114.3, y_r - 5 * G)
+
+    # BYPASS_REG (tied low: regulator on) straight up into the bank's GND rail, which ends just
+    # above it; PDR_ON (tied high) out far enough that its 3V3_AON symbol clears NRST's label.
+    xg, yg = pin(u, by_name['BYPASS_REG'][0])
+    x_gnd_end = 114.3 + 13 * 4 * G
+    path(s, [(xg, yg), (x_gnd_end, yg), (x_gnd_end, y_r + 3 * G)])
+    xp, yp = pin(u, by_name['PDR_ON'][0])
+    s.wire(xp, yp, xp - 7 * G, yp)
+    s.net_at('3V3_AON', xp - 7 * G, yp, 0, -1)
+
+    # VBAT: the RTC supply from the power sheet, labelled to the left under the rail.
+    xb, yb = pin(u, by_name['VBAT'][0])
+    s.wire(xb, yb, xb, yb - G)
+    s.net_at('VBAT_RTC', xb, yb - G, -1, 0)
+
+    # VDDDSI + VDDUSB: second 3V3_AON rail, out to the right past the body, with C115.
+    pts = [pin(u, n) for n in by_name['VDDDSI'] + by_name['VDDUSB']]
+    for x, y in pts:
+        s.wire(x, y, x, y_r)
+    x_sym, x_cap = 332.74, 345.44
+    rail(s, [(x, y_r) for x, _ in pts] + [(x_sym, y_r), (x_cap, y_r)])
+    s.net_at('3V3_AON', x_sym, y_r, 0, -1)
+    two(s, 'C115', 'Device:C', '100nF', (x_cap, y_r), (0, 1), footprint=C0402)
+    s.net_at('GND', x_cap, y_r + 3 * G, 0, 1)
+    s.text('VDDUSB', x_cap + G, y_r + 4 * G, size=1)
+
+    # VDDA (tied to VREF+ on the left side): up to its own rail, FB101 from 3V3_AON, 2x(1uF+100nF).
+    xa, ya = pin(u, by_name['VDDA'][0])
+    y_a = ya - 8 * G
+    s.wire(xa, ya, xa, y_a)
+    caps = [('C116', '1uF', C0402, None), ('C117', '100nF', C0402, None),
+            ('C118', '1uF', C0402, None), ('C119', '100nF', C0402, None)]
+    x_fb = 350.52 + 4 * 4 * G + G
+    tops = bank(s, caps, 350.52, y_a, 'VDDA', extra_top=[(xa, y_a), (x_fb, y_a)],
+                label_net=None)
+    s.net_at('VDDA', xa + 2 * G, y_a, 0, -1)
+    p1, _ = two(s, 'FB101', 'Device:FerriteBead_Small', 'BLM18PG221SN1', (x_fb, y_a), (1, 0),
+                footprint='Inductor_SMD:L_0603_1608Metric', pin_a='2', pin_b='1')
+    s.wire(p1[0], p1[1], p1[0] + 2 * G, p1[1])
+    s.net_at('3V3_AON', p1[0] + 2 * G, p1[1], 0, -1)
+    # PWR_FLAG (ERC: VDDA is driven through a passive ferrite) right on the rail's corner.
+    s.pwr_n += 1
+    s.part('#FLG%s%02d' % (s.prefix, s.pwr_n), 'power:PWR_FLAG', 'PWR_FLAG', xa, y_a)
+    s.text('VDDA / VREF+: FB101 + 2 x (1uF + 100nF)', 350.52, y_a - 10 * G)
+
+
+def vcap(s, u, by_name):
+    """VCAP1/VCAP2 (core regulator): 2.2uF each, ESR < 2 ohm, wired out past VCAPDSI's label."""
+    for name, x_cap, ref in (('VCAP1', 223.52, 'C120'), ('VCAP2', 231.14, 'C121')):
+        x, y = pin(u, by_name[name][0])
+        s.wire(x, y, x_cap, y)
+        s.net_at(name, x - 5 * G, y, -1, 0)
+        p2, _ = two(s, ref, 'Device:C', '2.2uF', (x_cap, y), (0, 1), footprint=C0402,
+                    fields={'Note': 'ESR < 2 ohm'})
+        s.net_at('GND', p2[0], p2[1], 0, 1)
+
+
+def clocks(s, u, by_name):
+    """HSE crystal below PH0/PH1 and LSE crystal above PC14/PC15, each wired to its pins with its
+    load capacitors to GND."""
+    s.text('HSE 8MHz (PLL -> 180MHz), NDK NX3225GD CL = 8pF: C = 2*(CL - Cstray) = 2*(8 - 3) =\n'
+           '10pF (C0G). LSE: NDK NX3215SA CL = 6pF, ESR <= 70k: C = 2*(6 - 3) = 6.2pF (C0G).\n'
+           'AN2867 gm_crit = 4*ESR*(2*pi*f)^2*(C0+CL)^2: HSE ~0.16-0.25 mA/V vs 1 mA/V max (ok).\n'
+           'LSE ~0.58 uA/V: OVER the 0.56 uA/V low-power max (DS Table 38), under the 1.5 uA/V\n'
+           'high-drive max -> FIRMWARE MUST select LSE high-drive mode before enabling the LSE.',
+           20.32, 30.48)
+    # HSE: PH0 (upper) -> crystal pin 1 (left), PH1 -> pin 3 (right); crystal below the pins.
+    p0, p1 = pin(u, by_name['PH0'][0]), pin(u, by_name['PH1'][0])
+    xc, yc = 219.71, 205.74
+    s.part('Y101', 'Device:Crystal_GND24', '8MHz CL8pF', xc, yc,
+           footprint='Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm',
+           fields={'MPN': 'NX3225GD-8MHZ-STD-CRA-3'})
+    a, b = (xc - 3.81, yc), (xc + 3.81, yc)
+    path(s, [p0, (a[0], p0[1]), a])
+    path(s, [p1, (b[0], p1[1]), b])
+    s.net_at('HSE_IN', p0[0] - 6 * G, p0[1], -1, 0)
+    s.net_at('HSE_OUT', p1[0] - 6 * G, p1[1], -1, 0)
+    s.net_at('GND', xc, yc + 2 * G, 0, 1)
+    for node, x_cap, ref in ((a, a[0] - 3 * G, 'C122'), (b, b[0] + 3 * G, 'C123')):
+        s.wire(node[0], node[1], x_cap, node[1])
+        s.junction(*node)
+        p2, _ = two(s, ref, 'Device:C', '10pF', (x_cap, node[1]), (0, 1), footprint=C0402)
+        s.net_at('GND', p2[0], p2[1], 0, 1)
+
+    # LSE: PC14 (upper) -> pin 1 (nearer), PC15 -> pin 2 (farther); crystal above the pins.
+    q0, q1 = pin(u, by_name['PC14'][0]), pin(u, by_name['PC15'][0])
+    xl, yl = 374.65, 220.98
+    s.part('Y102', 'Device:Crystal', '32.768kHz CL6pF', xl, yl,
+           footprint='Crystal:Crystal_SMD_3215-2Pin_3.2x1.5mm',
+           fields={'MPN': 'NX3215SA-32.768KHZ-EXS00A-MU00525'})
+    a, b = (xl - 3.81, yl), (xl + 3.81, yl)
+    path(s, [q0, (a[0], q0[1]), a])
+    path(s, [q1, (b[0], q1[1]), b])
+    s.net_at('LSE_IN', q0[0] + 4 * G, q0[1], 1, 0)
+    s.net_at('LSE_OUT', q1[0] + 4 * G, q1[1], 1, 0)
+    for node, x_cap, ref in ((a, a[0] - 3 * G, 'C124'), (b, b[0] + 3 * G, 'C125')):
+        s.wire(node[0], node[1], x_cap, node[1])
+        s.junction(*node)
+        p2, _ = two(s, ref, 'Device:C', '6.2pF', (x_cap, node[1]), (0, 1), footprint=C0402)
+        s.net_at('GND', p2[0], p2[1], 0, 1)
+
+
+def right_side_resistors(s, u, by_name):
+    """PB2 (BOOT1) 10k pull-down and PA9 (VBUS_SENSE) 1k from VBUS, wired out past the labels."""
+    x, y = pin(u, by_name['PB2'][0])
+    s.wire(x, y, 365.76, y)
+    s.net_at('BOOT1', x + 4 * G, y, 1, 0)
+    p2, _ = two(s, 'R102', 'Device:R', '10k', (365.76, y), (0, 1), footprint=R0402)
+    s.net_at('GND', p2[0], p2[1], 0, 1)
+
+    x, y = pin(u, by_name['PA9'][0])
+    s.wire(x, y, 365.76, y)
+    s.net_at('VBUS_SENSE', x + 4 * G, y, 1, 0)
+    p1, _ = two(s, 'R104', 'Device:R', '1k', (365.76, y), (0, -1), footprint=R0402,
+                pin_a='2', pin_b='1')
+    s.net_at('VBUS', p1[0], p1[1], 0, -1)
+
+
+def status_led(s, u, by_name):
+    """PG6 -> 1k -> green LED -> GND, wired out to the left."""
+    x, y = pin(u, by_name['PG6'][0])
+    x_led = 220.98
+    s.wire(x, y, x_led, y)
+    s.net_at('LED_STATUS', x - 6 * G, y, -1, 0)
+    p2, _ = two(s, 'R103', 'Device:R', '1k', (x_led, y), (0, 1), footprint=R0402)
+    s.wire(p2[0], p2[1], p2[0], p2[1] + G)
+    s.net_at('LED1_A', p2[0], p2[1] + G, -1, 0)
+    k, _ = two(s, 'D101', 'Device:LED', 'STATUS (green)', (p2[0], p2[1] + G), (0, 1),
+               footprint='LED_SMD:LED_0603_1608Metric', pin_a='2', pin_b='1')
+    s.net_at('GND', k[0], k[1], 0, 1)
+
+
+def reset_boot(s):
+    """NRST and BOOT0 sit between side-mounted power symbols on the MCU's left edge (no room for
+    a wire out), so their circuits are wired blocks joined to the pins by label."""
+    s.text('Reset: 100nF on NRST (internal pull-up). BOOT0 10k pull-down + BOOT button to 3V3:\n'
+           'hold BOOT while resetting (or plugging USB) to enter the ROM USB DFU bootloader.\n'
+           'PB2 = BOOT1 pulled low (R102, by the MCU) so BOOT0=1 selects system memory.',
+           20.32, 116.84)
+    top = (30.48, 134.62)
+    s.wire(top[0], top[1] - G, top[0], top[1])
+    s.net_at('NRST', top[0], top[1] - G, 0, -1)
+    p2, _ = two(s, 'C126', 'Device:C', '100nF', top, (0, 1), footprint=C0402)
+    s.net_at('GND', p2[0], p2[1], 0, 1)
+
+    node = (60.96, 134.62)
+    s.wire(node[0], node[1] - G, node[0], node[1])
+    s.net_at('BOOT0', node[0], node[1] - G, 0, -1)
+    p2, _ = two(s, 'R101', 'Device:R', '10k', node, (0, 1), footprint=R0402)
+    s.net_at('GND', p2[0], p2[1], 0, 1)
+    s.wire(node[0], node[1], node[0] + 2 * G, node[1])
+    s.junction(*node)
+    p1, _ = two(s, 'SW101', 'Switch:SW_Push', 'BOOT', (node[0] + 2 * G, node[1]), (1, 0),
+                footprint='Button_Switch_SMD:SW_Push_1P1T_NO_CK_KMR2', pin_a='2', pin_b='1')
+    s.wire(p1[0], p1[1], p1[0] + 2 * G, p1[1])
+    s.net_at('3V3_AON', p1[0] + 2 * G, p1[1], 0, -1)
 

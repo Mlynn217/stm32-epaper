@@ -66,13 +66,21 @@ def load_stock(lib, name):
     return parent
 
 
+def _rot(px, py, angle):
+    """Rotate a library-frame offset (y up) counter-clockwise by a multiple of 90 degrees."""
+    c, s = {0: (1, 0), 90: (0, 1), 180: (-1, 0), 270: (0, -1)}[angle % 360]
+    return px * c - py * s, px * s + py * c
+
+
 class Part:
-    def __init__(self, ref, lib_id, x, y, pins):
+    def __init__(self, ref, lib_id, x, y, pins, angle=0):
         self.ref, self.lib_id, self.x, self.y, self.pins = ref, lib_id, x, y, pins
+        self.angle = angle
 
     def pin_xy(self, num):
         px, py, a, _ = self.pins[num]
-        return self.x + px, self.y - py, a
+        rx, ry = _rot(px, py, self.angle)
+        return self.x + rx, self.y - ry, (a + self.angle) % 360
 
 
 def _eff(justify=None, hide=False, size=1.27):
@@ -122,20 +130,35 @@ class Sheet:
             self.lib[lib_id] = sym
         return self.lib[lib_id]
 
-    def part(self, ref, lib_id, value, x, y, footprint=None, fields=None, dnp=False, in_bom=True):
+    def part(self, ref, lib_id, value, x, y, footprint=None, fields=None, dnp=False, in_bom=True,
+             angle=0):
         sym = self._lib(lib_id)
         pins = _pins_of(sym)
         lprops = {p[1]: p[2] for p in find(sym, 'property')}
         fp = footprint if footprint is not None else lprops.get('Footprint', '')
         is_pwr = ref.startswith('#')
-        props = [self._field(sym, 'Reference', ref, x, y, force_hide=is_pwr),
-                 self._field(sym, 'Value', value, x, y),
-                 _prop('Footprint', fp, x, y, hide=True),
-                 _prop('Datasheet', lprops.get('Datasheet', ''), x, y, hide=True),
-                 _prop('Description', lprops.get('Description', ''), x, y, hide=True)]
+        if angle and not is_pwr and len(pins) == 2:
+            # Rotated two-pin part: keep the text horizontal (KiCad composes a field's angle with
+            # the symbol's, so counter-rotate it) and beside the body: to the right of a vertical
+            # body, above/below a horizontal one.
+            (p1x, p1y), (p2x, p2y) = [_rot(px, py, angle) for px, py, _, _ in pins.values()]
+            # (90/270: KiCad composes the angles; 180: it keeps field text upright by itself.)
+            ta = 0 if angle % 360 == 180 else (360 - angle) % 360
+            if abs(p1x - p2x) < 1e-6:          # vertical body
+                props = [_prop('Reference', ref, x + 2.54, y - 1.27, justify='left', angle=ta),
+                         _prop('Value', value, x + 2.54, y + 1.27, justify='left', angle=ta)]
+            else:
+                props = [_prop('Reference', ref, x, y - 2.54, angle=ta),
+                         _prop('Value', value, x, y + 2.54, angle=ta)]
+        else:
+            props = [self._field(sym, 'Reference', ref, x, y, force_hide=is_pwr),
+                     self._field(sym, 'Value', value, x, y)]
+        props += [_prop('Footprint', fp, x, y, hide=True),
+                  _prop('Datasheet', lprops.get('Datasheet', ''), x, y, hide=True),
+                  _prop('Description', lprops.get('Description', ''), x, y, hide=True)]
         for k, v in (fields or {}).items():
             props.append(_prop(k, v, x, y, hide=True))
-        inst = ['symbol', ['lib_id', lib_id], ['at', x, y, 0], ['unit', 1],
+        inst = ['symbol', ['lib_id', lib_id], ['at', x, y, angle], ['unit', 1],
                 ['exclude_from_sim', NO], ['in_bom', YES if in_bom and not is_pwr else NO], ['on_board', YES],
                 ['dnp', YES if dnp else NO], ['uuid', uid()], *props]
         for num in pins:
@@ -143,7 +166,7 @@ class Sheet:
         inst.append(['instances', ['project', self.project,
                                    ['path', self.path, ['reference', ref], ['unit', 1]]]])
         self.items.append(inst)
-        return Part(ref, lib_id, x, y, pins)
+        return Part(ref, lib_id, x, y, pins, angle)
 
     @staticmethod
     def _field(sym, key, val, x, y, force_hide=False):
