@@ -61,16 +61,17 @@ def hidden_pins(s, lib_id):
     return out
 
 
-def conn_by_name(s, part, mapping, strict=True):
+def conn_by_name(s, part, mapping, strict=True, drawn=()):
     """Connect every pin whose *name* is in `mapping` (net, or None = no-connect). Hidden pins are
     skipped: they sit stacked on a visible pin of the same name. With strict, every visible pin
-    of the part must be covered, so nothing is silently left floating."""
+    of the part must be covered, so nothing is silently left floating. Pins named in `drawn` are
+    covered but left alone: the caller wires them up itself."""
     hidden = hidden_pins(s, part.lib_id)
     seen = set()
     for num, (_, _, _, name) in part.pins.items():
         if name in mapping:
             seen.add(name)
-            if num in hidden:
+            if num in hidden or name in drawn:
                 continue
             if mapping[name] is None:
                 s.no_connect(part, num)
