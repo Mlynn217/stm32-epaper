@@ -88,3 +88,5 @@ hardware/enclosure/out/
 
 # Last routing attempt DRC report (hardware/scripts/route_loop.py)
 hardware/kicad/drc-last.json
+# KiCad 10 local history (autosave snapshots, a git repo of its own)
+.history/
